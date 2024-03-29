@@ -58,7 +58,7 @@ namespace scls
                     img->set_pixel(i, j, 0, 0, 0);
                 }
                 else {
-                    img->set_pixel(i, j, (static_cast<double>(it) / static_cast<double>(max_iteration)) * 255.0, 0, 0);
+                    img->set_pixel(i, j, (static_cast<double>(it) / static_cast<double>(max_iteration)) * 255.0, (static_cast<double>(it) / static_cast<double>(max_iteration)) * 255.0, 255 - (static_cast<double>(it) / static_cast<double>(max_iteration)) * 255.0);
                 }
             }
         }

@@ -50,6 +50,49 @@
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
+    //*********
+	//
+	// Color handling
+	//
+	//*********
+
+	class Color {
+	    // Class representing an 8 bit RGBA color
+    public:
+        // Basic Color constructor
+        Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+            a_alpha = static_cast<double>(alpha) / 255.0;
+            a_blue = static_cast<double>(blue) / 255.0;
+            a_green = static_cast<double>(green) / 255.0;
+            a_red = static_cast<double>(red) / 255.0;
+        };
+
+        // Getters and setters (ONLY WITH ATTRIBUTES)
+        inline unsigned char alpha() {return static_cast<unsigned char>(a_alpha * 255.0);};
+        inline unsigned char blue() {return static_cast<unsigned char>(a_blue * 255.0);};
+        inline unsigned char green() {return static_cast<unsigned char>(a_green * 255.0);};
+        inline unsigned char red() {return static_cast<unsigned char>(a_red * 255.0);};
+    private:
+        // Descriptor of the color (between 0 and 1)
+        double a_alpha = 1;
+        double a_blue = 0;
+        double a_green = 0;
+        double a_red = 0;
+	};
+
+	// Predefined colors
+	static Color black = Color(0, 0, 0);
+	static Color blue = Color(0, 0, 255);
+	static Color brown = Color(102, 51, 0);
+	static Color green = Color(0, 255, 0);
+	static Color grey = Color(128, 128, 128);
+	static Color orange = Color(255, 128, 0);
+	static Color pink = Color(255, 51, 255);
+	static Color purple = Color(77, 50, 146);
+	static Color red = Color(255, 0, 0);
+	static Color yellow = Color(255, 255, 0);
+	static Color white = Color(255, 255, 255);
+
     static FT_Library  _freetype_library;
     static bool _free_type_library_inited = false;
 

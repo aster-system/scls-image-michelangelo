@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <link rel="stylesheet" href="../style.css">
+        <meta charset="utf-8">
+        <title>SCLS Image "Michelangelo" - Core</title>
+    </head>
+    <body>
+        <h1>SCLS Image Core</h1>
+        <h2>Presentation</h2>
+        <div>
+            SCLS Image Core contains each very basics functions to use SCLS Image, or that can be used in a C++ program.
+        </div>
+        <h2>
+            Content
+        </h2>
+        <div>
+            <h3>
+                Color handling
+            </h3>
+            <div>
+                The core of SCLS Image contains of course a system to handle easily color in C++.
+                For now, only 8 bits RGBA is fully supported.</br>
+                There is one simple class allowing to do that, "Color".</br>
+                SCLS contains some built-in general colors.
+                <h4>
+                    Functions
+                </h4>
+                <div>
+                    <h5>
+                        Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255)
+                    </h5>
+                    <div>
+                        Most basic Color constructor, taking the "red", "green", "blue" and "alpha" value.
+                    </div>
+                    <h5>
+                        unsigned char alpha()
+                    </h5>
+                    <div>
+                        Return the alpha value of the color.
+                    </div>
+                    <h5>
+                        static Color black
+                    </h5>
+                    <div>
+                        A black Color, with a RGB of (0, 0, 0).
+                    </div>
+                    <h5>
+                        static Color blue
+                    </h5>
+                    <div>
+                        A full blue Color, with a RGB of (0, 0, 255).
+                    </div>
+                    <h5>
+                        unsigned char blue()
+                    </h5>
+                    <div>
+                        Return the blue value of the color.
+                    </div>
+                    <h5>
+                        static Color brown
+                    </h5>
+                    <div>
+                        A brown color, with a RGB of (102, 51, 0).
+                    </div>
+                    <h5>
+                        static Color green
+                    </h5>
+                    <div>
+                        A full green Color, with a RGB of (0, 255, 0).
+                    </div>
+                    <h5>
+                        unsigned char green()
+                    </h5>
+                    <div>
+                        Return the green value of the color.
+                    </div>
+                    <h5>
+                        static Color grey
+                    </h5>
+                    <div>
+                        A grey Color, with a RGB of (128, 128, 128).
+                    </div>
+                    <h5>
+                        static Color pink
+                    </h5>
+                    <div>
+                        A pink color, with a RGB of (255, 51, 255).
+                    </div>
+                    <h5>
+                        static Color purple
+                    </h5>
+                    <div>
+                        A purple color, with a RGB of (77, 50, 146).
+                    </div>
+                    <h5>
+                        static Color orange
+                    </h5>
+                    <div>
+                        An orange color, with a RGB of (255, 128, 0).
+                    </div>
+                    <h5>
+                        static Color red
+                    </h5>
+                    <div>
+                        A full red Color, with a RGB of (255, 0, 0).
+                    </div>
+                    <h5>
+                        unsigned char red()
+                    </h5>
+                    <div>
+                        Return the red value of the color.
+                    </div>
+                    <h5>
+                        static Color yellow
+                    </h5>
+                    <div>
+                        A yellow Color, with a RGB of (255, 0, 0).
+                    </div>
+                    <h5>
+                        static Color white
+                    </h5>
+                    <div>
+                        A white Color, with a RGB of (255, 255, 255).
+                    </div>
+                </div>
+            </div>
+            <h3>
+                Code specification
+            </h3>
+            <div>
+                This file define the macro "SCLS_IMAGE_CORE".
+            </div>
+        </div>
+    </body>
+</html>
