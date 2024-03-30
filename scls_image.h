@@ -25,5 +25,6 @@
 
 #include "scls_image_directory/scls_image_core.h"
 #include "scls_image_directory/scls_image_fractal.h"
+#include "scls_image_directory/scls_image_type.h"
 
 #endif // SCLS_IMAGE

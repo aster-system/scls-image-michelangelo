@@ -20,7 +20,7 @@
 namespace scls
 {
     // Return an image with a Mandelbrot fractal drawn on it
-    inline Image* burning_ship_fractal(unsigned short width, unsigned short height) {
+    Image* burning_ship_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
         double min_y = -2.5;
@@ -68,7 +68,7 @@ namespace scls
     };
 
     // Return an image with a Mandelbrot fractal drawn on it
-    inline Image* mandelbrot_fractal(unsigned short width, unsigned short height) {
+    Image* mandelbrot_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
         double min_y = -2.5;

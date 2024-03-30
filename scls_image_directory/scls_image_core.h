@@ -47,6 +47,8 @@
 #  define SET_BINARY_MODE(file)
 #endif
 
+#define PNG_CRC_CHECK 0xedb88320
+
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
@@ -93,8 +95,9 @@ namespace scls
 	static Color yellow = Color(255, 255, 0);
 	static Color white = Color(255, 255, 255);
 
-    static FT_Library  _freetype_library;
-    static bool _free_type_library_inited = false;
+
+
+
 
 	// Compress data from a char array without returning the result
 	inline int _compress_binary(char* to_compress, unsigned int to_compress_size, char* output, unsigned int output_size, unsigned int& total_output_size, unsigned int compression_level = 9) {
@@ -183,7 +186,7 @@ namespace scls
 			c = static_cast<unsigned int>(n);
 			for (int k = 0; k < 8; k++)
 			{
-				if (c & 1) c = 0xedb88320L ^ (c >> 1);
+				if (c & 1) c = static_cast<unsigned int>(PNG_CRC_CHECK) ^ (c >> 1);
 				else c = c >> 1;
 			}
 			_crc_table[n] = c;
@@ -1222,6 +1225,9 @@ namespace scls
 		// Width of the image
 		unsigned int a_width = 0;
 	};
+
+	static FT_Library  _freetype_library;
+    static bool _free_type_library_inited = false;
 
 	// Fonts datas
 	struct Font {
