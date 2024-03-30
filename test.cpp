@@ -2,6 +2,8 @@
 
 using namespace std;
 
+#include <random>
+
 int main()
 {
     scls::Image* img = scls::mandelbrot_fractal(500, 500);

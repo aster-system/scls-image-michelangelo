@@ -98,29 +98,33 @@ namespace scls
 
 	// Compress data from a char array without returning the result
 	inline int _compress_binary(char* to_compress, unsigned int to_compress_size, char* output, unsigned int output_size, unsigned int& total_output_size, unsigned int compression_level = 9) {
+		SET_BINARY_MODE(stdin);
+        SET_BINARY_MODE(stdout);
+
 		// Create compression ENV
+		unsigned int buffer_size = 16384.0 / 2.0;
+		int deflate_type = Z_FINISH;
 		int ret = 0;
 		z_stream strm;
 		strm.zalloc = Z_NULL;
 		strm.zfree = Z_NULL;
 		strm.opaque = Z_NULL;
-		strm.avail_in = 0;
-		strm.next_in = Z_NULL;
-		ret = deflateInit(&strm, compression_level);
-		if (ret != Z_OK) return ret;
+
+		ret = deflateInit(&strm, compression_level); if (ret != Z_OK) return ret;
 		strm.avail_in = to_compress_size;
 		strm.next_in = (Bytef*)(to_compress);
-		bool stream_end = false;
 
 		// Set output
-		strm.avail_out = output_size;
-		strm.next_out = (Bytef*)output;
+        strm.avail_out = buffer_size; strm.next_out = (Bytef*)output;
 
 		// Compress data
 		do
 		{
+		    // Set output
+			strm.avail_out = buffer_size;
+
 			// Do the decompression
-			ret = deflate(&strm, Z_FINISH);
+			ret = deflate(&strm, deflate_type);
 			if (ret == Z_STREAM_ERROR)
 			{
 				(void)deflateEnd(&strm);
@@ -139,10 +143,9 @@ namespace scls
 				(void)deflateEnd(&strm);
 				return -5;
 			case Z_STREAM_END:
-				stream_end = true;
 				break;
 			}
-		} while (strm.avail_out == 0 && !stream_end);
+		} while (strm.avail_out == 0);
 		(void)deflateEnd(&strm);
 
 		total_output_size = strm.total_out;
@@ -152,7 +155,7 @@ namespace scls
 
 	// Compress data from a char array and return the result
 	inline char* compress_binary(char* to_compress, unsigned int to_compress_size, unsigned int& output_size, unsigned int compression_level = 9) {
-		char* output = new char[to_compress_size + 1000];
+		char* output = new char[to_compress_size * 2];
 
 		unsigned int ret = _compress_binary(to_compress, to_compress_size, output, to_compress_size + 1000, output_size, compression_level);
 		if (ret != 1) return 0;
@@ -316,7 +319,7 @@ namespace scls
 		}
 		// Returns the data of the image filtered in a unsigned char*
 		inline unsigned char* data_filtered() {
-			unsigned char* datas = new unsigned char[get_height() * get_width() * get_components() + get_height()];
+		    unsigned char* datas = new unsigned char[get_height() * get_width() * get_components() + get_height()];
 			for (unsigned int i = 0; i < get_height(); i++)
 			{
 				for (unsigned int j = 0; j < get_width() * get_components() + 1; j++)
@@ -374,7 +377,7 @@ namespace scls
 			name = "IDAT";
 			unsigned int idat_size = 0;
 			char* idat_uncompressed = reinterpret_cast<char*>(data_filtered());
-			char* idat_compressed = compress_binary(idat_uncompressed, get_height() * get_width() * get_components() + get_height() * 2, idat_size, 9);
+			char* idat_compressed = compress_binary(idat_uncompressed, (get_height() * get_width() * get_components() + get_height()), idat_size, 9);
 			delete[] idat_uncompressed;
 			unsigned int idat_total_size = idat_size + 12;
 			datas->add_uint(idat_size, true);
