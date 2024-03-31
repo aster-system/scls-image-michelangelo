@@ -6,7 +6,7 @@ using namespace std;
 
 int main()
 {
-    scls::Image* img = scls::mandelbrot_fractal(1000, 1000);
+    scls::Image* img = scls::mandelbrot_fractal(500, 500);
     img->save_png("mandelbrot.png");
 
     return 0;
