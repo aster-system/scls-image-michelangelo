@@ -6,8 +6,8 @@ using namespace std;
 
 int main()
 {
-    scls::Image* img = scls::mandelbrot_fractal(500, 500);
-    img->save_png("mandelbrot.png");
+    scls::Image* img = scls::sierpinski_pyramid(1024, 1024, 7);
+    img->save_png("sierpinski_pyramid.png");
 
     return 0;
 }

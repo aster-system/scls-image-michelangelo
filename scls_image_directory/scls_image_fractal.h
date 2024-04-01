@@ -19,7 +19,7 @@
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
-    // Return an image with a Mandelbrot fractal drawn on it
+    // Returns an image with a Mandelbrot fractal drawn on it
     Image* burning_ship_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
@@ -67,7 +67,7 @@ namespace scls
         return img;
     };
 
-    // Return an image with a Mandelbrot fractal drawn on it
+    // Returns an image with a Mandelbrot fractal drawn on it
     Image* mandelbrot_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
@@ -114,4 +114,103 @@ namespace scls
         // Return the image
         return img;
     };
+
+    // Returns an image with a modulo drawn on it
+    Image* modulo_circle(unsigned short width, unsigned short height, unsigned int base, unsigned int side) {
+        Image* img = new Image(width, height, 255, 255, 255);
+
+        double max_x = 0.5;
+		double min_x = 0.5;
+
+		// Create each points of the group
+		std::vector<double> x_positions = std::vector<double>();
+		std::vector<double> y_positions = std::vector<double>();
+		for (int i = 0; i < side; i++)
+		{
+			double theta = (2 * 3.1415 * i) / side + 3.1415 / 4.0;
+			double x = cos(theta);
+			double y = sin(theta);
+
+			if (x > max_x) max_x = x;
+			if (x < min_x) min_x = x;
+
+			x_positions.push_back(x);
+			y_positions.push_back(y);
+		}
+
+		double ratio = width * 0.45;
+
+		for (int i = 0; i < x_positions.size(); i++)
+		{
+			x_positions[i] = x_positions[i] * ratio + width / 2.0;
+		}
+
+		for (int i = 0; i < y_positions.size(); i++)
+		{
+			y_positions[i] = y_positions[i] * ratio + height / 2.0;
+		}
+
+		for(int i = 0;i<x_positions.size() - 1;i++) {
+            img->draw_line(x_positions[i], y_positions[i], x_positions[i + 1], y_positions[i + 1], black, 2);
+		}
+		img->draw_line(x_positions[x_positions.size() - 1], y_positions[x_positions.size() - 1], x_positions[0], y_positions[0], black, 2);
+
+		for(int i = 0;i<x_positions.size();i++) {
+            img->set_pixel(x_positions[i], y_positions[i], black, 5);
+		}
+
+		// Calculate the modulo
+		for(int i = 0;i<side;i++) {
+            unsigned int result = base * i;
+            unsigned int pos = result % side;
+
+            img->draw_line(x_positions[i], y_positions[i], x_positions[pos], y_positions[pos], black, 1);
+		}
+
+		return img;
+    }
+
+    // Returns an image with a Sierpinski carpet drawn on it
+    Image* sierpinski_carpet(unsigned short width, unsigned short height, unsigned char step) {
+        // Create the image
+        Image* img = new Image(width, height, 255, 255, 255);
+
+        if(step == 0) {
+            img->draw_rect(0, 0, width, height, static_cast<double>(width) / 3.0, black);
+        }
+        else {
+            Image *child = sierpinski_carpet(static_cast<unsigned short>(static_cast<double>(width) / 3.0), static_cast<unsigned short>(static_cast<double>(height) / 3.0), step - 1);
+            img->paste(child, 0, 0);
+            img->paste(child, (static_cast<double>(width) / 3.0), 0);
+            img->paste(child, (static_cast<double>(width) / 3.0) * 2.0, 0);
+            img->paste(child, 0, static_cast<double>(height) / 3.0);
+            img->paste(child, (static_cast<double>(width) / 3.0) * 2.0, static_cast<double>(height) / 3.0);
+            img->paste(child, 0, (static_cast<double>(height) / 3.0) * 2.0);
+            img->paste(child, (static_cast<double>(width) / 3.0), (static_cast<double>(height) / 3.0) * 2.0);
+            img->paste(child, (static_cast<double>(width) / 3.0) * 2.0, (static_cast<double>(height) / 3.0) * 2.0);
+            delete child; child = 0;
+        }
+
+        return img;
+    };
+
+    // Returns an image with a Sierpinski pyramid drawn on it
+    Image* sierpinski_pyramid(unsigned short width, unsigned short height, unsigned char step, char current_step = -1) {
+        // Create the image
+        Image* img = new Image(width, height, 255, 255, 255, 255);
+
+        if(step == 0) {
+            img->fill_triangle(0, height, width / 2.0, 0, width, height, black);
+            if(current_step != -1) return img;
+        }
+        else {
+            scls::Image* child = sierpinski_pyramid(width / 2.0, height / 2.0, step - 1, step - 1);
+            img->paste(child, 0, height / 2.0);
+            img->paste(child, width / 2.0, height / 2.0);
+            img->paste(child, width / 4.0, 0);
+            if(current_step != -1) return img;
+        }
+
+        return img;
+    }
 }

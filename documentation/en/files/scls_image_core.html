@@ -204,6 +204,12 @@
                         If the image is in RGB or RGBA, the bit depht is the number of bit in one part of the color (red, blue...).
                     </div>
                     <h5>
+                        unsigned int buffer_size()
+                    </h5>
+                    <div>
+                        Returns the size of the image in the memory.
+                    </div>
+                    <h5>
                         unsigned int color_type()
                     </h5>
                     <div>
@@ -260,6 +266,13 @@
                         Free the memory from the image datas.
                     </div>
                     <h5>
+                        bool load_from_path(std::string path)
+                    </h5>
+                    <div>
+                        Load the image from "path", if it exists and it is correct with a supported image format.
+                        Then, returns if the loading was successfull or not.
+                    </div>
+                    <h5>
                         Color pixel(unsigned short x, unsigned short y)
                     </h5>
                     <div>
@@ -270,12 +283,6 @@
                     </h5>
                     <div>
                         Returns the height of the image.
-                    </div>
-                    <h5>
-                        std::vector&lt;unsigned char&gt; png_signature()
-                    </h5>
-                    <div>
-                        Returns the PNG signature in a std::vector of unsigned char.
                     </div>
                     <h5>
                         void set_pixel(unsigned short x, unsigned short y, Color color, unsigned short width = 1)
@@ -333,12 +340,6 @@
                 </h4>
                 <div>
                     <h5>
-                        Image(std::string path)
-                    </h5>
-                    <div>
-                        Image constructor, constructing the image from the PNG file specified by "path".
-                    </div>
-                    <h5>
                         unsigned int compression_method()
                     </h5>
                     <div>
@@ -388,10 +389,51 @@
                         Returns the physical pixel width to real width ratio.
                     </div>
                     <h5>
+                        std::vector&lt;unsigned char&gt; png_signature()
+                    </h5>
+                    <div>
+                        Returns the PNG signature in a std::vector of unsigned char.
+                    </div>
+                    <h5>
                         void save_png(std::string path)
                     </h5>
                     <div>
                         Save the image in PNG at the path "path".
+                    </div>
+                </div>
+                <h4>
+                    Hiddens functions
+                </h4>
+                <div>
+                    <h5>
+                        bool _load_all_chunks_from_png_file(Bytes_Set* file)
+                    </h5>
+                    <div>
+                        Load each chunk in the PNG file in "file".
+                    </div>
+                    <h5>
+                        bool _load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk)
+                    </h5>
+                    <div>
+                        Load the pHYS chunk with the datas in "chunk" from the PNG file in "file".
+                    </div>
+                    <h5>
+                        bool _load_png_file(Bytes_Set* file)
+                    </h5>
+                    <div>
+                        Load the file in PNG from the Bytes_Set "file".
+                    </div>
+                    <h5>
+                        bool _load_png_IDAT_from_file(Bytes_Set* file)
+                    </h5>
+                    <div>
+                        Load the IDAT chunks from the PNG file in "file".
+                    </div>
+                    <h5>
+                        bool _load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk)
+                    </h5>
+                    <div>
+                        Load the sRGB chunk with the datas in "chunk" from the PNG file in "file".
                     </div>
                 </div>
                 <h4>
@@ -416,6 +458,104 @@
                     </h5>
                     <div>
                         The total size of the chunk.
+                    </div>
+                </div>
+            </div>
+            <h3>
+                The Image class - Editing
+            </h3>
+            <div>
+                The main class of this file is "Image". It's the core class of an Image in SCLS Image.
+                It is made to be very simple and fast to use, with only some lines of code.</br>
+                This section contains the features to do some simple edit to the Image.
+                The edition can be drawing, general modification or blending.</br>
+                You can draw lines, rect and triangle on the Image.
+                <h4>
+                    Methods
+                </h4>
+                <div>
+                    <h5>
+                        void draw_line(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width = 1)
+                    </h5>
+                    <div>
+                        Draw a line between the points ("x_1", "y_1") and ("x_2", "y_2"), with the RGB("red", "green", "blue", "alpha") color, and a width of "width".
+                    </div>
+                    <h5>
+                        void draw_line(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, Color color, unsigned short width = 1)
+                    </h5>
+                    <div>
+                        Draw a line between the points ("x_1", "y_1") and ("x_2", "y_2"), with the "color" Color, and a width of "width".
+                    </div>
+                    <h5>
+                        void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255)
+                    </h5>
+                    <div>
+                        Draw a rectangle of rect ("x", "y", "width", "height") with each side of width "rect_width" on the image with the RGB("red", "green", "blue", "alpha") color.
+                    </div>
+                    <h5>
+                        void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, Color color)
+                    </h5>
+                    <div>
+                        Draw a rectangle of rect ("x", "y", "width", "height") with each side of width "rect_width" on the image with the "color" Color.
+                    </div>
+                    <h5>
+                        void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, Color color, Color fill_color)
+                    </h5>
+                    <div>
+                        Draw a rectangle of rect ("x", "y", "width", "height") with each side of width "rect_width" on the image with the "color" Color.</br>
+                        Also, fills the rectangle with the "fill_color" Color.
+                    </div>
+                    <h5>
+                        void fill_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, Color color)
+                    </h5>
+                    <div>
+                        Fill a rectangle of rect ("x", "y", "width", "height") on the image with the "color" Color.
+                    </div>
+                    <h5>
+                        void fill_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255)
+                    </h5>
+                    <div>
+                        Fill a rectangle of rect ("x", "y", "width", "height") on the image with the RGB("red", "green", "blue", "alpha") color.
+                    </div>
+                    <h5>
+                        void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255)
+                    </h5>
+                    <div>
+                        Fill a triangle at the points ("x_1", "y_1") ("x_2", "y_2") ("x_3", "y_3") with the RGB("red", "green", "blue", "alpha") color.
+                    </div>
+                    <h5>
+                        void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, Color color)
+                    </h5>
+                    <div>
+                        Fill a triangle at the points ("x_1", "y_1") ("x_2", "y_2") ("x_3", "y_3") with the "color" Color.
+                    </div>
+                    <h5>
+                        void flip_x()
+                    </h5>
+                    <div>
+                        Flip the image on the X axis.
+                    </div>
+                    <h5>
+                        void flip_y()
+                    </h5>
+                    <div>
+                        Flip the image on the Y axis.
+                    </div>
+                    <h5>
+                        void paste(Image* to_paste, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false)
+                    </h5>
+                    <div>
+                        Pastes the Image "to_paste" at the position ("x", "y").
+                        It uses a precise blending. The alpha of "to_paste" is multiplied by "opacity".
+                        But, if "force_pasting" is true, the alpha is not blended.
+                    </div>
+                    <h5>
+                        void paste(std::string path, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false)
+                    </h5>
+                    <div>
+                        Pastes the Image at the past "path" at the position ("x", "y").
+                        It uses a precise blending. The alpha of "to_paste" is multiplied by "opacity".
+                        But, if "force_pasting" is true, the alpha is not blended.
                     </div>
                 </div>
             </div>

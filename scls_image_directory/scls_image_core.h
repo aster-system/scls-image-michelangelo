@@ -257,6 +257,10 @@ namespace scls
 	    // All Image constructors
 		// Image most basic constructor
 		Image() {};
+		// Image constructor with a path
+		Image(std::string path) : Image() {
+		    load_from_path(path);
+		};
 		// Image constructor from scratch, easier to use
 		Image(unsigned short width, unsigned short height, Color color, unsigned int color_type = 6) : Image(width, height, color.red(), color.green(), color.blue(), color.alpha(), color_type) {
 
@@ -277,7 +281,7 @@ namespace scls
 		void free_memory() {
 			if (a_pixels != 0)
 			{
-				delete[] a_pixels; a_pixels = 0;
+				delete a_pixels; a_pixels = 0;
 			}
 		};
 		// Fill the image with one color
@@ -285,8 +289,8 @@ namespace scls
 		// Fill the image with one color
 		void fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			free_memory();
-			unsigned int position = 0; unsigned int total_size = height() * width() * components() * (bit_depht() / 8.0);
-			a_pixels = new Bytes_Set(total_size);
+			unsigned int position = 0;
+			a_pixels = new Bytes_Set(buffer_size());
 			if(color_type() == 6) {
                 for (unsigned int i = 0; i < height(); i++)
                 {
@@ -330,8 +334,29 @@ namespace scls
 
             if(color_type() == 6) a_pixels->set_data_at(position + 3 * multiplier, alpha);
 		};
+        // Load the image from a path
+		bool load_from_path(std::string path) {
+			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
+			{
+			    // Create the necessary things to read the PNG file
+				Bytes_Set file = Bytes_Set();
+				file.load_from_file(path);
+
+				// Check if the signature is correct (137 80 78 71 13 10 26 10 for png files)
+				std::string file_signature = file.extract_string(8);
+				std::vector<unsigned char> signature = png_signature();
+				for (int i = 0; i < static_cast<int>(signature.size()); i++)
+				{
+				    if (signature[i] != static_cast<unsigned char>(file_signature[i])) return false;
+				}
+
+				return _load_png_file(&file);
+			}
+			return false;
+		};
 
 		// Getters and setters (ONLY WITHOUT ATTRIBUTES)
+		inline unsigned int buffer_size() {return height() * width() * components() * static_cast<unsigned int>(static_cast<double>(bit_depht()) / 8.0);};
 		inline unsigned char components() { if (color_type() == 6) return 4; return 3; };
 		inline Bytes_Set* datas_filtered() {
 		    Bytes_Set* to_return = new Bytes_Set(datas()->datas_size() + height());
@@ -373,20 +398,7 @@ namespace scls
 			}
 			return to_return;
 		}
-		inline std::vector<unsigned char> png_signature() {
-			std::vector<unsigned char> signature;
-			signature.push_back(137);
-			signature.push_back(80);
-			signature.push_back(78);
-			signature.push_back(71);
-			signature.push_back(13);
-			signature.push_back(10);
-			signature.push_back(26);
-			signature.push_back(10);
-
-			return signature;
-		};
-        inline void set_pixel(unsigned short x, unsigned short y, Color color, unsigned short width = 1) {
+		inline void set_pixel(unsigned short x, unsigned short y, Color color, unsigned short width = 1) {
 			set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width);
 		}
 		inline void set_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1) {
@@ -429,7 +441,7 @@ namespace scls
 			}
 			else
 			{
-				draw_rect(static_cast<unsigned short>(x - static_cast<float>(width_point) / 2.0), static_cast<unsigned short>(y - (static_cast<float>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);
+				fill_rect(static_cast<unsigned short>(x - static_cast<float>(width_point) / 2.0), static_cast<unsigned short>(y - (static_cast<float>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);
 			}
 		}
         inline void set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha) {
@@ -547,10 +559,6 @@ namespace scls
         //
         //*********
 
-        // Image constructor with a path
-		Image(std::string path) : Image() {
-		    load_from_path(path);
-		};
         // Returns the data of the image under the PNG format
 		inline Bytes_Set* data_png() {
 			Bytes_Set* datas = new Bytes_Set();
@@ -612,228 +620,12 @@ namespace scls
 
 			return datas;
 		}
-        // Save the image into the PNG format
-		inline void save_png(std::string path) {
-			Bytes_Set* datas = data_png();
-			datas->save(path);
-			delete datas; datas = 0;
-		}
-
-		// Getters and setters (ONLY WITH ATTRIBUTES)
-		inline unsigned int compression_method() { return a_compression_method; };
-		inline unsigned int filter_method() { return a_filter_method; };
-		inline unsigned int interlace_method() { return a_interlace_method; };
-		inline bool is_loadable() { return a_loadable; };
-		inline unsigned int physical_height_ratio() { return a_physical_height_ratio; };
-		inline unsigned int physical_unit() { return a_physical_unit; };
-		inline unsigned int physical_width_ratio() { return a_physical_width_ratio; };
-
-
-
-
-
-		// Draw a line on the image
-		void draw_line(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width = 1) {
-			if (width == 1 || true)
-			{
-				float distance_x = static_cast<float>(x_2 - x_1);
-				float distance_y = static_cast<float>(y_2 - y_1);
-
-				float x_y_ratio = distance_x / distance_y;
-
-				if (abs(x_y_ratio) < 1)
-				{
-					// Normalize positions
-					if (y_1 > y_2)
-					{
-						unsigned short temp = y_1;
-						y_1 = y_2;
-						y_2 = temp;
-						temp = x_1;
-						x_1 = x_2;
-						x_2 = temp;
-					}
-
-					float actual_x = x_1;
-					float actual_y = y_1;
-
-					while (actual_y < y_2)
-					{
-						actual_y++;
-						actual_x += x_y_ratio;
-						set_pixel(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), red, green, blue, alpha, width);
-					}
-				}
-				else
-				{
-					// Normalize positions
-					if (x_1 > x_2)
-					{
-						unsigned short temp = x_1;
-						x_1 = x_2;
-						x_2 = temp;
-						temp = y_1;
-						y_1 = y_2;
-						y_2 = temp;
-					}
-
-					float actual_x = x_1;
-					float actual_y = y_1;
-
-					float y_x_ratio = distance_y / distance_x;
-					while (actual_x < x_2)
-					{
-						actual_y += y_x_ratio;
-						actual_x++;
-						set_pixel(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), red, green, blue, alpha, width);
-					}
-				}
-			}
-		};
-		// Draw a rectangle on the image
-		void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
-			for (int i = 0; i < width; i++)
-			{
-				for (int j = 0; j < height; j++)
-				{
-					set_pixel(x + i, y + j, red, green, blue, alpha);
-				}
-			}
-		};
-		// Fill a rectangle on the image
-		void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
-			// 3 should be the point with the largest X value
-			if (x_1 > x_3)
-			{
-				unsigned short temp = x_1;
-				x_1 = x_3;
-				x_3 = temp;
-				temp = y_1;
-				y_1 = y_3;
-				y_3 = temp;
-			}
-
-			// 3 should be the point with the largest X value
-			if (x_2 > x_3)
-			{
-				unsigned short temp = x_2;
-				x_2 = x_3;
-				x_3 = temp;
-				temp = y_2;
-				y_2 = y_3;
-				y_3 = temp;
-			}
-
-			// 2 should be the point with the largest Y value of 1 and 2
-			if (y_1 > y_2)
-			{
-				unsigned short temp = x_2;
-				x_2 = x_1;
-				x_1 = temp;
-				temp = y_2;
-				y_2 = y_1;
-				y_1 = temp;
-			}
-
-			float distance_x_1_2 = static_cast<float>(x_2 - x_1);
-			float distance_y_1_2 = static_cast<float>(y_2 - y_1);
-
-			float actual_x = x_1;
-			float actual_y = y_1;
-			float ratio_x_y = distance_x_1_2 / distance_y_1_2;
-			float ratio_y_x = abs(distance_y_1_2 / distance_x_1_2);
-
-			unsigned short iter = 0;
-
-			while (actual_y < y_2 && iter < 1000)
-			{
-				if (abs(ratio_x_y) < 1)
-				{
-					actual_y++;
-					actual_x += ratio_x_y;
-				}
-				else
-				{
-					actual_y += ratio_y_x;
-					if (distance_x_1_2 > 0) actual_x++;
-					else actual_x--;
-				}
-
-				draw_line(static_cast<unsigned short>(floor(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-				draw_line(static_cast<unsigned short>(floor(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-				draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-				draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-				iter++;
-			}
-		};
-		// Flip the image on the X axis
-		inline void flip_x() {
-			unsigned char* line1 = new unsigned char[width()];
-			unsigned int max = height();
-
-			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
-			{
-				// Red
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components());
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components(), a_pixels->data_at(((max - (i + 1)) * width() + j) * components()));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components(), line1[j]);
-
-				// Green
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 1);
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 1, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 1));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 1, line1[j]);
-
-				// Blue
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 2);
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 2, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 2));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 2, line1[j]);
-
-				// Alpha
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 3);
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 3, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 3));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 3, line1[j]);
-			}
-
-			delete[] line1;
-		};
-		// Flip the image on the Y axis
-		inline void flip_y() {
-			unsigned char* line1 = new unsigned char[height()];
-			unsigned int max = width();
-
-			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
-			{
-				// Red
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components());
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components(), a_pixels->data_at(((max - (i + 1)) + j * width()) * components()));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components(), line1[j]);
-
-				// Green
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 1);
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 1, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 1));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 1, line1[j]);
-
-				// Blue
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 2);
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 2, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 2));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 2, line1[j]);
-
-				// Alpha
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 3);
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 3, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 3));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 3, line1[j]);
-			}
-
-			delete[] line1;
-		};
-		// Get every chunks into a PNG image
-		std::vector<_PNG_Chunk> _get_all_chunks_from_path(std::string path) {
-			std::vector<_PNG_Chunk> to_return = std::vector<_PNG_Chunk>();
-			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
+        // Get every chunks into a PNG image
+		bool _load_all_chunks_from_png_file(Bytes_Set* file) {
+			std::vector<_PNG_Chunk> chunks = std::vector<_PNG_Chunk>();
+			if (file != 0)
 			{
 				// Create the necessary things to read the PNG file
-				Bytes_Set file = Bytes_Set();
-				file.load_from_file(path);
 				a_idat_chunk.clear();
 				std::string name = "";
 				unsigned int size_offset = 33;
@@ -842,19 +634,19 @@ namespace scls
 
 				// Check each chunks in the file
 				while (name != "IEND") {
-                    unsigned int chunk_size = file.extract_uint(size_offset, true);
-					name = file.extract_string(4, size_offset + 4);
+                    unsigned int chunk_size = file->extract_uint(size_offset, true);
+					name = file->extract_string(4, size_offset + 4);
 
 					_PNG_Chunk chunk;
 					chunk.position = size_offset + 8;
 					chunk.name = name;
 					chunk.size = chunk_size;
 					size_offset += chunk_size + 12;
-					to_return.push_back(chunk);
+					chunks.push_back(chunk);
 
 					if (name == "pHYs")
 					{
-						_load_pHYS_from_path(path, chunk);
+						_load_png_pHYS_from_file(file, chunk);
 					}
 					else if (name == "IDAT" && is_loadable())
 					{
@@ -862,7 +654,7 @@ namespace scls
 					}
 					else if (name == "sRGB")
 					{
-						_load_sRGB_from_path(path, chunk);
+						_load_png_sRGB_from_file(file, chunk);
 					}
 					else if (name == "PLTE" || name == "bKGD") // Not implemented yet
 					{
@@ -875,88 +667,14 @@ namespace scls
 				fill(0, 0, 0);
 
 				// Load IDAT chunks
-				if (a_idat_chunk.size() > 0 && is_loadable())
-				{
-					a_error_load = _load_IDAT_from_path(path);
-					if (a_error_load != 1) a_loadable = false;
-				}
+				if (a_idat_chunk.size() > 0 && is_loadable()) { a_loadable = _load_png_IDAT_from_file(file); }
 			}
-			return to_return;
+			return true;
 		};
-		// Load the base data of an image from a path
-		bool _load_base_from_path(std::string path) {
-			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
-			{
-				// Create the necessary things to read the PNG file
-				Bytes_Set file = Bytes_Set();
-				file.load_from_file(path);
-
-				// Check if the signature is correct (137 80 78 71 13 10 26 10 for png files)
-				std::string file_signature = file.extract_string(8);
-				std::vector<unsigned char> signature = png_signature();
-				for (int i = 0; i < static_cast<int>(signature.size()); i++)
-				{
-				    if (signature[i] != static_cast<unsigned char>(file_signature[i])) return false;
-				}
-
-				// Check the first chunk of the file
-				a_width = file.extract_uint(16, true);
-				a_height = file.extract_uint(20, true);
-				a_bit_depth = file.extract_data(24);
-				a_color_type = file.extract_data(25);
-				a_compression_method = file.extract_data(26);
-				a_filter_method = file.extract_data(27);
-				a_interlace_method = file.extract_data(28);
-				fill(0, 0, 0, 0);
-
-				return true;
-			}
-			return false;
-		}
-		// Load the image from a path
-		bool load_from_path(std::string path) {
-			if (_load_base_from_path(path))
-			{
-				_get_all_chunks_from_path(path);
-				return true;
-			}
-			return false;
-		};
-		// Load the image from a set of binary datas coming from a FreeType text
-		inline bool _load_from_text_binary(char* datas, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
-		    a_height = height; a_width = width;
-		    fill(0, 0, 0, 0);
-		    if(color_type() == 6) {
-                for(int i = 0;i<height;i++) {
-                    for(int j = 0;j<width;j++) {
-                        float glyph_alpha = (datas[i * width + j] / 255.0);
-                        set_pixel(j, i, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<float>(alpha)));
-                    }
-                }
-            }
-            else {
-                for(int i = 0;i<height;i++) {
-                    for(int j = 0;j<width;j++) {
-                        set_pixel(j, i, red, green, blue);
-                    }
-                }
-            }
-            return true;
-		};
-		// Load the image from a set of PNG binary data
-		inline bool _load_from_binary_PNG(char* datas, unsigned int size) {
-			write_in_file_binary("_temp.png", datas, size);
-
-			bool result = load_from_path("_temp.png");
-
-			std::remove("_temp.png");
-
-			return result;
-		};
-		// Load a IDAT chunk grom a path
-		char _load_IDAT_from_path(std::string path) {
+        // Load a IDAT chunk grom a path
+		bool _load_png_IDAT_from_file(Bytes_Set* file) {
 			std::vector<_PNG_Chunk>& chunk = a_idat_chunk;
-			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
+			if (file != 0)
 			{
 				if (a_pixels == 0) return -1;
 
@@ -968,27 +686,13 @@ namespace scls
 				}
 
 				// Create the necessary things to read the PNG file
-				char* header = new char[current_size];
-				char* header_part = new char[current_size];
-				unsigned int total_size = 0;
-				current_size = 0;
+				Bytes_Set* all_data = new Bytes_Set();
 
 				// Read into the chunk
 				for (int i = 0; i < static_cast<int>(chunk.size()); i++)
 				{
-					read_file_binary(path, header_part, chunk[i].size, chunk[i].position);
-					total_size += chunk[i].size;
-
-					for (unsigned int j = 0; j < chunk[i].size; j++)
-					{
-						(header[current_size + j]) = (header_part[j]);
-					}
-					current_size += chunk[i].size;
-					delete[] header_part;
-					header_part = new char[a_chunk_size];
+					all_data->add_datas(file->extract_datas(chunk[i].size, chunk[i].position), chunk[i].size);
 				}
-				delete[] header_part;
-				header_part = 0;
 
                 // Set binary mode
 				SET_BINARY_MODE(stdin);
@@ -998,13 +702,13 @@ namespace scls
 				int ret = 0;
 				unsigned int out_size = (width() * height() * components()) + height();
 				unsigned char* out = new unsigned char[out_size];
-				ret = uncompress_binary(header, current_size, (char*)out, out_size);
+				ret = uncompress_binary(all_data->datas(), current_size, (char*)out, out_size);
+				delete all_data; all_data = 0;
 
 				if (ret != 1)
 				{
-					delete[] header;
 					delete[] out;
-					return ret;
+					return false;
 				}
 
 				// Process data
@@ -1201,48 +905,316 @@ namespace scls
 				}
 
 				// Free memory
-				delete[] header;
 				delete[] out;
-			}
-			else
-			{
-				return -4;
-			}
-			return 1;
-		};
-		// Load the pHYS chunk from a path
-		bool _load_pHYS_from_path(std::string path, _PNG_Chunk chunk) {
-			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path) && chunk.name == "pHYs" && chunk.size == 9)
-			{
-				// Create the necessary things to read the PNG file
-				Bytes_Set file = Bytes_Set();
-				file.load_from_file(path);
-
-				// Read into the chunk
-				a_physical_height_ratio = file.extract_uint(chunk.position + 4, true);
-				a_physical_width_ratio = file.extract_uint(chunk.position, true);
-				a_physical_unit = file.extract_data(chunk.position + 8);
-
-				return true;
-			}
-			return false;
-		};
-		// Load the sRGB chunk from a path
-		bool _load_sRGB_from_path(std::string path, _PNG_Chunk chunk) {
-			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path) && chunk.name == "sRGB" && chunk.size == 1)
-			{
-				// Read into the chunk
-				Bytes_Set file = Bytes_Set();
-				file.load_from_file(path);
-				a_srgb_value = file.extract_data(chunk.position);
-
-				return true;
 			}
 			else
 			{
 				return false;
 			}
+			return true;
+		};
+        // Load the pHYS chunk from a path
+		bool _load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
+			if (file != 0 && chunk.name == "pHYs" && chunk.size == 9)
+			{
+				// Read into the chunk
+				a_physical_height_ratio = file->extract_uint(chunk.position + 4, true);
+				a_physical_width_ratio = file->extract_uint(chunk.position, true);
+				a_physical_unit = file->extract_data(chunk.position + 8);
+
+				return true;
+			}
+			return false;
+		};
+        // Load the Image from a PNG file
+        inline bool _load_png_file(Bytes_Set* file) {
+            // Check the first chunk of the file
+            a_width = file->extract_uint(16, true);
+            a_height = file->extract_uint(20, true);
+            a_bit_depth = file->extract_data(24);
+            a_color_type = file->extract_data(25);
+            a_compression_method = file->extract_data(26);
+            a_filter_method = file->extract_data(27);
+            a_interlace_method = file->extract_data(28);
+            fill(0, 0, 0, 0);
+
+            return _load_all_chunks_from_png_file(file);
+        }
+        // Load the sRGB chunk from a path
+		bool _load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
+			if (file != 0 && chunk.name == "sRGB" && chunk.size == 1)
+			{
+				// Read into the chunk
+				a_srgb_value = file->extract_data(chunk.position);
+
+				return true;
+			}
+			return false;
 		}
+        // Save the image into the PNG format
+		inline void save_png(std::string path) {
+			Bytes_Set* datas = data_png();
+			datas->save(path);
+			delete datas; datas = 0;
+		}
+
+		// Getters and setters (ONLY WITHOUT ATTRIBUTES)
+		inline std::vector<unsigned char> png_signature() {
+			std::vector<unsigned char> signature;
+			signature.push_back(137);
+			signature.push_back(80);
+			signature.push_back(78);
+			signature.push_back(71);
+			signature.push_back(13);
+			signature.push_back(10);
+			signature.push_back(26);
+			signature.push_back(10);
+
+			return signature;
+		};
+
+		// Getters and setters (ONLY WITH ATTRIBUTES)
+		inline unsigned int compression_method() { return a_compression_method; };
+		inline unsigned int filter_method() { return a_filter_method; };
+		inline unsigned int interlace_method() { return a_interlace_method; };
+		inline bool is_loadable() { return a_loadable; };
+		inline unsigned int physical_height_ratio() { return a_physical_height_ratio; };
+		inline unsigned int physical_unit() { return a_physical_unit; };
+		inline unsigned int physical_width_ratio() { return a_physical_width_ratio; };
+
+        //*********
+        //
+        // The Image class - Editing
+        //
+        //*********
+
+        // Drawing methods
+        // Draw a line on the image
+		void draw_line(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width = 1) {
+			if (width == 1 || true)
+			{
+				float distance_x = static_cast<float>(x_2 - x_1);
+				float distance_y = static_cast<float>(y_2 - y_1);
+
+				float x_y_ratio = distance_x / distance_y;
+
+				if (abs(x_y_ratio) < 1)
+				{
+					// Normalize positions
+					if (y_1 > y_2)
+					{
+						unsigned short temp = y_1;
+						y_1 = y_2;
+						y_2 = temp;
+						temp = x_1;
+						x_1 = x_2;
+						x_2 = temp;
+					}
+
+					float actual_x = x_1;
+					float actual_y = y_1;
+
+					while (actual_y < y_2)
+					{
+						actual_y++;
+						actual_x += x_y_ratio;
+						set_pixel(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), red, green, blue, alpha, width);
+					}
+				}
+				else
+				{
+					// Normalize positions
+					if (x_1 > x_2)
+					{
+						unsigned short temp = x_1;
+						x_1 = x_2;
+						x_2 = temp;
+						temp = y_1;
+						y_1 = y_2;
+						y_2 = temp;
+					}
+
+					float actual_x = x_1;
+					float actual_y = y_1;
+
+					float y_x_ratio = distance_y / distance_x;
+					while (actual_x < x_2)
+					{
+						actual_y += y_x_ratio;
+						actual_x++;
+						set_pixel(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), red, green, blue, alpha, width);
+					}
+				}
+			}
+		};
+        void draw_line(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, Color color, unsigned short width = 1) {
+            draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);
+        };
+        // Draw a rectangle on the image
+        void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+            fill_rect(x, y, width, rect_width, red, green, blue, alpha);
+            fill_rect(x, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
+            fill_rect(width - rect_width, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
+            fill_rect(x + rect_width, height - rect_width, width - 2 * rect_width, rect_width, red, green, blue, alpha);
+        };
+        void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, Color color) {
+            draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());
+        };
+        void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, Color color, Color fill_color) {
+            draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());
+            fill_rect(x + rect_width, y + rect_width, width - rect_width * 2, height - rect_width * 2, fill_color.red(), fill_color.green(), fill_color.blue(), fill_color.alpha());
+        };
+        // Fill a rectangle on the image
+		void fill_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+			for (int i = 0; i < width; i++)
+			{
+				for (int j = 0; j < height; j++)
+				{
+					set_pixel(x + i, y + j, red, green, blue, alpha);
+				}
+			}
+		};
+		void fill_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {
+		    fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());
+		};
+        // Fill a rectangle on the image
+		void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+			// 3 should be the point with the largest X value
+			if (x_1 > x_3)
+			{
+				unsigned short temp = x_1;
+				x_1 = x_3;
+				x_3 = temp;
+				temp = y_1;
+				y_1 = y_3;
+				y_3 = temp;
+			}
+
+			// 3 should be the point with the largest X value
+			if (x_2 > x_3)
+			{
+				unsigned short temp = x_2;
+				x_2 = x_3;
+				x_3 = temp;
+				temp = y_2;
+				y_2 = y_3;
+				y_3 = temp;
+			}
+
+			// 2 should be the point with the largest Y value of 1 and 2
+			if (y_1 > y_2)
+			{
+				unsigned short temp = x_2;
+				x_2 = x_1;
+				x_1 = temp;
+				temp = y_2;
+				y_2 = y_1;
+				y_1 = temp;
+			}
+
+			float distance_x_1_2 = static_cast<float>(x_2 - x_1);
+			float distance_y_1_2 = static_cast<float>(y_2 - y_1);
+
+			float actual_x = x_1;
+			float actual_y = y_1;
+			float ratio_x_y = distance_x_1_2 / distance_y_1_2;
+			float ratio_y_x = abs(distance_y_1_2 / distance_x_1_2);
+
+			unsigned short iter = 0;
+
+			authorized_sender().push_back("");
+			draw_line(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), x_3, y_3, red, green, blue, alpha, 2);
+
+			while (actual_y < y_2)
+			{
+				if (abs(ratio_x_y) < 1)
+				{
+					actual_y++;
+					actual_x += ratio_x_y;
+				}
+				else
+				{
+					actual_y += ratio_y_x;
+					if (distance_x_1_2 > 0) actual_x++;
+					else actual_x--;
+				}
+
+				if(actual_x < 0) actual_x = 0;
+				if(actual_y < 0) actual_y = 0;
+
+				draw_line(static_cast<unsigned short>(floor(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
+				draw_line(static_cast<unsigned short>(floor(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
+				draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
+				draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
+				iter++;
+			}
+			authorized_sender().pop_back();
+		};
+        void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, Color color) {
+            fill_triangle(x_1, y_1, x_2, y_2, x_3, y_3, color.red(), color.green(), color.blue(), color.alpha());
+        };
+
+        // Flip the image on the X axis
+		inline void flip_x() {
+			unsigned char* line1 = new unsigned char[width()];
+			unsigned int max = height();
+
+			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
+			{
+				// Red
+				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components());
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components(), a_pixels->data_at(((max - (i + 1)) * width() + j) * components()));
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components(), line1[j]);
+
+				// Green
+				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 1);
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 1, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 1));
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 1, line1[j]);
+
+				// Blue
+				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 2);
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 2, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 2));
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 2, line1[j]);
+
+				// Alpha
+				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 3);
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 3, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 3));
+				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 3, line1[j]);
+			}
+
+			delete[] line1;
+		};
+		// Flip the image on the Y axis
+		inline void flip_y() {
+			unsigned char* line1 = new unsigned char[height()];
+			unsigned int max = width();
+
+			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
+			{
+				// Red
+				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components());
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components(), a_pixels->data_at(((max - (i + 1)) + j * width()) * components()));
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components(), line1[j]);
+
+				// Green
+				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 1);
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 1, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 1));
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 1, line1[j]);
+
+				// Blue
+				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 2);
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 2, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 2));
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 2, line1[j]);
+
+				// Alpha
+				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 3);
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 3, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 3));
+				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 3, line1[j]);
+			}
+
+			delete[] line1;
+		};
+
 		// Paste an Image on this Image
 		inline void paste(Image* to_paste, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false) {
             for(unsigned int i = 0;i<to_paste->height();i++)
@@ -1273,6 +1245,31 @@ namespace scls
 		    delete img; img = 0;
 		};
 
+
+
+
+
+		// Load the image from a set of binary datas coming from a FreeType text
+		inline bool _load_from_text_binary(char* datas, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+		    a_height = height; a_width = width;
+		    fill(0, 0, 0, 0);
+		    if(color_type() == 6) {
+                for(int i = 0;i<height;i++) {
+                    for(int j = 0;j<width;j++) {
+                        float glyph_alpha = (datas[i * width + j] / 255.0);
+                        set_pixel(j, i, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<float>(alpha)));
+                    }
+                }
+            }
+            else {
+                for(int i = 0;i<height;i++) {
+                    for(int j = 0;j<width;j++) {
+                        set_pixel(j, i, red, green, blue);
+                    }
+                }
+            }
+            return true;
+		};
     private:
 	    // Base datas about the image
         // Bit depth of the image
@@ -1293,6 +1290,8 @@ namespace scls
 		unsigned int a_filter_method = 0;
 		// Filter type of the image
 		unsigned char a_filter_type = 0;
+		// Vector of all the IDAT chunks in the image
+		std::vector<_PNG_Chunk> a_idat_chunk = std::vector<_PNG_Chunk>();
 		// Interlace method of the image
 		unsigned int a_interlace_method = 0;
 		// If the image can be loaded or not
@@ -1305,16 +1304,6 @@ namespace scls
 		unsigned int a_physical_width_ratio = 10000;
 		// Value of the sRGB chunk
 		unsigned char a_srgb_value = 0;
-
-
-
-
-		// Size of a chunk to decode an image
-		unsigned int a_chunk_size = static_cast<unsigned int>(pow(2, 24) - 1);
-		// Error during the loading (1 = normal)
-		char a_error_load = 1;
-		// Vector of all the IDAT chunks in the image
-		std::vector<_PNG_Chunk> a_idat_chunk = std::vector<_PNG_Chunk>();
 	};
 
 	// Fonts datas
