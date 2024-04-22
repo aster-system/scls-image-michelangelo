@@ -298,7 +298,6 @@ namespace scls
         // Load the font if necessary
         if(_system_fonts.size() <= 0) load_system_font();
 
-
         if(datas.font.font_family == "") datas.font = get_system_font(DEFAULT_FONT);
 
         // Create each lines

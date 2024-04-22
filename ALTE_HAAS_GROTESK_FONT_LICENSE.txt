@@ -1,0 +1,16 @@
+The used font in the Aster System logo is Alte Haas Grotesk by Yann Le Coroller.
+You can download this Font in DaFont, here : https://www.dafont.com/fr/alte-haas-grotesk.font?text=alte.
+Here a test which must be with the font :
+
+
+
+Alte Haas Grotesk is a typeface that look like an helvetica printed in an old Muller-Brockmann Book.
+
+These fonts are freeware and can be distributed as long as they are
+together with this text file. 
+
+I would appreciate very much to see what you have done with it anyway.
+
+yann le coroller 
+www.yannlecoroller.com
+yann@lecoroller.com
