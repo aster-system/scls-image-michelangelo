@@ -3,7 +3,9 @@
 using namespace std;
 
 #ifndef LOGO_FONT_PATH
-#define LOGO_FONT_PATH "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
+// Before school PC : "C:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
+// Development PC : "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
+#define LOGO_FONT_PATH "C:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
 #endif // LOGO_FONT_PATH
 
 #include <random>
