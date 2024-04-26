@@ -151,7 +151,7 @@ namespace scls
     static bool _free_type_library_inited = false;
 
 	// Enumeration of each text alignment possible
-	enum Text_Alignment {
+	enum Text_Alignment_Horizontal {
 	    Left, Center, Right
 	};
 
@@ -174,7 +174,7 @@ namespace scls
         unsigned short font_size = 50;
 
         // Multi line caracteristic
-        Text_Alignment alignment = Left;
+        Text_Alignment_Horizontal alignment = Text_Alignment_Horizontal::Left;
 
         // Out offset
         unsigned short out_offset_bottom_width = 0;
@@ -196,6 +196,27 @@ namespace scls
         unsigned short width = static_cast<unsigned short>(binary_datas->bitmap.width);
         Image* img = new Image();
         img->_load_from_text_binary(reinterpret_cast<char*>(binary_datas->bitmap.buffer), width, height, datas.red, datas.green, datas.blue, datas.alpha);
+
+        // Get the position of the cursor
+        cursor_pos = binary_datas->bitmap_left;
+        y_pos = binary_datas->bitmap_top - height;
+
+        return img;
+    };
+
+    // Return a pointer to an image with a char on it
+    inline Image* _char_image(char character, FT_Face& face, int& cursor_pos, int& y_pos, Color color) {
+        // Configure and load the FreeType glyph system
+        FT_UInt index = FT_Get_Char_Index(face, (static_cast<unsigned char>(character)));
+        FT_Error error = FT_Load_Glyph(face, index, 0);
+        FT_GlyphSlot binary_datas = face->glyph;
+        error = FT_Render_Glyph(binary_datas, FT_RENDER_MODE_NORMAL);
+
+        // Create and draw the image
+        unsigned short height = static_cast<unsigned short>(binary_datas->bitmap.rows);
+        unsigned short width = static_cast<unsigned short>(binary_datas->bitmap.width);
+        Image* img = new Image();
+        img->_load_from_text_binary(reinterpret_cast<char*>(binary_datas->bitmap.buffer), width, height, color.red(), color.green(), color.blue(), color.alpha());
 
         // Get the position of the cursor
         cursor_pos = binary_datas->bitmap_left;
@@ -344,6 +365,197 @@ namespace scls
         Text_Image_Data datas;
         return text_image(content, datas);
     }
+
+    class Text_Image_Creator {
+        // Class allowing to simplify the creation of text image
+    public:
+        // Most simple Text_Image_Creator constructor
+        Text_Image_Creator(std::string text) : a_text(text) {
+
+        };
+        // Text_Image_Creator destructor
+        ~Text_Image_Creator() {
+
+        }
+
+        // Create a line of the text
+        Image* _line(std::string line) {
+            // Base variables for the creation
+            unsigned int font_size = current_font_size;
+            std::string path = current_font.font_path;
+
+            // Load the FreeType base system
+            if(!_free_type_library_inited)
+            {
+                FT_Error error = FT_Init_FreeType(&_freetype_library);
+                if ( error )
+                {
+                    print("Error", "SCLS", "Unable to load the FreeType engine.");
+                    return 0;
+                }
+                _free_type_library_inited = true;
+            }
+            FT_Face face;
+            FT_Error error = FT_New_Face(_freetype_library, path.c_str(), 0, &face);
+            if (!std::filesystem::exists(path))
+            {
+                print("Error", "SCLS", "Unable to load the \"" + path + "\" font, it does not exist.");
+                return 0;
+            }
+            else if ( error )
+            {
+                print("Error", "SCLS", "Unable to load the \"" + path + "\" font.");
+                return 0;
+            }
+
+            // Configure and load the FreeType glyph system
+            error = FT_Select_Charmap(face, FT_ENCODING_UNICODE);
+            error = FT_Set_Pixel_Sizes(face, 0, font_size);
+
+            // Create each characters
+            std::vector<Image*> characters;
+            std::vector<int> cursor_pos;
+            int max_height = 0;
+            int to_add_font_size = 0;
+            unsigned int total_width = 0;
+            std::vector<unsigned int> y_pos;
+            for(int i = 0;i<static_cast<int>(line.size());i++)
+            {
+                if(line[i] == ' ')
+                {
+                    characters.push_back(0);
+                    cursor_pos.push_back(0);
+                    y_pos.push_back(0);
+                    total_width += font_size / 2.0;
+                    continue;
+                }
+                int cursor_position = 0;
+                int y_position = 0;
+                Image* image = _char_image(line[i], face, cursor_position, y_position, current_color);
+                characters.push_back(image);
+                cursor_pos.push_back(total_width + cursor_position);
+                if(cursor_pos[cursor_pos.size() - 1] < 0) cursor_pos[cursor_pos.size() - 1] = 0; // Avoid a little bug with X position
+                if(static_cast<int>(image->height()) + y_position > max_height) max_height = image->height() + y_position;
+                if(y_position < to_add_font_size) to_add_font_size = y_position;
+                y_pos.push_back(y_position);
+                total_width += image->width() + cursor_position;
+            }
+
+            for(int i = 0;i<static_cast<int>(characters.size());i++)
+            {
+                if(characters[i] != 0)
+                {
+                    y_pos[i] = max_height - (characters[i]->height() + y_pos[i]);
+                }
+            }
+
+            // Create the final image and clear the memory
+            Image* final_image = new Image(total_width, max_height - to_add_font_size, current_background_color);
+            for(int i = 0;i<static_cast<int>(characters.size());i++)
+            {
+                if(characters[i] != 0)
+                {
+                    unsigned int x = cursor_pos[i];
+                    final_image->paste(characters[i], x, y_pos[i]);
+                    delete characters[i]; characters[i] = 0;
+                }
+            }
+
+            return final_image;
+        }
+        // Return the entire text
+        Image* image() {
+            // Create the needed configurations
+            std::string content = text();
+            current_background_color = white;
+            current_color = global_color();
+            current_font = global_font();
+            current_font_size = global_font_size();
+            std::vector<std::string> cutted = cut_string(content, "\n");
+
+            // Create each lines
+            std::vector<Image*> image_parts = std::vector<Image*>();
+            unsigned int max_width = 0;
+            unsigned int min_x = global_out_offset_width_left();
+            unsigned int min_y = global_out_offset_width_top();
+            unsigned int total_height = 0;
+            for(int i = 0;i<static_cast<int>(cutted.size());i++)
+            {
+                if(cutted[i] == "") {
+                    image_parts.push_back(0);
+                    total_height += current_font_size;
+                }
+                else {
+                    Image* image = _line(cutted[i]);
+                    if(image != 0)
+                    {
+                        image_parts.push_back(image);
+                        total_height += image->height();
+                        if(image->width() > max_width) max_width = image->width();
+                    }
+                }
+            }
+
+            // Create the final image and clear memory
+            Image* final_image = new Image(max_width + min_x + global_out_offset_width_right(), total_height + min_y + global_out_offset_width_bottom(), current_background_color);
+            unsigned int y_position = min_y;
+            for(int i = 0;i<static_cast<int>(image_parts.size());i++)
+            {
+                Image* image = image_parts[i]; if(image == 0) { y_position += current_font_size; continue; }
+                unsigned int x = min_x;
+                if(current_text_alignment_horizontal == Text_Alignment_Horizontal::Center)x = min_x + static_cast<int>(static_cast<float>(max_width - image->width()) / 2.0);
+                else if(current_text_alignment_horizontal == Text_Alignment_Horizontal::Right) x = min_x + max_width - image->width();
+                final_image->paste(image, x, y_position); y_position += image->height();
+                delete image_parts[i]; image_parts[i] = 0;
+            }
+
+            return final_image;
+        };
+        // Save the image in a path
+        void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;}
+
+        // Getters and setters
+        inline Color global_color() const {return a_global_color;};
+        inline Font global_font() {if(a_global_font.font_path == "") set_global_font(get_system_font("arial"));return a_global_font;};
+        inline unsigned short global_font_size() const {return a_global_font_size;};
+        inline unsigned short global_out_offset_width_bottom() const {return a_global_out_offset_width_bottom;};
+        inline unsigned short global_out_offset_width_left() const {return a_global_out_offset_width_left;};
+        inline unsigned short global_out_offset_width_right() const {return a_global_out_offset_width_right;};
+        inline unsigned short global_out_offset_width_top() const {return a_global_out_offset_width_top;};
+        inline void set_global_color(Color new_global_color) {a_global_color = new_global_color;};
+        inline void set_global_font(Font new_font) {a_global_font = new_font;};
+        inline void set_global_font_size(unsigned short new_global_font_size) {a_global_font_size = new_global_font_size;};
+        inline void set_global_out_offset_width_bottom(unsigned short new_global_out_offset_width_bottom) {a_global_out_offset_width_bottom = new_global_out_offset_width_bottom;};
+        inline void set_global_out_offset_width_left(unsigned short new_global_out_offset_width_left) {a_global_out_offset_width_left = new_global_out_offset_width_left;};
+        inline void set_global_out_offset_width_right(unsigned short new_global_out_offset_width_right) {a_global_out_offset_width_right = new_global_out_offset_width_right;};
+        inline void set_global_out_offset_width_top(unsigned short new_global_out_offset_width_top) {a_global_out_offset_width_top = new_global_out_offset_width_top;};
+        inline void set_text(std::string new_text) {a_text = new_text;};
+        inline std::string text() const {return a_text;};
+    private:
+        // Global color in the text
+        Color a_global_color = black;
+        // Global font in the text
+        Font a_global_font;
+        // Global font size in the text
+        unsigned short a_global_font_size = 20;
+        // Global out bottom offset
+        unsigned short a_global_out_offset_width_bottom = 0;
+        // Global out left offset
+        unsigned short a_global_out_offset_width_left = 0;
+        // Global out right offset
+        unsigned short a_global_out_offset_width_right = 0;
+        // Global out top offset
+        unsigned short a_global_out_offset_width_top = 0;
+        // Text in the creator
+        std::string a_text = "";
+
+        // Currently used attributes
+        Text_Alignment_Horizontal current_text_alignment_horizontal = Text_Alignment_Horizontal::Center;
+        Color current_background_color = white;
+        Color current_color = black;
+        Font current_font;
+        unsigned short current_font_size = 20;
+    };
 }
 
 #endif // SCLS_IMAGE_TEXT
