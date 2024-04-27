@@ -125,7 +125,7 @@ namespace scls
 		// Create each points of the group
 		std::vector<double> x_positions = std::vector<double>();
 		std::vector<double> y_positions = std::vector<double>();
-		for (int i = 0; i < side; i++)
+		for (unsigned int i = 0; i < side; i++)
 		{
 			double theta = (2 * 3.1415 * i) / side + 3.1415 / 4.0;
 			double x = cos(theta);
@@ -140,27 +140,27 @@ namespace scls
 
 		double ratio = width * 0.45;
 
-		for (int i = 0; i < x_positions.size(); i++)
+		for (int i = 0; i < static_cast<int>(x_positions.size()); i++)
 		{
 			x_positions[i] = x_positions[i] * ratio + width / 2.0;
 		}
 
-		for (int i = 0; i < y_positions.size(); i++)
+		for (int i = 0; i < static_cast<int>(y_positions.size()); i++)
 		{
 			y_positions[i] = y_positions[i] * ratio + height / 2.0;
 		}
 
-		for(int i = 0;i<x_positions.size() - 1;i++) {
+		for(int i = 0;i<static_cast<int>(x_positions.size() - 1);i++) {
             img->draw_line(x_positions[i], y_positions[i], x_positions[i + 1], y_positions[i + 1], black, 2);
 		}
 		img->draw_line(x_positions[x_positions.size() - 1], y_positions[x_positions.size() - 1], x_positions[0], y_positions[0], black, 2);
 
-		for(int i = 0;i<x_positions.size();i++) {
+		for(int i = 0;i<static_cast<int>(x_positions.size());i++) {
             img->set_pixel(x_positions[i], y_positions[i], black, 5);
 		}
 
 		// Calculate the modulo
-		for(int i = 0;i<side;i++) {
+		for(unsigned int i = 0;i<side;i++) {
             unsigned int result = base * i;
             unsigned int pos = result % side;
 
