@@ -123,11 +123,11 @@ scls::Image* aster_system_logo() {
 
 int main()
 {
-    scls::Text_Image_Creator* image_creator = new scls::Text_Image_Creator("Le char Leclerc\nLe char Leclerc est un char de combat\nde conception française, construit par Nexter.");
-    image_creator->set_global_out_offset_width_bottom(50);
-    image_creator->set_global_out_offset_width_left(50);
-    image_creator->set_global_out_offset_width_right(50);
-    image_creator->set_global_out_offset_width_top(50);
+    scls::Text_Image_Creator* image_creator = new scls::Text_Image_Creator("<h1><b>Le char <i>Leclerc</i></b></h1>Le char Leclerc est un char de combat</br>de conception française, construit par Nexter.");
+    // image_creator->set_global_out_offset_width_bottom(50);
+    // image_creator->set_global_out_offset_width_left(50);
+    // image_creator->set_global_out_offset_width_right(50);
+    // image_creator->set_global_out_offset_width_top(50);
     image_creator->save_image("text.png");
     delete image_creator; image_creator = 0;
 

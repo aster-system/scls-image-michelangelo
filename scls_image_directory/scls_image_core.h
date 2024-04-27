@@ -26,6 +26,7 @@
 #include <map>
 #include <math.h>
 #include <scls_foundation.h>
+#include <stack>
 #include <zlib/zlib.h>
 
 // ZLib mandatory stuff
