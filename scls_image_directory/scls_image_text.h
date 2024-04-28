@@ -228,6 +228,15 @@ namespace scls
         return final_balise;
 	};
 
+	// HTML formatted
+	std::string html_formatted(std::string str) {
+	    std::string nl = ""; nl += static_cast<char>(10);
+	    std::string np = ""; np += static_cast<char>(13);
+	    str = replace(str, nl, "");
+	    str = replace(str, np, "");
+	    return str;
+	};
+
 	// Hiddens variables
 	static FT_Library  _freetype_library;
     static bool _free_type_library_inited = false;
@@ -267,10 +276,16 @@ namespace scls
 
     // Style about a text
     struct Text_Style {
+        // Color of the background color
+        Color background_color = white;
+        // Font of the style
+        Font font;
+        // Font size of the style
+        unsigned short font_size = 20;
         // Max width of the text (only in pixel for now)
         double max_width = 500;
         // Color of the text
-        Color text_color = black;
+        Color color = black;
     };
 
     // Balise in a text
@@ -527,8 +542,12 @@ namespace scls
             Text_Balise current_balise;
             // Create the <h1> style
             current_balise.is_paragraph = true;
-            current_balise.style.text_color = red;
+            current_balise.style.color = red; current_balise.style.font_size = 50; current_balise.style.font = get_system_font("arialbd");
             a_defined_balises["h1"] = current_balise;
+            // Create the <h2> style
+            current_balise.is_paragraph = true;
+            current_balise.style.color = black; current_balise.style.font_size = 35; current_balise.style.font = get_system_font("arialbd");
+            a_defined_balises["h2"] = current_balise;
         }
     private:
         // List of each defined balises
@@ -549,13 +568,7 @@ namespace scls
 
         // Return an image with a block in it
         Image* _block(std::string block_text) {
-            // Create the needed configurations
             std::string content = block_text;
-            Color current_background_color = white;
-            Color current_color = black;
-            Font current_font = get_system_font("arial");
-            unsigned short current_font_size = 20;
-
             std::vector<std::string> first_cutted = cut_string_by_balise(content, false, true);
             std::vector<std::string> cutted = std::vector<std::string>();
             for(int i = 0;i<first_cutted.size();i++) {
@@ -570,9 +583,20 @@ namespace scls
                 }
             }
 
+            bool is_balise = false;
             if(cutted[0][0] == '<') {
                 std::string block_balise_name = balise_name(cutted[0]);
+
+                if(defined_balises()->contains_defined_balise(block_balise_name)) {
+                    current_balises().push(block_balise_name);
+                    apply_current_style();
+                    is_balise = true;
+                }
             }
+
+            // Create the needed configurations
+            Color current_background_color = a_current_style.background_color;
+            unsigned short current_font_size = a_current_style.font_size;
 
             // Create each words
             unsigned int current_width = 0;
@@ -610,6 +634,15 @@ namespace scls
                     int y_position = 0;
                     Image* image = _word(cutted[i], y_position);
                     if(image != 0) {
+                        // Check max width
+                        if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
+                            // Break a line
+                            current_width -= space_width;
+                            if(current_width > max_width) max_width = current_width;
+                            current_width = 0;
+                            total_height += current_font_size;
+                        }
+
                         _Text_Block_Part part;
                         part.image = image; part.y_offset = (current_font_size - image->height()) - y_position;
                         if(-y_position > min_y) min_y = -y_position;
@@ -623,6 +656,7 @@ namespace scls
             if(current_width > max_width) max_width = current_width;
 
             // Create the final image and clear memory
+            apply_current_style();
             unsigned int current_x = 0;
             unsigned int current_y = 0;
             Image* final_image = new Image(max_width + min_x, total_height + min_y, current_background_color);
@@ -641,12 +675,24 @@ namespace scls
                     }
                     continue;
                 }
+
+                // Apply max width
+                if(current_style().max_width != -1 && current_x + image->width() > current_style().max_width) {
+                    // Break a line
+                    current_x = 0;
+                    current_y += current_font_size;
+                }
+
                 int x = current_x;
                 int y = current_y + image_parts[i].y_offset;
                 final_image->paste(image, x, y);
                 current_x += image->width();
                 if(i != static_cast<int>(image_parts.size()) - 1) current_x += space_width;
                 delete image;
+            }
+
+            if(is_balise) {
+                current_balises().pop();
             }
 
             return final_image;
@@ -782,11 +828,11 @@ namespace scls
         // Return the entire text
         Image* image(std::string text) {
             // Create the needed configurations
-            std::string content = text;
+            std::string content = html_formatted(text);
             Color current_background_color = white;
             unsigned short current_font_size = 20;
 
-            Text_Image img = Text_Image(defined_balises(), text);
+            Text_Image img = Text_Image(defined_balises(), content);
             std::vector<Text_Block> all_blocks = img._blocks();
 
             // Create each lines
@@ -801,6 +847,7 @@ namespace scls
                     total_height += current_font_size;
                 }
                 else {
+                    apply_current_style();
                     Image* image = _block(all_blocks[i].content);
                     if(image != 0) {
                         image_parts.push_back(image);
@@ -827,10 +874,8 @@ namespace scls
         // Create a single word of the text without any balising and spaces
         Image* _word(std::string word, int& y_position) {
             // Base variables for the creation
-            Color current_color = black;
-            Color current_background_color = white;
-            unsigned int font_size = 20;
-            std::string path = get_system_font("arial").font_path;
+            std::string path = a_current_style.font.font_path;
+            if(path == "") path = get_system_font("arial").font_path;
 
             // Load the FreeType base system
             if(!_free_type_library_inited)
@@ -858,7 +903,7 @@ namespace scls
 
             // Configure and load the FreeType glyph system
             error = FT_Select_Charmap(face, FT_ENCODING_UNICODE);
-            error = FT_Set_Pixel_Sizes(face, 0, font_size);
+            error = FT_Set_Pixel_Sizes(face, 0, a_current_style.font_size);
 
             // Create each characters
             std::vector<Image*> characters;
@@ -872,7 +917,7 @@ namespace scls
             {
                 int cursor_position = 0;
                 int y_position = 0;
-                Image* image = _char_image(word[i], face, cursor_position, y_position, current_color);
+                Image* image = _char_image(word[i], face, cursor_position, y_position, a_current_style.color);
                 characters.push_back(image);
                 cursor_pos.push_back(total_width + cursor_position);
                 if(cursor_pos[cursor_pos.size() - 1] < 0) cursor_pos[cursor_pos.size() - 1] = 0; // Avoid a little bug with X position
@@ -892,7 +937,7 @@ namespace scls
             }
 
             // Create the final image and clear the memory
-            Image* final_image = new Image(total_width, max_height - to_add_font_size, current_background_color);
+            Image* final_image = new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0));
             for(int i = 0;i<static_cast<int>(characters.size());i++)
             {
                 if(characters[i] != 0)
@@ -907,10 +952,29 @@ namespace scls
             return final_image;
         }
 
+        // Apply a style to the text
+        inline void apply_current_style() {
+            if(current_balises().size() == 0) apply_global_style();
+            else apply_style(defined_balises()->defined_balise(current_balises().top()).style);
+        };
+        inline void apply_global_style() {apply_style(global_style());};
+        inline void apply_style(Text_Style style) {a_current_style = style;};
+
         // Getters and setters
+        inline std::stack<std::string>& current_balises() {return a_current_balises;};
+        inline Text_Style current_style() {return a_current_style;};
         inline _Balise_Container* defined_balises() {return a_defined_balises;};
+        inline Text_Style& global_style() {return a_global_style;};
         inline std::string text() {return a_text;};
     private:
+        // Current style used for the formatting
+        Text_Style a_current_style;
+        // Current balise stack in the text
+        std::stack<std::string> a_current_balises = std::stack<std::string>();
+
+        // Global style in the text
+        Text_Style a_global_style;
+
         // Containers of each defined balises
         _Balise_Container* a_defined_balises = 0;
         // HTML Text in the image
