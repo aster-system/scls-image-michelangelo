@@ -244,7 +244,7 @@ namespace scls
         return final_balise;
 	};
 
-	// HTML formatted
+	// HTML fo*rmatted
 	static std::string html_formatted(std::string str) {
 	    std::string nl = ""; nl += static_cast<char>(10);
 	    std::string np = ""; np += static_cast<char>(13);
@@ -562,6 +562,11 @@ namespace scls
         // Load the built-ins balises
         void _load_built_in_balises() {
             Text_Balise current_balise;
+            // Create the <div> style
+            current_balise.is_paragraph = true;
+            a_defined_balises["div"] = current_balise;
+            // Create the <p> style
+            a_defined_balises["p"] = current_balise;
             // Create the <h1> style
             current_balise.is_paragraph = true;
             current_balise.style.alignment_horizontal = Text_Alignment_Horizontal::Center;
@@ -649,9 +654,9 @@ namespace scls
             unsigned short current_font_size = a_current_style.font_size;
 
             // Create each words
-            unsigned int current_width = 0;
+            int current_width = 0;
             std::vector<_Text_Block_Part> image_parts = std::vector<_Text_Block_Part>();
-            unsigned int max_width = 0;
+            int max_width = 0;
             unsigned int min_x = 0;
             unsigned int min_y = 0;
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(current_font_size) / 2.0);
@@ -711,6 +716,7 @@ namespace scls
 
                             // Create the image
                             Image* new_block = _block(block_content);
+                            if(new_block->width() > max_width) max_width = new_block->width();
                             part.image = new_block;
                             part.style = current_style();
 
