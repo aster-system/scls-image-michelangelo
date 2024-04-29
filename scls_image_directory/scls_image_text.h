@@ -155,7 +155,7 @@ namespace scls
     };
 
 	// Return the name of a formatted balise
-	std::string balise_name(std::string balise_formatted) {
+	static std::string balise_name(std::string balise_formatted) {
 	    if(balise_formatted[0] == '<') balise_formatted = balise_formatted.substr(1, balise_formatted.size() - 1);
 	    if(balise_formatted[0] == '/') balise_formatted = balise_formatted.substr(1, balise_formatted.size() - 1);
 	    if(balise_formatted[balise_formatted.size() - 1] == '>') balise_formatted = balise_formatted.substr(0, balise_formatted.size() - 1);
