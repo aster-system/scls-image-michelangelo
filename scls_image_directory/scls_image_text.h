@@ -146,6 +146,14 @@ namespace scls
 	//
 	//*********
 
+	// Part of a text gotten by a balising cut
+    struct _Text_Balise_Part {
+        // Content of the part
+        std::string content = "";
+        // Position of the start of the balise (of the first char of the content)
+        unsigned int start_position = 0;
+    };
+
 	// Return the name of a formatted balise
 	std::string balise_name(std::string balise_formatted) {
 	    if(balise_formatted[0] == '<') balise_formatted = balise_formatted.substr(1, balise_formatted.size() - 1);
@@ -160,16 +168,19 @@ namespace scls
 	};
 
 	// Cut a string by its balises
-	std::vector<std::string> cut_string_by_balise(std::string str, bool erase_blank = false, bool erase_last_if_blank = true) {
+	std::vector<_Text_Balise_Part> cut_string_by_balise(std::string str, bool erase_blank = false, bool erase_last_if_blank = true) {
 		std::string last_string = ""; // String since the last cut
-		std::vector<std::string> result = std::vector<std::string>();
+		std::vector<_Text_Balise_Part> result = std::vector<_Text_Balise_Part>();
 		for (int i = 0; i < static_cast<int>(str.size()); i++) // Browse the string char by char
 		{
 		    if(str[i] == '<') {
+                _Text_Balise_Part part_to_add;
+                part_to_add.content = last_string;
+                part_to_add.start_position = i;
                 if(last_string == "") {
-                    if(!erase_blank && result.size() > 0)result.push_back(last_string);
+                    if(!erase_blank && result.size() > 0)result.push_back(part_to_add);
                 }
-                else result.push_back(last_string);
+                else result.push_back(part_to_add);
                 last_string = "";
 
                 i++;
@@ -179,7 +190,8 @@ namespace scls
                     i++;
                 }
 
-                result.push_back("<" + last_string + ">");
+                part_to_add.content = "<" + last_string + ">";
+                result.push_back(part_to_add);
                 last_string = "";
                 continue;
 		    }
@@ -187,7 +199,11 @@ namespace scls
 			last_string += str[i];
 		}
 
-		if (last_string.size() > 0 || !erase_last_if_blank) { result.push_back(last_string); } // Add the last non-cutted element
+		if (last_string.size() > 0 || !erase_last_if_blank) {
+            _Text_Balise_Part part_to_add;
+            part_to_add.content = last_string;
+            result.push_back(part_to_add);
+        } // Add the last non-cutted element
 		return result;
 	};
 
@@ -276,16 +292,18 @@ namespace scls
 
     // Style about a text
     struct Text_Style {
+        // Horizontal alignment of the text
+        Text_Alignment_Horizontal alignment_horizontal = Text_Alignment_Horizontal::Left;
         // Color of the background color
         Color background_color = white;
+        // Color of the text
+        Color color = black;
         // Font of the style
         Font font;
         // Font size of the style
         unsigned short font_size = 20;
         // Max width of the text (only in pixel for now)
         double max_width = 500;
-        // Color of the text
-        Color color = black;
     };
 
     // Balise in a text
@@ -306,10 +324,14 @@ namespace scls
         std::string content = "";
     };
 
-    // Part of a block of a text
+    // Part of a block of a text representing a word to draw
     struct _Text_Block_Part {
         // Pointer to the image
         Image* image = 0;
+        // If the part is a paragraph or not
+        bool is_paragraph = false;
+        // Style of the part
+        Text_Style style;
         // Offset in the Y axis
         int y_offset = 0;
     };
@@ -542,10 +564,12 @@ namespace scls
             Text_Balise current_balise;
             // Create the <h1> style
             current_balise.is_paragraph = true;
+            current_balise.style.alignment_horizontal = Text_Alignment_Horizontal::Center;
             current_balise.style.color = red; current_balise.style.font_size = 50; current_balise.style.font = get_system_font("arialbd");
             a_defined_balises["h1"] = current_balise;
             // Create the <h2> style
             current_balise.is_paragraph = true;
+            current_balise.style.alignment_horizontal = Text_Alignment_Horizontal::Left;
             current_balise.style.color = black; current_balise.style.font_size = 35; current_balise.style.font = get_system_font("arialbd");
             a_defined_balises["h2"] = current_balise;
         }
@@ -568,29 +592,55 @@ namespace scls
 
         // Return an image with a block in it
         Image* _block(std::string block_text) {
-            std::string content = block_text;
-            std::vector<std::string> first_cutted = cut_string_by_balise(content, false, true);
-            std::vector<std::string> cutted = std::vector<std::string>();
+            const std::string content = block_text;
+            std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(content, false, true);
+            std::vector<_Text_Balise_Part> cutted = std::vector<_Text_Balise_Part>();
             for(int i = 0;i<first_cutted.size();i++) {
-                if(first_cutted[i][0] == '<') {
-                    cutted.push_back(formatted_balise(first_cutted[i]));
+                if(first_cutted[i].content[0] == '<') {
+                    cutted.push_back(first_cutted[i]);
                 }
                 else {
-                    std::vector<std::string> space_cutted = cut_string(first_cutted[i], " ", false, true);
+                    std::vector<std::string> space_cutted = cut_string(first_cutted[i].content, " ", false, true);
                     for(int j = 0;j<space_cutted.size();j++) {
-                        cutted.push_back(space_cutted[j]);
+                        _Text_Balise_Part part_to_add;
+                        part_to_add.content = space_cutted[j];
+                        cutted.push_back(part_to_add);
                     }
                 }
             }
 
             bool is_balise = false;
-            if(cutted[0][0] == '<') {
-                std::string block_balise_name = balise_name(cutted[0]);
+            if(cutted[0].content[0] == '<') {
+                std::string block_balise_name = balise_name(cutted[0].content);
 
-                if(defined_balises()->contains_defined_balise(block_balise_name)) {
-                    current_balises().push(block_balise_name);
-                    apply_current_style();
-                    is_balise = true;
+                // Check if the block is an entire balise
+                unsigned int level = 0;
+                for(int i = 0;i<cutted.size()-1;i++) {
+                    if(cutted[i].content.size() > 2 && cutted[i].content[0] == '<' && cutted[i].content[cutted[i].content.size() - 1] == '>') {
+                        std::string parsed_balise_name = balise_name(cutted[i].content);
+                        if(parsed_balise_name == block_balise_name) {
+                            if(cutted[i].content[1] == '/') {
+                                level--;
+                                if(level == 0) break;
+                            }
+                            else {
+                                level++;
+                            }
+                        }
+                    }
+                    i++;
+                }
+
+                // If the block can be an entire balise
+                if(level == 1) {
+                    if(defined_balises()->contains_defined_balise(block_balise_name)) {
+                        current_balises().push(block_balise_name);
+
+                        apply_current_style();
+                        cutted.erase(cutted.begin());
+                        cutted.erase(cutted.end() - 1);
+                        is_balise = true;
+                    }
                 }
             }
 
@@ -605,14 +655,12 @@ namespace scls
             unsigned int min_x = 0;
             unsigned int min_y = 0;
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(current_font_size) / 2.0);
-            unsigned int total_height = current_font_size;
+            unsigned int total_height = 0;
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                if(cutted[i][0] == '<') {
+                if(cutted[i].content[0] == '<') {
                     // Apply a balise
-                    _Text_Block_Part part;
-                    image_parts.push_back(part);
 
-                    std::string balise = cutted[i];
+                    std::string balise = cutted[i].content;
                     if(balise.size() <= 0 || balise[balise.size() - 1] != '>') {
                         print("Warnig", "SCLS Image \"Michelangelo\"", "A balise you want to parse is badly syntaxed.");
                         continue;
@@ -629,11 +677,64 @@ namespace scls
                             total_height += current_font_size;
                         }
                     }
+                    else {
+                        std::string balise_content = balise.substr(1, balise.size() - 2);
+                        std::string current_balise_name = balise_name(balise_content);
+
+                        if(defined_balises(current_balise_name).is_paragraph) {
+                            // A new block should be created
+                            _Text_Balise_Part current_text_balise_part = cutted[i];
+
+                            // Search the end of the block
+                            i++;
+                            unsigned int level = 1;
+                            while(i < static_cast<int>(cutted.size())) {
+                                if(cutted[i].content.size() > 2 && cutted[i].content[0] == '<' && cutted[i].content[cutted[i].content.size() - 1] == '>') {
+                                    std::string parsed_balise_name = balise_name(cutted[i].content);
+                                    if(parsed_balise_name == current_balise_name) {
+                                        if(cutted[i].content[1] == '/') {
+                                            level--;
+                                            if(level == 0) break;
+                                        }
+                                        else {
+                                            level++;
+                                        }
+                                    }
+                                }
+                                i++;
+                            }
+
+                            // Parse the new block
+                            unsigned int block_size = (cutted[i].start_position + cutted[i].content.size()) - current_text_balise_part.start_position;
+                            std::string block_content = content.substr(current_text_balise_part.start_position, block_size);
+                            _Text_Block_Part part; part.is_paragraph = true;
+
+                            // Create the image
+                            Image* new_block = _block(block_content);
+                            part.image = new_block;
+                            part.style = current_style();
+
+                            apply_current_style();
+                            current_width = 0;
+                            image_parts.push_back(part);
+                            total_height += new_block->height();
+
+                            continue;
+                        }
+                    }
+
+                    // Add an empty part
+                    if(i == 0) total_height += current_font_size;
+                    _Text_Block_Part part;
+                    image_parts.push_back(part);
                 }
-                else if(cutted[i] != "") {
+                else if(cutted[i].content != "") {
                     int y_position = 0;
-                    Image* image = _word(cutted[i], y_position);
+                    Image* image = _word(cutted[i].content, y_position);
                     if(image != 0) {
+                        // Check the last part
+                        if(i == 0 || image_parts[image_parts.size() - 1].is_paragraph) total_height += current_font_size;
+
                         // Check max width
                         if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
                             // Break a line
@@ -662,8 +763,8 @@ namespace scls
             Image* final_image = new Image(max_width + min_x, total_height + min_y, current_background_color);
             for(int i = 0;i<static_cast<int>(image_parts.size());i++) {
                 Image* image = image_parts[i].image; if(image == 0) {
-                    // A part is a balise
-                    std::string balise = cutted[i];
+                     // A part is a balise
+                    std::string balise = cutted[i].content;
                     if(balise[1] == '/') {
                         std::string balise_content = balise.substr(2, balise.size() - 3);
                         std::vector<std::string> balise_cutted = cut_string(balise_content, " ", false, true);
@@ -673,22 +774,46 @@ namespace scls
                             current_y += current_font_size;
                         }
                     }
-                    continue;
+                }
+                else {
+                    if(image_parts[i].is_paragraph) {
+                        // A part is a paragraph
+                        // Paste the image
+                        int x = current_x;
+                        int y = current_y;
+
+                        if(image_parts[i].style.alignment_horizontal == Text_Alignment_Horizontal::Center) {
+                            x = static_cast<int>(static_cast<double>(final_image->width()) / 2.0 - static_cast<double>(image->width()) / 2.0);
+                        }
+
+                        final_image->paste(image, x, y);
+                        current_y += image->height();
+                        delete image;
+                        continue;
+                    }
+
+                    // Apply max width
+                    if(current_style().max_width != -1 && current_x + image->width() > current_style().max_width) {
+                        // Break a line
+                        current_x = 0;
+                        current_y += current_font_size;
+                    }
+
+                    int x = current_x;
+                    int y = current_y + image_parts[i].y_offset;
+                    final_image->paste(image, x, y);
+                    current_x += image->width();
+                    if(i != static_cast<int>(image_parts.size()) - 1) current_x += space_width;
+                    delete image;
                 }
 
-                // Apply max width
-                if(current_style().max_width != -1 && current_x + image->width() > current_style().max_width) {
-                    // Break a line
-                    current_x = 0;
-                    current_y += current_font_size;
+                // Check if the next part demand a break of line
+                if(i != static_cast<int>(image_parts.size()) - 1) {
+                    if(image_parts[i + 1].is_paragraph) {
+                        current_x = 0;
+                        current_y += current_font_size;
+                    }
                 }
-
-                int x = current_x;
-                int y = current_y + image_parts[i].y_offset;
-                final_image->paste(image, x, y);
-                current_x += image->width();
-                if(i != static_cast<int>(image_parts.size()) - 1) current_x += space_width;
-                delete image;
             }
 
             if(is_balise) {
@@ -697,177 +822,12 @@ namespace scls
 
             return final_image;
         };
-        // Returns each text block of a text
-        std::vector<Text_Block> _blocks(std::string text_to_parse) {
-            // Parse lines
-            // Cut by balises
-            std::vector<Text_Block> all_blocks = std::vector<Text_Block>();
-            std::string content = text_to_parse;
-            std::string last_line = "";
-            for(int i = 0;i<static_cast<int>(content.size());i++) {
-                if(content[i] == '<') {
-                    i++;
-                    if(i >= static_cast<int>(content.size())) {
-                        print("Warnig", "SCLS Image \"Michelangelo\"", "A balise you want to start is badly syntaxed.");
-                        return std::vector<Text_Block>();
-                    }
-
-                    if(content[i] == '/') {
-                        // End a balise
-                        i++;
-                        if(i >= static_cast<int>(content.size())) {
-                            print("Warnig", "SCLS Image \"Michelangelo\"", "A balise you want to end is badly syntaxed.");
-                            return std::vector<Text_Block>();
-                        }
-
-                        std::string balise_content = "";
-                        while(content[i] != '>') {
-                            if(i >= static_cast<int>(content.size())) {
-                                print("Warnig", "SCLS Image \"Michelangelo\"", "The balise \"" + balise_content + "\" you want to parse is badly syntaxed.");
-                                return std::vector<Text_Block>();
-                            }
-                            balise_content += content[i];
-                            i++;
-                        }
-
-                        last_line += "</" + balise_content;
-                    }
-                    else {
-                        std::string balise_definition = "";
-                        while(content[i] != '>') {
-                            if(i >= static_cast<int>(content.size())) {
-                                print("Warnig", "SCLS Image \"Michelangelo\"", "The balise \"" + balise_definition + "\" you want to parse is badly syntaxed.");
-                                return std::vector<Text_Block>();
-                            }
-                            balise_definition += content[i];
-                            i++;
-                        }
-                        balise_definition = formatted_balise("<" + balise_definition + ">");
-
-                        std::string current_balise_name = balise_name(balise_definition);
-                        if(defined_balises()->contains_defined_balise(current_balise_name)) {
-                            if(defined_balises()->defined_balise(current_balise_name).is_paragraph) {
-                                // Get all the balise
-                                i++;
-                                if(i >= static_cast<int>(content.size())) {
-                                    print("Warnig", "SCLS Image \"Michelangelo\"", "A balise you want to parse is badly syntaxed.");
-                                    return std::vector<Text_Block>();
-                                }
-
-                                std::string balise_content = "";
-                                short balise_height = 1;
-                                while(i < static_cast<int>(content.size())) {
-                                    if(content[i] == '<') {
-                                        i++;
-                                        std::string temp_balise_content = "";
-                                        while(content[i] != '>') {
-                                            if(i >= static_cast<int>(content.size())) {
-                                                print("Warnig", "SCLS Image \"Michelangelo\"", "The balise \"" + balise_content + "\" you want to parse is badly syntaxed.");
-                                                return std::vector<Text_Block>();
-                                            }
-                                            temp_balise_content += content[i];
-                                            i++;
-                                        }
-
-                                        if(temp_balise_content[0] == '/') {
-                                            balise_height--;
-                                            if(balise_height == 0) break;
-                                            else {
-                                                balise_content += "<" + temp_balise_content;
-                                            }
-                                        }
-                                        else {
-                                            balise_content += "<" + temp_balise_content;
-                                            Text_Balise to_test = defined_balises()->defined_balise(cut_string(temp_balise_content, " ")[0]);
-                                            if(to_test.has_content) balise_height++;
-                                        }
-                                    }
-                                    balise_content += content[i];
-
-                                    if(i >= static_cast<int>(content.size())) {
-                                        print("Warnig", "SCLS Image \"Michelangelo\"", "A balise you want to parse is badly syntaxed.");
-                                        return std::vector<Text_Block>();
-                                    }
-                                    i++;
-                                }
-
-                                // Add a block
-                                if(all_blocks.size() > 0 || last_line != "") {
-                                    Text_Block block; block.content = last_line;
-                                    all_blocks.push_back(block);
-                                }
-                                if(balise_content != "") {
-                                    Text_Block block; block.content = balise_definition + balise_content + "</" + current_balise_name + ">";
-                                    all_blocks.push_back(block);
-                                }
-                                last_line = "";
-                                continue;
-                            }
-                            else {
-                                last_line += "<" + balise_definition;
-                            }
-                        }
-                        else {
-                            last_line += "<" + balise_definition;
-                        }
-                    }
-                }
-                last_line += content[i];
-            }
-            if(all_blocks.size() > 0 || last_line != "") {
-                Text_Block block; block.content = last_line;
-                all_blocks.push_back(block);
-            }
-
-            return all_blocks;
-        };
-        // Returns each text block of a text
-        inline std::vector<Text_Block> _blocks() {
-            return _blocks(text());
-        };
         // Return the entire text
         Image* image(std::string text) {
             // Create the needed configurations
             std::string content = html_formatted(text);
-            Color current_background_color = white;
-            unsigned short current_font_size = 20;
 
-            Text_Image img = Text_Image(defined_balises(), content);
-            std::vector<Text_Block> all_blocks = img._blocks();
-
-            // Create each lines
-            std::vector<Image*> image_parts = std::vector<Image*>();
-            unsigned int max_width = 0;
-            unsigned int min_x = 0;
-            unsigned int min_y = 0;
-            unsigned int total_height = 0;
-            for(int i = 0;i<static_cast<int>(all_blocks.size());i++) {
-                if(all_blocks[i].content == "") {
-                    image_parts.push_back(0);
-                    total_height += current_font_size;
-                }
-                else {
-                    apply_current_style();
-                    Image* image = _block(all_blocks[i].content);
-                    if(image != 0) {
-                        image_parts.push_back(image);
-                        total_height += image->height();
-                        if(image->width() > max_width) max_width = image->width();
-                    }
-                }
-            }
-
-            // Create the final image and clear memory
-            Image* final_image = new Image(max_width + min_x, total_height + min_y, current_background_color);
-            unsigned int y_position = min_y;
-            for(int i = 0;i<static_cast<int>(image_parts.size());i++) {
-                Image* image = image_parts[i]; if(image == 0) { y_position += current_font_size; continue; }
-                unsigned int x = min_x;
-                final_image->paste(image, x, y_position); y_position += image->height();
-                delete image_parts[i]; image_parts[i] = 0;
-            }
-
-            return final_image;
+            return _block(content);
         };
         // Save the image as an image
         inline void save_image(std::string path) {Image* img = image(text());img->save_png(path);delete img;img = 0;};
@@ -964,6 +924,7 @@ namespace scls
         inline std::stack<std::string>& current_balises() {return a_current_balises;};
         inline Text_Style current_style() {return a_current_style;};
         inline _Balise_Container* defined_balises() {return a_defined_balises;};
+        inline Text_Balise defined_balises(std::string balise) {return defined_balises()->defined_balise(balise);};
         inline Text_Style& global_style() {return a_global_style;};
         inline std::string text() {return a_text;};
     private:
