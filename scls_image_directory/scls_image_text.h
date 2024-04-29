@@ -168,7 +168,7 @@ namespace scls
 	};
 
 	// Cut a string by its balises
-	std::vector<_Text_Balise_Part> cut_string_by_balise(std::string str, bool erase_blank = false, bool erase_last_if_blank = true) {
+	static std::vector<_Text_Balise_Part> cut_string_by_balise(std::string str, bool erase_blank = false, bool erase_last_if_blank = true) {
 		std::string last_string = ""; // String since the last cut
 		std::vector<_Text_Balise_Part> result = std::vector<_Text_Balise_Part>();
 		for (int i = 0; i < static_cast<int>(str.size()); i++) // Browse the string char by char
@@ -208,7 +208,7 @@ namespace scls
 	};
 
 	// Format a balise and return it
-	std::string formatted_balise(std::string str) {
+	static std::string formatted_balise(std::string str) {
 	    // Remove useless spaces
 	    while(str.size() > 0 && str[0] == ' ') {
             str = str.substr(1, str.size() - 1);
@@ -245,7 +245,7 @@ namespace scls
 	};
 
 	// HTML formatted
-	std::string html_formatted(std::string str) {
+	static std::string html_formatted(std::string str) {
 	    std::string nl = ""; nl += static_cast<char>(10);
 	    std::string np = ""; np += static_cast<char>(13);
 	    str = replace(str, nl, "");
