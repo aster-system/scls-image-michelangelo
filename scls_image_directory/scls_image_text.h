@@ -303,7 +303,7 @@ namespace scls
         // Font size of the style
         unsigned short font_size = 20;
         // Max width of the text (only in pixel for now)
-        double max_width = 500;
+        double max_width = -1;
     };
 
     // Balise in a text
@@ -330,6 +330,8 @@ namespace scls
         Image* image = 0;
         // If the part is a paragraph or not
         bool is_paragraph = false;
+        // Line of this block
+        unsigned int line = 0;
         // Style of the part
         Text_Style style;
         // Offset in the Y axis
@@ -641,21 +643,23 @@ namespace scls
                     if(defined_balises()->contains_defined_balise(block_balise_name)) {
                         current_balises().push(block_balise_name);
 
-                        apply_current_style();
                         cutted.erase(cutted.begin());
                         cutted.erase(cutted.end() - 1);
                         is_balise = true;
                     }
                 }
             }
+            apply_current_style();
 
             // Create the needed configurations
             Color current_background_color = a_current_style.background_color;
             unsigned short current_font_size = a_current_style.font_size;
 
             // Create each words
+            unsigned int current_line = 0;
             int current_width = 0;
             std::vector<_Text_Block_Part> image_parts = std::vector<_Text_Block_Part>();
+            std::vector<unsigned int> lines_width = std::vector<unsigned int>();
             int max_width = 0;
             unsigned int min_x = 0;
             unsigned int min_y = 0;
@@ -676,7 +680,9 @@ namespace scls
                         std::vector<std::string> balise_cutted = cut_string(balise_content, " ", false, true);
                         if(balise_cutted[0] == "br") {
                             // Break a line
+                            current_line++;
                             current_width -= space_width;
+                            lines_width.push_back(current_width);
                             if(current_width > max_width) max_width = current_width;
                             current_width = 0;
                             total_height += current_font_size;
@@ -721,6 +727,9 @@ namespace scls
                             part.style = current_style();
 
                             apply_current_style();
+                            current_line++;
+                            lines_width.push_back(current_width);
+                            if(current_width > max_width) max_width = current_width;
                             current_width = 0;
                             image_parts.push_back(part);
                             total_height += new_block->height();
@@ -744,13 +753,16 @@ namespace scls
                         // Check max width
                         if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
                             // Break a line
+                            current_line++;
                             current_width -= space_width;
+                            lines_width.push_back(current_width);
                             if(current_width > max_width) max_width = current_width;
                             current_width = 0;
                             total_height += current_font_size;
                         }
 
                         _Text_Block_Part part;
+                        part.line = current_line;
                         part.image = image; part.y_offset = (current_font_size - image->height()) - y_position;
                         if(-y_position > min_y) min_y = -y_position;
                         current_width += image->width();
@@ -760,6 +772,7 @@ namespace scls
                 }
             }
             current_width -= space_width;
+            lines_width.push_back(current_width);
             if(current_width > max_width) max_width = current_width;
 
             // Create the final image and clear memory
@@ -807,6 +820,12 @@ namespace scls
 
                     int x = current_x;
                     int y = current_y + image_parts[i].y_offset;
+
+                    // Apply text alignment
+                    if(current_style().alignment_horizontal == Text_Alignment_Horizontal::Center) {
+                        x = static_cast<int>(static_cast<double>(final_image->width()) / 2.0 - static_cast<double>(lines_width[image_parts[i].line]) / 2.0) + current_x;
+                    }
+
                     final_image->paste(image, x, y);
                     current_x += image->width();
                     if(i != static_cast<int>(image_parts.size()) - 1) current_x += space_width;
@@ -828,15 +847,19 @@ namespace scls
 
             return final_image;
         };
-        // Return the entire text
+        // Return the entire text in an image
         Image* image(std::string text) {
             // Create the needed configurations
             std::string content = html_formatted(text);
 
             return _block(content);
         };
+        // Return the entire text in an image
+        Image* image() {
+            return image(text());
+        };
         // Save the image as an image
-        inline void save_image(std::string path) {Image* img = image(text());img->save_png(path);delete img;img = 0;};
+        inline void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;};
         // Create a single word of the text without any balising and spaces
         Image* _word(std::string word, int& y_position) {
             // Base variables for the creation
@@ -932,6 +955,7 @@ namespace scls
         inline _Balise_Container* defined_balises() {return a_defined_balises;};
         inline Text_Balise defined_balises(std::string balise) {return defined_balises()->defined_balise(balise);};
         inline Text_Style& global_style() {return a_global_style;};
+        inline void set_text(std::string new_text) {a_text = new_text;};
         inline std::string text() {return a_text;};
     private:
         // Current style used for the formatting
@@ -960,8 +984,12 @@ namespace scls
             delete a_defined_balises; a_defined_balises = 0;
         }
 
+        // Create an image from a text and return it
+        inline Image* image(std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);Image* to_return=img->image();delete img;img = 0;return to_return;};
+        // Returns a newly created text image
+        inline Text_Image* new_text_image(std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);return img;};
         // Save the image in a path
-        void save_image(std::string path, std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);img->save_image(path);delete img;img = 0;}
+        inline void save_image(std::string path, std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);img->save_image(path);delete img;img = 0;}
 
         // Getters and setters
         inline _Balise_Container* defined_balises() {return a_defined_balises;};

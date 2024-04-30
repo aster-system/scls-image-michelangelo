@@ -124,11 +124,10 @@ scls::Image* aster_system_logo() {
 int main()
 {
     scls::Text_Image_Generator* image_generator = new scls::Text_Image_Generator();
-    // image_creator->set_global_out_offset_width_bottom(50);
-    // image_creator->set_global_out_offset_width_left(50);
-    // image_creator->set_global_out_offset_width_right(50);
-    // image_creator->set_global_out_offset_width_top(50);
-    image_generator->save_image("text.png", scls::to_utf_8(scls::read_file("content.html")));
+    scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8(scls::read_file("content.html")));
+    leclerc->global_style().max_width = 500;
+    leclerc->save_image("text.png");
+    delete leclerc; leclerc = 0;
     delete image_generator; image_generator = 0;
 
     return 0;
