@@ -841,7 +841,7 @@ namespace scls
         Image* _word(std::string word, int& y_position) {
             // Base variables for the creation
             std::string path = a_current_style.font.font_path;
-            if(path == "") path = get_system_font("arial").font_path;
+            if(path == "") path = get_system_font(DEFAULT_FONT).font_path;
 
             // Load the FreeType base system
             if(!_free_type_library_inited)
