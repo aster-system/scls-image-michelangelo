@@ -257,9 +257,14 @@ namespace scls
 	static FT_Library  _freetype_library;
     static bool _free_type_library_inited = false;
 
-	// Enumeration of each text alignment possible
-	enum Text_Alignment_Horizontal {
-	    Left, Center, Right
+	// Enumeration of each horizontal alignment possible
+	enum Alignment_Horizontal {
+	    H_Left, H_Center, H_Right
+	};
+
+	// Enumeration of each vertical alignment possible
+	enum Alignment_Vertical {
+	    V_Top, V_Center, V_Bottom
 	};
 
 	// Datas about the text to draw
@@ -281,7 +286,7 @@ namespace scls
         unsigned short font_size = 50;
 
         // Multi line caracteristic
-        Text_Alignment_Horizontal alignment = Text_Alignment_Horizontal::Left;
+        Alignment_Horizontal alignment = Alignment_Horizontal::H_Left;
 
         // Out offset
         unsigned short out_offset_bottom_width = 0;
@@ -293,7 +298,7 @@ namespace scls
     // Style about a text
     struct Text_Style {
         // Horizontal alignment of the text
-        Text_Alignment_Horizontal alignment_horizontal = Text_Alignment_Horizontal::Left;
+        Alignment_Horizontal alignment_horizontal = Alignment_Horizontal::H_Left;
         // Color of the background color
         Color background_color = white;
         // Color of the text
@@ -519,8 +524,8 @@ namespace scls
         {
             Image* image = image_parts[i]; if(image == 0) { y_position += datas.font_size; continue; }
             unsigned int x = min_x;
-            if(datas.alignment == Center)x = min_x + static_cast<int>(static_cast<float>(max_width - image->width()) / 2.0);
-            else if(datas.alignment == Right) x = min_x + max_width - image->width();
+            if(datas.alignment == H_Center)x = min_x + static_cast<int>(static_cast<float>(max_width - image->width()) / 2.0);
+            else if(datas.alignment == H_Right) x = min_x + max_width - image->width();
             final_image->paste(image, x, y_position); y_position += image->height();
             delete image_parts[i]; image_parts[i] = 0;
         }
@@ -571,12 +576,12 @@ namespace scls
             a_defined_balises["p"] = current_balise;
             // Create the <h1> style
             current_balise.is_paragraph = true;
-            current_balise.style.alignment_horizontal = Text_Alignment_Horizontal::Center;
+            current_balise.style.alignment_horizontal = Alignment_Horizontal::H_Center;
             current_balise.style.color = red; current_balise.style.font_size = 50; current_balise.style.font = get_system_font("arialbd");
             a_defined_balises["h1"] = current_balise;
             // Create the <h2> style
             current_balise.is_paragraph = true;
-            current_balise.style.alignment_horizontal = Text_Alignment_Horizontal::Left;
+            current_balise.style.alignment_horizontal = Alignment_Horizontal::H_Left;
             current_balise.style.color = black; current_balise.style.font_size = 35; current_balise.style.font = get_system_font("arialbd");
             a_defined_balises["h2"] = current_balise;
         }
@@ -801,7 +806,7 @@ namespace scls
                         int x = current_x;
                         int y = current_y;
 
-                        if(image_parts[i].style.alignment_horizontal == Text_Alignment_Horizontal::Center) {
+                        if(image_parts[i].style.alignment_horizontal == Alignment_Horizontal::H_Center) {
                             x = static_cast<int>(static_cast<double>(final_image->width()) / 2.0 - static_cast<double>(image->width()) / 2.0);
                         }
 
@@ -822,7 +827,7 @@ namespace scls
                     int y = current_y + image_parts[i].y_offset;
 
                     // Apply text alignment
-                    if(current_style().alignment_horizontal == Text_Alignment_Horizontal::Center) {
+                    if(current_style().alignment_horizontal == Alignment_Horizontal::H_Center) {
                         x = static_cast<int>(static_cast<double>(final_image->width()) / 2.0 - static_cast<double>(lines_width[image_parts[i].line]) / 2.0) + current_x;
                     }
 
@@ -1030,7 +1035,7 @@ namespace scls
         _Balise_Container* a_defined_balises = new _Balise_Container();
 
         // Currently used attributes
-        Text_Alignment_Horizontal current_text_alignment_horizontal = Text_Alignment_Horizontal::Center;
+        Alignment_Horizontal current_text_alignment_horizontal = Alignment_Horizontal::H_Center;
         Color current_background_color = white;
         Color current_color = black;
         Font current_font;
