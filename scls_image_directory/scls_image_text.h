@@ -603,7 +603,7 @@ namespace scls
         };
 
         // Return an image with a block in it
-        Image* _block(std::string block_text) {
+        Image* _block(std::string block_text, unsigned int start_text_position, unsigned int start_plain_text_position) {
             const std::string content = block_text;
             std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(content, false, true);
             std::vector<_Text_Balise_Part> cutted = std::vector<_Text_Balise_Part>();
@@ -726,7 +726,7 @@ namespace scls
                             _Text_Block_Part part; part.is_paragraph = true;
 
                             // Create the image
-                            Image* new_block = _block(block_content);
+                            Image* new_block = _block(block_content, start_text_position, start_plain_text_position);
                             if(new_block->width() > max_width) max_width = new_block->width();
                             part.image = new_block;
                             part.style = current_style();
@@ -739,6 +739,10 @@ namespace scls
                             image_parts.push_back(part);
                             total_height += new_block->height();
 
+                            // Add the size of the word to the total size
+                            start_plain_text_position += plain_text_size(block_content);
+                            start_text_position += cutted[i].content.size();
+
                             continue;
                         }
                     }
@@ -747,6 +751,9 @@ namespace scls
                     if(i == 0) total_height += current_font_size;
                     _Text_Block_Part part;
                     image_parts.push_back(part);
+
+                    // Add the size of the word to the total size
+                    start_text_position += cutted[i].content.size();
                 }
                 else if(cutted[i].content != "") {
                     int y_position = 0;
@@ -754,6 +761,14 @@ namespace scls
                     if(image != 0) {
                         // Check the last part
                         if(i == 0 || image_parts[image_parts.size() - 1].is_paragraph) total_height += current_font_size;
+                        else if(image_parts[image_parts.size() - 1].image != 0) {
+                            start_plain_text_position++;
+                            start_text_position++;
+                        }
+
+                        if(cursor_position() >= start_plain_text_position && cursor_position() <= start_plain_text_position + cutted[i].content.size()) {
+                            std::cout << "OMG " << cutted[i].content << std::endl;
+                        }
 
                         // Check max width
                         if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
@@ -773,6 +788,10 @@ namespace scls
                         current_width += image->width();
                         current_width += space_width;
                         image_parts.push_back(part);
+
+                        // Add the size of the word to the total size
+                        start_plain_text_position += cutted[i].content.size();
+                        start_text_position += cutted[i].content.size();
                     }
                 }
             }
@@ -850,6 +869,8 @@ namespace scls
                 current_balises().pop();
             }
 
+            std::cout << "U " << content.size() << " " << start_text_position << " " << start_plain_text_position << std::endl;
+
             return final_image;
         };
         // Return the entire text in an image
@@ -857,7 +878,7 @@ namespace scls
             // Create the needed configurations
             std::string content = html_formatted(text);
 
-            return _block(content);
+            return _block(content, 0, 0);
         };
         // Return the entire text in an image
         Image* image() {
@@ -954,14 +975,34 @@ namespace scls
         inline void apply_global_style() {apply_style(global_style());};
         inline void apply_style(Text_Style style) {a_current_style = style;};
 
+        // Return the size of the text
+        inline unsigned int plain_text_size(std::string text_to_check) {
+            unsigned int total_size = 0;
+            bool can_count_size = 0;
+            for(int i = 0;i<static_cast<int>(text_to_check.size());i++) {
+                if(text_to_check[i] == '<') can_count_size = false;
+                else if(text_to_check[i] == '>') can_count_size = true;
+                else if(can_count_size) total_size++;
+            }
+            return total_size;
+        };
+        inline unsigned int plain_text_size() {
+            return plain_text_size(text());
+        };
+
         // Getters and setters
         inline std::stack<std::string>& current_balises() {return a_current_balises;};
         inline Text_Style current_style() {return a_current_style;};
+        inline unsigned int cursor_position() const {return a_cursor_position;};
+        inline unsigned short cursor_width() const {return a_cursor_width;};
         inline _Balise_Container* defined_balises() {return a_defined_balises;};
         inline Text_Balise defined_balises(std::string balise) {return defined_balises()->defined_balise(balise);};
         inline Text_Style& global_style() {return a_global_style;};
+        inline void set_cursor_position(unsigned int new_cursor_position) {a_cursor_position = new_cursor_position;};
         inline void set_text(std::string new_text) {a_text = new_text;};
-        inline std::string text() {return a_text;};
+        inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
+        inline std::string text() const {return a_text;};
+        inline bool use_cursor() const {return a_use_cursor;};
     private:
         // Current style used for the formatting
         Text_Style a_current_style;
@@ -975,6 +1016,14 @@ namespace scls
         _Balise_Container* a_defined_balises = 0;
         // HTML Text in the image
         std::string a_text = "";
+
+        // Cursor datas
+        // Position of the cursor in the text (0 = before the first character, size = after the last character)
+        unsigned int a_cursor_position = 0;
+        // Width of the cursor
+        unsigned short a_cursor_width = 2;
+        // If the image use the cursor or not
+        bool a_use_cursor = false;
     };
 
     class Text_Image_Generator {

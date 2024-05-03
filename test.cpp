@@ -126,6 +126,7 @@ int main()
     scls::Text_Image_Generator* image_generator = new scls::Text_Image_Generator();
     scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8(scls::read_file("content.html")));
     leclerc->global_style().max_width = 500;
+    leclerc->set_use_cursor(true);
     leclerc->save_image("text.png");
     delete leclerc; leclerc = 0;
     delete image_generator; image_generator = 0;
