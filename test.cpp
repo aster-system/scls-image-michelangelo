@@ -124,8 +124,9 @@ scls::Image* aster_system_logo() {
 int main()
 {
     scls::Text_Image_Generator* image_generator = new scls::Text_Image_Generator();
-    scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8(scls::read_file("content.html"))); // scls::read_file("content.html")
+    scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8(scls::read_file("content.html") + "</br> ")); // scls::read_file("content.html")
     // scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8("Le char Leclerc</br>Leclerc great because Leclerc good."));
+    // scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8("Ab</br> ")); // scls::read_file("content.html")
     leclerc->global_style().max_width = 500;
     leclerc->set_use_cursor(true);
     leclerc->save_image("text.png");
