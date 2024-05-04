@@ -701,6 +701,7 @@ namespace scls
                             lines_width.push_back(current_width);
                             if(current_width > max_width) max_width = current_width;
                             current_width = 0;
+                            start_plain_text_position++;
                             total_height += current_font_size;
                         }
                     }
@@ -736,6 +737,12 @@ namespace scls
                             std::string block_content = content.substr(current_text_balise_part.start_position, block_size);
                             _Text_Block_Part part; part.is_paragraph = true;
 
+                            // Add or not the space to the text if necessary
+                            if(image_parts.size() > 0 && image_parts[image_parts.size() - 1].image != 0) {
+                                start_plain_text_position++;
+                                start_text_position++;
+                            }
+
                             // Create the image
                             Image* new_block = _block(block_content, start_text_position, start_plain_text_position);
                             if(new_block->width() > max_width) max_width = new_block->width();
@@ -751,8 +758,8 @@ namespace scls
                             total_height += new_block->height();
 
                             // Add the size of the word to the total size
-                            start_plain_text_position += plain_text_size(block_content) + 1;
-                            start_text_position += cutted[i].content.size() + 1;
+                            start_plain_text_position += plain_text_size(block_content);
+                            start_text_position += cutted[i].content.size();
 
                             continue;
                         }
@@ -767,6 +774,12 @@ namespace scls
                     start_text_position += cutted[i].content.size();
                 }
                 else if(cutted[i].content != "") {
+                    // Add or not the space to the text
+                    if(image_parts.size() > 0 && image_parts[image_parts.size() - 1].image != 0) {
+                        start_plain_text_position++;
+                        start_text_position++;
+                    }
+
                     // Check the position of the cursor
                     int cursor_x_position = -1;
                     if(cursor_position() >= start_plain_text_position && cursor_position() <= start_plain_text_position + cutted[i].content.size()) {
@@ -779,7 +792,6 @@ namespace scls
 
                     // Check the cursor position
                     if(cursor_x_position != -1) {
-                        std::cout << "M " << cursor_x_position << " " << cursor_position() << " " << start_plain_text_position << std::endl;
                         std::string part_1 = cutted[i].content.substr(0, cursor_x_position);
                         std::string part_2 = cutted[i].content.substr(cursor_x_position, cutted[i].content.size() - cursor_x_position);
 
@@ -808,10 +820,6 @@ namespace scls
                     if(image != 0) {
                         // Check the last part
                         if(i == 0 || image_parts[image_parts.size() - 1].is_paragraph) total_height += current_font_size;
-                        else if(image_parts[image_parts.size() - 1].image != 0) {
-                            start_plain_text_position++;
-                            start_text_position++;
-                        }
 
                         // Check max width
                         if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
@@ -914,7 +922,6 @@ namespace scls
 
                     // Draw the cursor if necessary
                     if(use_cursor() && image_parts[i].cursor_x_offset >= 0) {
-                        std::cout << "K " << x << " " << image_parts[i].cursor_x_offset << " " << current_y << std::endl;
                         x += image_parts[i].cursor_x_offset;
                         if(x >= (static_cast<double>(cursor_width()) / 2.0)) x -= (static_cast<double>(cursor_width()) / 2.0);
                         final_image->fill_rect(x, current_y, cursor_width(), current_font_size, black);
@@ -1038,15 +1045,18 @@ namespace scls
         inline void apply_global_style() {apply_style(global_style());};
         inline void apply_style(Text_Style style) {a_current_style = style;};
 
-        // Return the size of the text
-        inline unsigned int plain_text_size(std::string text_to_check) {
-            unsigned int total_size = 0;
-            for(int i = 0;i<static_cast<int>(text_to_check.size());i++) {
-                if(text_to_check[i] == '<') {
+        // Returns a html text in plain text
+        std::string plain_text(std::string text_to_convert) {
+            std::string final_text = "";
+            std::stack<std::string> found_balises = std::stack<std::string>();
+            std::string last_balise = "";
+            text_to_convert = replace(html_formatted(text_to_convert), "</br>", "\n");
+            for(int i = 0;i<static_cast<int>(text_to_convert.size());i++) {
+                if(text_to_convert[i] == '<') {
                     std::string balise = "";
                     unsigned int start = i;
-                    while(text_to_check[i] != '>' && i < static_cast<int>(text_to_check.size())) {
-                        balise += text_to_check[i];
+                    while(text_to_convert[i] != '>' && i < static_cast<int>(text_to_convert.size())) {
+                        balise += text_to_convert[i];
                         i++;
                     }
                     balise += ">";
@@ -1055,19 +1065,35 @@ namespace scls
                     if(start != 0) {
                         // Check the balise
                         std::string current_balise_name = balise_name(balise);
+
+                        if(defined_balises(current_balise_name).is_paragraph && final_text != "" && i < text_to_convert.size() - 1 && !defined_balises(last_balise).is_paragraph) {
+                            final_text += "\n";
+                        }
+
+                        // Check in the balise stack
                         if(balise[1] == '/') {
-                            total_size++;
+                            if(found_balises.size() > 0 && found_balises.top() == current_balise_name) {
+                                found_balises.pop();
+                            }
                         }
-                        else {
-                            total_size++;
-                        }
+                        else found_balises.push(current_balise_name);
+                        last_balise = current_balise_name;
                     }
                 }
                 else {
-                    total_size++;
+                    final_text += text_to_convert[i];
+                    last_balise = "";
                 }
             }
-            return total_size;
+
+            return final_text;
+        };
+        inline std::string plain_text() {
+            return plain_text(text());
+        };
+        // Return the size of the text
+        inline unsigned int plain_text_size(std::string text_to_check) {
+            return plain_text(text_to_check).size();
         };
         inline unsigned int plain_text_size() {
             return plain_text_size(html_formatted(text()));
