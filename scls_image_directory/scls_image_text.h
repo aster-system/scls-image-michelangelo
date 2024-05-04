@@ -849,6 +849,34 @@ namespace scls
                             total_height += current_font_size;
                         }
 
+                        // Check the cursor position
+                        if(cursor_x_position != -1) {
+                            std::string part_1 = cutted[i].content.substr(0, cursor_x_position);
+                            std::string part_2 = cutted[i].content.substr(cursor_x_position, cutted[i].content.size() - cursor_x_position);
+
+                            if(part_1 == "") {
+                                cursor_x = current_width;
+                            }
+                            else if(part_2 == "") {
+                                cursor_x = current_width + image->width();
+                            }
+                            else {
+                                if(part_1.size() < part_2.size()) {
+                                    int temp_int = 0;
+                                    Image* temp = _word(part_1, temp_int);
+                                    cursor_x = current_width + (temp->width());
+                                    delete temp; temp = 0;
+                                }
+                                else {
+                                    int temp_int = 0;
+                                    Image* temp = _word(part_2, temp_int);
+                                    cursor_x = current_width + (image->width() - temp->width());
+                                    delete temp; temp = 0;
+                                }
+                            }
+                            cursor_y = total_height - current_font_size;
+                        }
+
                         part_to_add.line = current_line;
                         part_to_add.image = image; part_to_add.y_offset = (current_font_size - image->height()) - y_position;
                         if(-y_position > static_cast<int>(min_y)) min_y = -y_position;
@@ -862,34 +890,6 @@ namespace scls
                     else {
                         // Add an empty part
                         part_to_add.is_filled = false;
-                    }
-
-                    // Check the cursor position
-                    if(cursor_x_position != -1) {
-                        std::string part_1 = cutted[i].content.substr(0, cursor_x_position);
-                        std::string part_2 = cutted[i].content.substr(cursor_x_position, cutted[i].content.size() - cursor_x_position);
-
-                        if(part_1 == "") {
-                            cursor_x = 0;
-                        }
-                        else if(part_2 == "") {
-                            cursor_x = image->width();
-                        }
-                        else {
-                            if(part_1.size() < part_2.size()) {
-                                int temp_int = 0;
-                                Image* temp = _word(part_1, temp_int);
-                                cursor_x = temp->width();
-                                delete temp; temp = 0;
-                            }
-                            else {
-                                int temp_int = 0;
-                                Image* temp = _word(part_2, temp_int);
-                                cursor_x = image->width() - temp->width();
-                                delete temp; temp = 0;
-                            }
-                        }
-                        cursor_y = total_height - current_font_size;
                     }
                 }
                 else {
