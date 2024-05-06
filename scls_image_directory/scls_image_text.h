@@ -695,31 +695,30 @@ namespace scls
             return cutted;
         };
         // Return the style of a balise
-        inline Text_Balise defined_balise(std::string balise_name) {
-            for(std::map<std::string, Text_Balise>::iterator it = a_defined_balises.begin();it!=a_defined_balises.end();it++){
-                if(it->first == balise_name) return it->second;
-            }
-            return Text_Balise();
+        inline Text_Balise& defined_balise(std::string balise_name) {
+            return a_defined_balises[balise_name];
         };
+        // Set a balise to the container
+        inline void set_defined_balise(std::string name, Text_Balise balise_datas) { a_defined_balises[name] = balise_datas; };
 
         // Load the built-ins balises
         void _load_built_in_balises() {
             Text_Balise current_balise;
             // Create the <div> style
             current_balise.is_paragraph = true;
-            a_defined_balises["div"] = current_balise;
+            set_defined_balise("div", current_balise);
             // Create the <p> style
-            a_defined_balises["p"] = current_balise;
+            set_defined_balise("p", current_balise);
             // Create the <h1> style
             current_balise.is_paragraph = true;
             current_balise.style.alignment_horizontal = Alignment_Horizontal::H_Center;
             current_balise.style.color = red; current_balise.style.font_size = 50; current_balise.style.font = get_system_font("arialbd");
-            a_defined_balises["h1"] = current_balise;
+            set_defined_balise("h1", current_balise);
             // Create the <h2> style
             current_balise.is_paragraph = true;
             current_balise.style.alignment_horizontal = Alignment_Horizontal::H_Left;
             current_balise.style.color = black; current_balise.style.font_size = 35; current_balise.style.font = get_system_font("arialbd");
-            a_defined_balises["h2"] = current_balise;
+            set_defined_balise("h2", current_balise);
         }
     private:
         // List of each defined balises
@@ -1206,27 +1205,26 @@ namespace scls
         bool a_use_cursor = false;
     };
 
-    class Text_Image_Generator {
+    class Text_Image_Generator : public _Balise_Container {
         // Class simplifying the creation of text image
     public:
         // Most simple Text_Image_Generator constructor
         Text_Image_Generator() {
-            defined_balises()->_load_built_in_balises();
+            _load_built_in_balises();
         };
         // Text_Image_Generator destructor
         ~Text_Image_Generator() {
-            delete a_defined_balises; a_defined_balises = 0;
+
         }
 
         // Create an image from a text and return it
-        inline Image* image(std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);Image* to_return=img->image();delete img;img = 0;return to_return;};
+        inline Image* image(std::string text) {Text_Image *img = new Text_Image(this, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
         // Returns a newly created text image
-        inline Text_Image* new_text_image(std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);return img;};
+        inline Text_Image* new_text_image(std::string text) {Text_Image *img = new Text_Image(this, text);return img;};
         // Save the image in a path
-        inline void save_image(std::string path, std::string text) {Text_Image *img = new Text_Image(defined_balises(), text);img->save_image(path);delete img;img = 0;}
+        inline void save_image(std::string path, std::string text) {Text_Image *img = new Text_Image(this, text);img->save_image(path);delete img;img = 0;}
 
         // Getters and setters
-        inline _Balise_Container* defined_balises() {return a_defined_balises;};
         inline Color global_color() const {return a_global_color;};
         inline Font global_font() {if(a_global_font.font_path == "") set_global_font(get_system_font("arial"));return a_global_font;};
         inline unsigned short global_font_size() const {return a_global_font_size;};
@@ -1259,9 +1257,6 @@ namespace scls
         unsigned short a_global_out_offset_width_top = 0;
         // Global style of the text
         Text_Style a_global_style;
-
-        // Containers of each defined balises
-        _Balise_Container* a_defined_balises = new _Balise_Container();
 
         // Currently used attributes
         Alignment_Horizontal current_text_alignment_horizontal = Alignment_Horizontal::H_Center;
