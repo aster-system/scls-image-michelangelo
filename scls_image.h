@@ -25,7 +25,7 @@
 
 // Include scls_foundation
 #ifdef __ASTER_DEV
-#include "../scls-foundation-leonhard/scls_foundation.h"
+#include "dev_part/scls_foundation.h"
 #else
 #include <scls_foundation.h>
 #endif // __ASTER_DEV

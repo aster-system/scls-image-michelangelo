@@ -400,8 +400,9 @@ FodyWeavers.xsd
 
 # Added by developer
 glad.c
+dev_part/
 matix/
-*.sln
+mods_hidden/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
@@ -409,4 +410,4 @@ matix/
 *.cbp
 *.depend
 *.layout
-*.ttf
+*.mp4
