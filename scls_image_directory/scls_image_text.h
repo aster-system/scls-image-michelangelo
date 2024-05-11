@@ -76,22 +76,22 @@ namespace scls
             if(cutted.size() > 0)
             {
                 std::string descriptor = cutted[cutted.size() - 1];
-                if(contains(descriptor, "Bold"))
+                if(contains_string(descriptor, "Bold"))
                 {
                     font.bold = true;
                     last_name += "b";
                 }
-                if(contains(descriptor, "Italic"))
+                if(contains_string(descriptor, "Italic"))
                 {
                     font.italic = true;
                     last_name += "i";
                 }
-                if(contains(descriptor, "Condensed"))
+                if(contains_string(descriptor, "Condensed"))
                 {
                     font.condensed = true;
                     last_name += "c";
                 }
-                if(contains(descriptor, "Light"))
+                if(contains_string(descriptor, "Light"))
                 {
                     font.light = true;
                     last_name += "l";
