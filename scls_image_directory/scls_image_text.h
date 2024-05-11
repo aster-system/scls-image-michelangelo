@@ -50,10 +50,10 @@ namespace scls
 	};
 
 	// List of all the fonts in the system
-	static std::map<std::string, Font> _system_fonts = std::map<std::string, Font>();
+	inline std::map<std::string, Font> _system_fonts = std::map<std::string, Font>();
 
 	// Load all the fonts system fonts
-	static void load_system_font() {
+	inline void load_system_font() {
         _system_fonts.clear();
         std::vector<std::string> font_files = std::vector<std::string>();
         std::vector<std::string> subpaths = directory_content(BASE_FONT_PATH, true);
@@ -104,7 +104,7 @@ namespace scls
 	};
 
 	// Return the system path of a font
-	static Font get_system_font(std::string font, bool bold = false, bool italic = false, bool condensed = false, bool light = false) {
+	inline Font get_system_font(std::string font, bool bold = false, bool italic = false, bool condensed = false, bool light = false) {
 	    if(_system_fonts.size() <= 0) load_system_font();
 
 	    std::string last_name = "";
@@ -116,7 +116,7 @@ namespace scls
 	};
 
 	// Print each system fonts
-	static void print_system_fonts() {
+	inline void print_system_fonts() {
 	    if(_system_fonts.size() <= 0) load_system_font();
 
 	    for(std::map<std::string, Font>::iterator it = _system_fonts.begin();it!=_system_fonts.end();it++)
@@ -145,116 +145,6 @@ namespace scls
 	// Text creation
 	//
 	//*********
-
-	// Part of a text gotten by a balising cut
-    struct _Text_Balise_Part {
-        // Content of the part
-        std::string content = "";
-        // Position of the start of the balise (of the first char of the content)
-        unsigned int start_position = 0;
-    };
-
-	// Return the name of a formatted balise
-	static std::string balise_name(std::string balise_formatted) {
-	    if(balise_formatted[0] == '<') balise_formatted = balise_formatted.substr(1, balise_formatted.size() - 1);
-	    if(balise_formatted[0] == '/') balise_formatted = balise_formatted.substr(1, balise_formatted.size() - 1);
-	    if(balise_formatted[balise_formatted.size() - 1] == '>') balise_formatted = balise_formatted.substr(0, balise_formatted.size() - 1);
-	    // Remove useless spaces
-	    while(balise_formatted.size() > 0 && balise_formatted[0] == ' ') {
-            balise_formatted = balise_formatted.substr(1, balise_formatted.size() - 1);
-	    }
-
-	    return cut_string(balise_formatted, " ")[0];
-	};
-
-	// Cut a string by its balises
-	static std::vector<_Text_Balise_Part> cut_string_by_balise(std::string str, bool erase_blank = false, bool erase_last_if_blank = true) {
-	    bool last_is_balise = false;
-		std::string last_string = ""; // String since the last cut
-		std::vector<_Text_Balise_Part> result = std::vector<_Text_Balise_Part>();
-		for (int i = 0; i < static_cast<int>(str.size()); i++) // Browse the string char by char
-		{
-		    if(str[i] == '<') {
-                _Text_Balise_Part part_to_add;
-                part_to_add.content = last_string;
-                part_to_add.start_position = i;
-                if(!last_is_balise && last_string == "") {
-                    if(!erase_blank && result.size() > 0)result.push_back(part_to_add);
-                }
-                else result.push_back(part_to_add);
-                last_string = "";
-
-                i++;
-                while(str[i] != '>') {
-                    if(i >= static_cast<int>(str.size())) break;
-                    last_string += str[i];
-                    i++;
-                }
-
-                part_to_add.content = "<" + last_string + ">";
-                result.push_back(part_to_add);
-                last_is_balise = true;
-                last_string = "";
-                continue;
-		    }
-
-		    last_is_balise = false;
-			last_string += str[i];
-		}
-
-		if (last_string.size() > 0 || !erase_last_if_blank) {
-            _Text_Balise_Part part_to_add;
-            part_to_add.content = last_string;
-            result.push_back(part_to_add);
-        } // Add the last non-cutted element
-		return result;
-	};
-
-	// Format a balise and return it
-	static std::string formatted_balise(std::string str) {
-	    // Remove useless spaces
-	    while(str.size() > 0 && str[0] == ' ') {
-            str = str.substr(1, str.size() - 1);
-	    }
-	    while(str.size() > 0 && str[str.size() - 1] == ' ') {
-            str = str.substr(0, str.size() - 1);
-	    }
-
-	    // Get the position of the / if there is one
-        int slash_position = 0;
-        bool slash_position_founded = false;
-        while(str[slash_position] < static_cast<int>(str.size())) {
-            if(str[slash_position] == '/') {
-                slash_position_founded = true;
-                break;
-            }
-            slash_position++;
-        }
-
-        // Format the balise
-        std::string final_balise = "";
-        if(slash_position_founded) final_balise = "</" + str.substr(slash_position + 1, str.size() - (2 + slash_position)) + ">";
-        else final_balise = "<" + str.substr(1, str.size() - 2) + ">";
-
-        // Format the formatted balise (help)
-	    while(final_balise.size() > 0 && final_balise[0] == ' ') {
-            final_balise = final_balise.substr(1, final_balise.size() - 1);
-	    }
-	    while(final_balise.size() > 0 && final_balise[final_balise.size() - 1] == ' ') {
-            final_balise = final_balise.substr(0, final_balise.size() - 1);
-	    }
-
-        return final_balise;
-	};
-
-	// HTML fo*rmatted
-	static std::string html_formatted(std::string str) {
-	    std::string nl = ""; nl += static_cast<char>(10);
-	    std::string np = ""; np += static_cast<char>(13);
-	    str = replace(str, nl, "");
-	    str = replace(str, np, "");
-	    return str;
-	};
 
 	// Hiddens variables
 	static FT_Library  _freetype_library;
@@ -583,7 +473,7 @@ namespace scls
             std::string final_text = "";
             std::stack<std::string> found_balises = std::stack<std::string>();
             std::string last_balise = "";
-            text_to_convert = replace(html_formatted(text_to_convert), "</br>", "\n");
+            text_to_convert = replace(format_string(text_to_convert), "</br>", "\n");
             for(int i = 0;i<static_cast<int>(text_to_convert.size());i++) {
                 if(text_to_convert[i] == '<') {
                     std::string balise = "";
@@ -871,7 +761,7 @@ namespace scls
         // Return the entire text in an image
         Image* image(std::string text) {
             // Create the needed configurations
-            std::string content = html_formatted(text);
+            std::string content = format_string(text);
 
             return _block(content, 0, 0);
         };

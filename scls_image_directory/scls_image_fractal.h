@@ -20,7 +20,7 @@
 namespace scls
 {
     // Returns an image with a Mandelbrot fractal drawn on it
-    static Image* burning_ship_fractal(unsigned short width, unsigned short height) {
+    inline Image* burning_ship_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
         double min_y = -2.5;
@@ -68,7 +68,7 @@ namespace scls
     };
 
     // Returns an image with a Mandelbrot fractal drawn on it
-    static Image* mandelbrot_fractal(unsigned short width, unsigned short height) {
+    inline Image* mandelbrot_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
         double min_y = -2.5;
@@ -116,7 +116,7 @@ namespace scls
     };
 
     // Returns an image with a modulo drawn on it
-    static Image* modulo_circle(unsigned short width, unsigned short height, unsigned int base, unsigned int side) {
+    inline Image* modulo_circle(unsigned short width, unsigned short height, unsigned int base, unsigned int side) {
         Image* img = new Image(width, height, 255, 255, 255);
 
         double max_x = 0.5;
@@ -171,7 +171,7 @@ namespace scls
     }
 
     // Returns an image with a Sierpinski carpet drawn on it
-    static Image* sierpinski_carpet(unsigned short width, unsigned short height, unsigned char step) {
+    inline Image* sierpinski_carpet(unsigned short width, unsigned short height, unsigned char step) {
         // Create the image
         Image* img = new Image(width, height, 255, 255, 255);
 
@@ -195,7 +195,7 @@ namespace scls
     };
 
     // Returns an image with a Sierpinski pyramid drawn on it
-    static Image* sierpinski_pyramid(unsigned short width, unsigned short height, unsigned char step, char current_step = -1) {
+    inline Image* sierpinski_pyramid(unsigned short width, unsigned short height, unsigned char step, char current_step = -1) {
         // Create the image
         Image* img = new Image(width, height, 255, 255, 255, 255);
 
