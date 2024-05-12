@@ -509,6 +509,7 @@ namespace scls
                 }
             }
 
+            final_text = format_string_as_plain_text(final_text);
             return final_text;
         };
         // Return the size of the text
@@ -884,11 +885,12 @@ namespace scls
                 else {
                     // Draw the image
                     int y_position = 0;
-                    Image* image = _word(cutted[i].content, y_position);
+                    std::string word_content = format_string_as_plain_text(cutted[i].content);
+                    Image* image = _word(word_content, y_position);
 
                     // Check for the position of the cursor
                     int cursor_x_position = -1;
-                    if(cursor_position() >= start_plain_text_position && cursor_position() <= start_plain_text_position + cutted[i].content.size()) {
+                    if(cursor_position() >= start_plain_text_position && cursor_position() <= start_plain_text_position + word_content.size()) {
                         cursor_x_position = cursor_position() - start_plain_text_position;
                     }
 
@@ -908,8 +910,8 @@ namespace scls
 
                         // Check the cursor position
                         if(cursor_x_position != -1) {
-                            std::string part_1 = cutted[i].content.substr(0, cursor_x_position);
-                            std::string part_2 = cutted[i].content.substr(cursor_x_position, cutted[i].content.size() - cursor_x_position);
+                            std::string part_1 = word_content.substr(0, cursor_x_position);
+                            std::string part_2 = word_content.substr(cursor_x_position, word_content.size() - cursor_x_position);
 
                             to_return.has_cursor = true;
                             if(part_1 == "") {
@@ -941,7 +943,7 @@ namespace scls
                         current_width += image->width();
 
                         // Add the size of the word to the total size
-                        start_plain_text_position += cutted[i].content.size();
+                        start_plain_text_position += word_content.size();
                         start_text_position += cutted[i].content.size();
                     }
                     else {
