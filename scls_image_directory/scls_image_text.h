@@ -152,12 +152,12 @@ namespace scls
 
 	// Enumeration of each horizontal alignment possible
 	enum Alignment_Horizontal {
-	    H_Left, H_Center, H_Right
+	    H_Left, H_Center, H_Right, H_User_Defined
 	};
 
 	// Enumeration of each vertical alignment possible
 	enum Alignment_Vertical {
-	    V_Top, V_Center, V_Bottom
+	    V_Top, V_Center, V_Bottom, V_User_Defined
 	};
 
 	// Datas about the text to draw
