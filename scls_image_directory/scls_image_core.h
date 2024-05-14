@@ -29,7 +29,7 @@
 #include <zlib/zlib.h>
 
 // ZLib mandatory stuff
-#if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
+#if defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
 #  include <io.h>
 #  define SET_BINARY_MODE(file) (void)_setmode(_fileno(file), O_BINARY)
