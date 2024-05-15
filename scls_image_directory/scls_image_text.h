@@ -18,7 +18,7 @@
 #define SCLS_IMAGE_TEXT
 
 // Base path to the fonts in the system
-#ifdef __WIN32__ // With Windows
+#if defined(__WIN32__) || defined(__WIN64__) // With Windows
 #define BASE_FONT_PATH std::string("C:\\Windows\\Fonts\\")
 #define DEFAULT_FONT std::string("arial")
 #endif
