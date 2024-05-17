@@ -26,6 +26,7 @@
 #include <map>
 #include <math.h>
 #include <stack>
+#include <thread>
 #include <zlib/zlib.h>
 
 // ZLib mandatory stuff
@@ -281,27 +282,42 @@ namespace scls
 			free_memory();
 			unsigned int position = 0;
 			a_pixels = new Bytes_Set(buffer_size());
-			if(color_type() == 6) {
-                for (unsigned int i = 0; i < height(); i++)
+			unsigned int current_thread_position = 0;
+			unsigned int pixel_by_thread = floor(static_cast<double>((width() * height()) / static_cast<double>(a_thread_number_for_filling)));
+
+			// Create each threads
+			std::vector<std::thread*> threads = std::vector<std::thread*>();
+			for(unsigned short i = 0;i<a_thread_number_for_filling - 1;i++) {
+                std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, pixel_by_thread, red, green, blue, alpha);
+                threads.push_back(current_thread);
+                current_thread_position += pixel_by_thread;
+			}
+			std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, (width() * height()) - current_thread_position, red, green, blue, alpha);
+            threads.push_back(current_thread);
+
+            // Wait for each threads
+			for(int i = 0;i<threads.size();i++) {
+                threads[i]->join();
+                delete threads[i]; threads[i] = 0;
+			} threads.clear();
+		};
+		// Fill a part of pixel
+		void __fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+		    if(color_type() == 6) {
+                for (unsigned int i = 0; i < length; i++)
                 {
-                    for (unsigned int j = 0; j < width(); j++)
-                    {
-                        a_pixels->set_data_at(position, red); position++;
-                        a_pixels->set_data_at(position, green); position++;
-                        a_pixels->set_data_at(position, blue); position++;
-                        a_pixels->set_data_at(position, alpha); position++;
-                    }
+                    a_pixels->set_data_at((start_position + i) * 4, red);
+                    a_pixels->set_data_at((start_position + i) * 4 + 1, green);
+                    a_pixels->set_data_at((start_position + i) * 4 + 2, blue);
+                    a_pixels->set_data_at((start_position + i) * 4 + 3, alpha);
                 }
             }
             else {
-               for (unsigned int i = 0; i < height(); i++)
+               for (unsigned int i = 0; i < length; i++)
                 {
-                    for (unsigned int j = 0; j < width(); j++)
-                    {
-                        a_pixels->set_data_at(position, red); position++;
-                        a_pixels->set_data_at(position, green); position++;
-                        a_pixels->set_data_at(position, blue); position++;
-                    }
+                    a_pixels->set_data_at((start_position + i) * 4, red);
+                    a_pixels->set_data_at((start_position + i) * 4 + 1, green);
+                    a_pixels->set_data_at((start_position + i) * 4 + 2, blue);
                 }
             }
 		};
@@ -1294,6 +1310,15 @@ namespace scls
 		unsigned int a_physical_width_ratio = 10000;
 		// Value of the sRGB chunk
 		unsigned char a_srgb_value = 0;
+
+		//*********
+        //
+        // Multi-threading handling
+        //
+        //*********
+
+        // Number of thread created for a filling
+        unsigned short a_thread_number_for_filling = 10;
 	};
 }
 
