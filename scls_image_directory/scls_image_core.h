@@ -61,16 +61,21 @@ namespace scls
         };
 
         // Getters and setters (ONLY WITH ATTRIBUTES)
-        inline unsigned char alpha() {return static_cast<unsigned char>(a_alpha * 255.0);};
-        inline unsigned char blue() {return static_cast<unsigned char>(a_blue * 255.0);};
-        inline unsigned char green() {return static_cast<unsigned char>(a_green * 255.0);};
-        inline unsigned char red() {return static_cast<unsigned char>(a_red * 255.0);};
+        inline unsigned char alpha() const {return static_cast<unsigned char>(a_alpha * 255.0);};
+        inline unsigned char blue() const {return static_cast<unsigned char>(a_blue * 255.0);};
+        inline unsigned char green() const {return static_cast<unsigned char>(a_green * 255.0);};
+        inline unsigned char red() const {return static_cast<unsigned char>(a_red * 255.0);};
         inline void set_alpha(unsigned char new_alpha) {a_alpha = static_cast<double>(new_alpha) / 255.0;};
         inline void set_blue(unsigned char new_blue) {a_blue = static_cast<double>(new_blue) / 255.0;};
         inline void set_green(unsigned char new_green) {a_green = static_cast<double>(new_green) / 255.0;};
         inline void set_red(unsigned char new_red) {a_red = static_cast<double>(new_red) / 255.0;};
         inline void set_rgb(unsigned char new_red, unsigned char new_green, unsigned char new_blue) { set_red(new_red); set_green(new_green); set_blue(new_blue); };
         inline void set_rgba(unsigned char new_red, unsigned char new_green, unsigned char new_blue, unsigned char new_alpha) { set_rgb(new_red, new_green, new_blue); set_alpha(new_alpha); };
+
+        // Operator
+        inline bool operator==(const Color& color) {
+            return color.a_red == a_red && color.a_green == a_green && color.a_blue == a_blue && color.a_alpha == a_alpha;
+        }
     private:
         // Descriptor of the color (between 0 and 1)
         double a_alpha = 1;
@@ -404,6 +409,22 @@ namespace scls
 			}
 			return to_return;
 		}
+		Color pixel_by_number(unsigned int position) {
+		    unsigned char multiplier = (bit_depht() / 8.0);
+		    position *= components() * (bit_depht() / 8.0);
+		    Color to_return = white;
+
+            if(color_type() == 6)
+            {
+                to_return.set_rgba(a_pixels->data_at(position), a_pixels->data_at(position + multiplier), a_pixels->data_at(position + 2 * multiplier), a_pixels->data_at(position + 3 * multiplier));
+            }
+            else
+            {
+                to_return.set_rgb(a_pixels->data_at(position), a_pixels->data_at(position + multiplier), a_pixels->data_at(position + 2 * multiplier));
+            }
+
+			return to_return;
+		};
 		inline void set_pixel(unsigned short x, unsigned short y, Color color, unsigned short width = 1) {
 			set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width);
 		}
@@ -497,6 +518,37 @@ namespace scls
                 a_pixels->set_data_at(position + 2 * multiplier, blue);
 			}
         }
+        inline void set_pixel_by_number(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+            unsigned char multiplier = (bit_depht() / 8.0);
+            position *= components() * (bit_depht() / 8.0);
+            if(color_type() == 6)
+            {
+                Color color = pixel_by_number(position);
+
+                float alpha_f = normalize_value(alpha, 0, 255) / 255.0;
+                float blue_f = normalize_value(blue, 0, 255);
+                float green_f = normalize_value(green, 0, 255);
+                float red_f = normalize_value(red, 0, 255);
+
+                // Calculate alpha
+                alpha = normalize_value(alpha, 0, 255); if(color.alpha() > alpha) alpha = color.alpha();
+                blue = alpha_f * blue_f + (1.0 - alpha_f) * static_cast<float>(color.blue());
+                red = alpha_f * red_f + (1.0 - alpha_f) * static_cast<float>(color.red());
+                green = alpha_f * green_f + (1.0 - alpha_f) * static_cast<float>(color.green());
+
+                a_pixels->set_data_at(position, red);
+                a_pixels->set_data_at(position + multiplier, green);
+                a_pixels->set_data_at(position + 2 * multiplier, blue);
+                a_pixels->set_data_at(position + 3 * multiplier,  alpha);
+            }
+            else
+            {
+                a_pixels->set_data_at(position, red);
+                a_pixels->set_data_at(position + multiplier, green);
+                a_pixels->set_data_at(position + 2 * multiplier, blue);
+            }
+        };
+        inline void set_pixel_by_number(unsigned int position, Color color) { set_pixel_by_number(position, color.red(), color.green(), color.blue());};
         inline void set_pixel_green(unsigned short x, unsigned short y, unsigned char green, unsigned char alpha = 255) {
             if (x < 0 || y < 0 || x >= width() || y >= height()) {
                 print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set the green is out of the image.");
@@ -1162,7 +1214,7 @@ namespace scls
 
         // Flip the image on the X axis
 		inline void flip_x() {
-			unsigned char* line1 = new unsigned char[width()];
+		    unsigned char* line1 = new unsigned char[width()];
 			unsigned int max = height();
 
 			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
@@ -1222,27 +1274,30 @@ namespace scls
 		};
 
 		// Paste an Image on this Image
-		inline void paste(Image* to_paste, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false) {
-            for(unsigned int i = 0;i<to_paste->height();i++)
-            {
-                for(unsigned int j = 0;j<to_paste->width();j++)
-                {
-                    unsigned short final_x = x + j;
-                    unsigned short final_y = y + i;
+		inline void paste(Image* to_paste, unsigned short x, unsigned short y, double opacity = 1.0, bool force_pasting = false) {
+            unsigned int current_thread_position = 0;
+			unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
-                    if(final_x >= width()) break;
-                    if(final_y >= height()) return;
+			// Create each threads
+			std::vector<std::thread*> threads = std::vector<std::thread*>();
+			for(unsigned short i = 0;i<a_thread_number_for_pasting - 1;i++) {
+                unsigned int start_x = floor(current_thread_position % to_paste->width());
+                unsigned int start_y = floor(current_thread_position / to_paste->width());
 
-                    Color pixel = to_paste->pixel(j, i);
+                std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity, force_pasting);
+                threads.push_back(current_thread);
+                current_thread_position += pixel_by_thread;
+			}
+			unsigned int start_x = floor(current_thread_position % to_paste->width());
+            unsigned int start_y = floor(current_thread_position / to_paste->width());
+			std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity, force_pasting);
+            threads.push_back(current_thread);
 
-                    if(force_pasting) force_pixel(final_x, final_y, pixel);
-                    else
-                    {
-                        pixel.set_alpha(static_cast<float>(pixel.alpha()) * opacity);
-                        set_pixel(final_x, final_y, pixel);
-                    }
-                }
-            }
+            // Wait for each threads
+			for(int i = 0;i<threads.size();i++) {
+                threads[i]->join();
+                delete threads[i]; threads[i] = 0;
+			} threads.clear();
 		};
 		// Paste an Image from a path to this Image
 		inline void paste(std::string path, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false) {
@@ -1250,6 +1305,20 @@ namespace scls
 		    paste(img, x, y, opacity, force_pasting);
 		    delete img; img = 0;
 		};
+        // Paste a part of an image on this image
+        void __paste_part_of_image(Image* to_paste, unsigned int x_offset, unsigned int y_offset, unsigned int start_x, unsigned int start_y, unsigned int length, double opacity, bool force_pasting) {
+            for(unsigned int i = 0;i<length;i++) {
+                if(x_offset + start_x >= 0 && y_offset + start_y >= 0 && x_offset + start_x < width() && y_offset + start_y < height()) {
+                    Color pixel = to_paste->pixel(start_x, start_y);
+                    set_pixel(x_offset + start_x, y_offset + start_y, pixel);
+                }
+
+                start_x++; if(start_x >= to_paste->width()) {
+                    start_x = 0;
+                    start_y++;
+                }
+            }
+        };
 
 
 
@@ -1259,18 +1328,55 @@ namespace scls
 		inline bool _load_from_text_binary(char* datas, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
 		    a_height = height; a_width = width;
 		    fill(0, 0, 0, 0);
+
+		    unsigned int current_thread_position = 0;
+			unsigned int pixel_by_thread = floor((static_cast<double>(width) * static_cast<double>(height)) / static_cast<double>(a_thread_number_for_pasting_text));
+
+			// Create each threads
+			std::vector<std::thread*> threads = std::vector<std::thread*>();
+			for(unsigned short i = 0;i<a_thread_number_for_pasting_text - 1;i++) {
+                unsigned int start_x = floor(current_thread_position % width);
+                unsigned int start_y = floor(current_thread_position / width);
+
+                std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, pixel_by_thread, red, green, blue, alpha);
+                threads.push_back(current_thread);
+                current_thread_position += pixel_by_thread;
+			}
+			unsigned int start_x = floor(current_thread_position % width);
+            unsigned int start_y = floor(current_thread_position / width);
+            std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, (static_cast<double>(width) * static_cast<double>(height)) - current_thread_position, red, green, blue, alpha);
+            threads.push_back(current_thread);
+
+            // Wait for each threads
+			for(int i = 0;i<threads.size();i++) {
+                threads[i]->join();
+                delete threads[i]; threads[i] = 0;
+			} threads.clear();
+
+            return true;
+		};
+		// Load a part of image with a FreeType text in it
+		inline bool __load_part_from_text_binary(char* datas, unsigned int offset, unsigned short start_x, unsigned short start_y, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
 		    if(color_type() == 6) {
-                for(int i = 0;i<height;i++) {
-                    for(int j = 0;j<width;j++) {
-                        float glyph_alpha = (datas[i * width + j] / 255.0);
-                        set_pixel(j, i, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<float>(alpha)));
+                for(int i = 0;i<length;i++) {
+                    float glyph_alpha = (datas[offset + i] / 255.0);
+                    set_pixel(start_x, start_y, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<float>(alpha)));
+
+                    start_x++;
+                    if(start_x >= width()) {
+                        start_x = 0;
+                        start_y++;
                     }
                 }
             }
             else {
-                for(int i = 0;i<height;i++) {
-                    for(int j = 0;j<width;j++) {
-                        set_pixel(j, i, red, green, blue);
+                for(int i = 0;i<length;i++) {
+                    set_pixel(start_x, start_y, red, green, blue);
+
+                    start_x++;
+                    if(start_x >= width()) {
+                        start_x = 0;
+                        start_y++;
                     }
                 }
             }
@@ -1319,6 +1425,10 @@ namespace scls
 
         // Number of thread created for a filling
         unsigned short a_thread_number_for_filling = 10;
+        // Number of thread created for a pasting
+        unsigned short a_thread_number_for_pasting = 10;
+        // Number of thread created for a pasting a text
+        unsigned short a_thread_number_for_pasting_text = 10;
 	};
 }
 

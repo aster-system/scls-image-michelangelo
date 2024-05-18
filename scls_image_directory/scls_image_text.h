@@ -1029,19 +1029,29 @@ namespace scls
 
             // Create the final image and clear the memory
             Image* final_image = new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0));
+            std::vector<std::thread*> threads = std::vector<std::thread*>();
             for(int i = 0;i<static_cast<int>(characters.size());i++)
             {
                 if(characters[i] != 0)
                 {
-                    unsigned int x = cursor_pos[i];
-                    final_image->paste(characters[i], x, y_pos[i]);
-                    delete characters[i]; characters[i] = 0;
+                    threads.push_back(new std::thread(&Text_Image::__word_letter, this, final_image, characters[i], cursor_pos[i], y_pos[i]));
                 }
             }
             y_position = min_y_position;
 
+            // Join each threads
+            for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                threads[i]->join();
+                delete threads[i];
+            }
+
             return final_image;
         }
+        // Paste a letter of a word in an image
+        void __word_letter(Image* image_to_apply, Image* image_to_paste, unsigned int x, unsigned int y) {
+            image_to_apply->paste(image_to_paste, x, y);
+            delete image_to_paste; image_to_paste = 0;
+        };
 
         // Apply a style to the text
         inline void apply_current_style() {
