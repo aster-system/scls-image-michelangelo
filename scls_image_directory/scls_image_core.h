@@ -291,20 +291,25 @@ namespace scls
 			unsigned int pixel_by_thread = floor(static_cast<double>((width() * height()) / static_cast<double>(a_thread_number_for_filling)));
 
 			// Create each threads
-			std::vector<std::thread*> threads = std::vector<std::thread*>();
-			for(unsigned short i = 0;i<a_thread_number_for_filling - 1;i++) {
-                std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, pixel_by_thread, red, green, blue, alpha);
+			if(a_thread_number_for_filling > 0) {
+                std::vector<std::thread*> threads = std::vector<std::thread*>();
+                for(unsigned short i = 0;i<a_thread_number_for_filling - 1;i++) {
+                    std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, pixel_by_thread, red, green, blue, alpha);
+                    threads.push_back(current_thread);
+                    current_thread_position += pixel_by_thread;
+                }
+                std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, (width() * height()) - current_thread_position, red, green, blue, alpha);
                 threads.push_back(current_thread);
-                current_thread_position += pixel_by_thread;
-			}
-			std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, (width() * height()) - current_thread_position, red, green, blue, alpha);
-            threads.push_back(current_thread);
 
-            // Wait for each threads
-			for(int i = 0;i<threads.size();i++) {
-                threads[i]->join();
-                delete threads[i]; threads[i] = 0;
-			} threads.clear();
+                // Wait for each threads
+                for(int i = 0;i<threads.size();i++) {
+                    threads[i]->join();
+                    delete threads[i]; threads[i] = 0;
+                } threads.clear();
+			}
+			else {
+                __fill_pixel_part(0, width() * height(), red, green, blue, alpha);
+			}
 		};
 		// Fill a part of pixel
 		void __fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
@@ -609,6 +614,9 @@ namespace scls
 		inline unsigned int color_type() { return a_color_type; };
 		inline Bytes_Set* datas() { return a_pixels; }
 		inline unsigned int height() { return a_height; };
+		inline void set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
+        inline void set_thread_number_for_pasting(unsigned short new_thread_number) {a_thread_number_for_pasting = new_thread_number;};
+        inline void set_thread_number_for_pasting_text(unsigned short new_thread_number) {a_thread_number_for_pasting_text = new_thread_number;};
 		inline unsigned int width() { return a_width; };
 
 		//*********
@@ -1279,25 +1287,30 @@ namespace scls
 			unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
 			// Create each threads
-			std::vector<std::thread*> threads = std::vector<std::thread*>();
-			for(unsigned short i = 0;i<a_thread_number_for_pasting - 1;i++) {
+			if(a_thread_number_for_pasting > 0) {
+                std::vector<std::thread*> threads = std::vector<std::thread*>();
+                for(unsigned short i = 0;i<a_thread_number_for_pasting - 1;i++) {
+                    unsigned int start_x = floor(current_thread_position % to_paste->width());
+                    unsigned int start_y = floor(current_thread_position / to_paste->width());
+
+                    std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity, force_pasting);
+                    threads.push_back(current_thread);
+                    current_thread_position += pixel_by_thread;
+                }
                 unsigned int start_x = floor(current_thread_position % to_paste->width());
                 unsigned int start_y = floor(current_thread_position / to_paste->width());
-
-                std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity, force_pasting);
+                std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity, force_pasting);
                 threads.push_back(current_thread);
-                current_thread_position += pixel_by_thread;
-			}
-			unsigned int start_x = floor(current_thread_position % to_paste->width());
-            unsigned int start_y = floor(current_thread_position / to_paste->width());
-			std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity, force_pasting);
-            threads.push_back(current_thread);
 
-            // Wait for each threads
-			for(int i = 0;i<threads.size();i++) {
-                threads[i]->join();
-                delete threads[i]; threads[i] = 0;
-			} threads.clear();
+                // Wait for each threads
+                for(int i = 0;i<threads.size();i++) {
+                    threads[i]->join();
+                    delete threads[i]; threads[i] = 0;
+                } threads.clear();
+			}
+			else {
+                __paste_part_of_image(to_paste, x, y, 0, 0, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity, force_pasting);
+			}
 		};
 		// Paste an Image from a path to this Image
 		inline void paste(std::string path, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false) {
@@ -1329,29 +1342,34 @@ namespace scls
 		    a_height = height; a_width = width;
 		    fill(0, 0, 0, 0);
 
-		    unsigned int current_thread_position = 0;
-			unsigned int pixel_by_thread = floor((static_cast<double>(width) * static_cast<double>(height)) / static_cast<double>(a_thread_number_for_pasting_text));
+		    // Create each threads
+			if(a_thread_number_for_pasting_text > 0) {
+                unsigned int current_thread_position = 0;
+                unsigned int pixel_by_thread = floor((static_cast<double>(width) * static_cast<double>(height)) / static_cast<double>(a_thread_number_for_pasting_text));
 
-			// Create each threads
-			std::vector<std::thread*> threads = std::vector<std::thread*>();
-			for(unsigned short i = 0;i<a_thread_number_for_pasting_text - 1;i++) {
+                std::vector<std::thread*> threads = std::vector<std::thread*>();
+                for(unsigned short i = 0;i<a_thread_number_for_pasting_text - 1;i++) {
+                    unsigned int start_x = floor(current_thread_position % width);
+                    unsigned int start_y = floor(current_thread_position / width);
+
+                    std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, pixel_by_thread, red, green, blue, alpha);
+                    threads.push_back(current_thread);
+                    current_thread_position += pixel_by_thread;
+                }
                 unsigned int start_x = floor(current_thread_position % width);
                 unsigned int start_y = floor(current_thread_position / width);
-
-                std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, pixel_by_thread, red, green, blue, alpha);
+                std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, (static_cast<double>(width) * static_cast<double>(height)) - current_thread_position, red, green, blue, alpha);
                 threads.push_back(current_thread);
-                current_thread_position += pixel_by_thread;
-			}
-			unsigned int start_x = floor(current_thread_position % width);
-            unsigned int start_y = floor(current_thread_position / width);
-            std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, (static_cast<double>(width) * static_cast<double>(height)) - current_thread_position, red, green, blue, alpha);
-            threads.push_back(current_thread);
 
-            // Wait for each threads
-			for(int i = 0;i<threads.size();i++) {
-                threads[i]->join();
-                delete threads[i]; threads[i] = 0;
-			} threads.clear();
+                // Wait for each threads
+                for(int i = 0;i<threads.size();i++) {
+                    threads[i]->join();
+                    delete threads[i]; threads[i] = 0;
+                } threads.clear();
+			}
+			else {
+                __load_part_from_text_binary(datas, 0, 0, 0, (static_cast<double>(width) * static_cast<double>(height)), red, green, blue, alpha);
+			}
 
             return true;
 		};
@@ -1424,11 +1442,11 @@ namespace scls
         //*********
 
         // Number of thread created for a filling
-        unsigned short a_thread_number_for_filling = 10;
+        unsigned short a_thread_number_for_filling = 0;
         // Number of thread created for a pasting
-        unsigned short a_thread_number_for_pasting = 10;
+        unsigned short a_thread_number_for_pasting = 0;
         // Number of thread created for a pasting a text
-        unsigned short a_thread_number_for_pasting_text = 10;
+        unsigned short a_thread_number_for_pasting_text = 0;
 	};
 }
 

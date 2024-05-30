@@ -886,6 +886,7 @@ namespace scls
                     // Draw the image
                     int y_position = 0;
                     std::string word_content = format_string_as_plain_text(cutted[i].content);
+                    long long t = time_ns();
                     Image* image = _word(word_content, y_position);
 
                     // Check for the position of the cursor
@@ -1029,21 +1030,26 @@ namespace scls
 
             // Create the final image and clear the memory
             Image* final_image = new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0));
-            unsigned char max_thread_number = 5;
+            unsigned char max_thread_number = 0;
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             for(int i = 0;i<static_cast<int>(characters.size());i++)
             {
                 if(characters[i] != 0)
                 {
-                    if(threads.size()  >= max_thread_number) {
-                        for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                            threads[i]->join();
-                            delete threads[i];
-                        } threads.clear();
-                    }
+                    if(max_thread_number > 0) {
+                        if(threads.size() >= max_thread_number) {
+                            for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                                threads[i]->join();
+                                delete threads[i];
+                            } threads.clear();
+                        }
 
-                    std::thread* current_thread = new std::thread(&Text_Image::__word_letter, this, final_image, characters[i], cursor_pos[i], y_pos[i]);
-                    threads.push_back(current_thread);
+                        std::thread* current_thread = new std::thread(&Text_Image::__word_letter, this, final_image, characters[i], cursor_pos[i], y_pos[i]);
+                        threads.push_back(current_thread);
+                    }
+                    else {
+                        __word_letter(final_image, characters[i], cursor_pos[i], y_pos[i]);
+                    }
                 }
             }
             y_position = min_y_position;
