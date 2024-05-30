@@ -1029,12 +1029,21 @@ namespace scls
 
             // Create the final image and clear the memory
             Image* final_image = new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0));
+            unsigned char max_thread_number = 5;
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             for(int i = 0;i<static_cast<int>(characters.size());i++)
             {
                 if(characters[i] != 0)
                 {
-                    threads.push_back(new std::thread(&Text_Image::__word_letter, this, final_image, characters[i], cursor_pos[i], y_pos[i]));
+                    if(threads.size()  >= max_thread_number) {
+                        for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                            threads[i]->join();
+                            delete threads[i];
+                        } threads.clear();
+                    }
+
+                    std::thread* current_thread = new std::thread(&Text_Image::__word_letter, this, final_image, characters[i], cursor_pos[i], y_pos[i]);
+                    threads.push_back(current_thread);
                 }
             }
             y_position = min_y_position;
