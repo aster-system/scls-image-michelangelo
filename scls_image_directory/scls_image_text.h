@@ -517,6 +517,8 @@ namespace scls
 
         // Returns the balise of the block or a blank string if it is not
         std::string _block_balise(std::vector<_Text_Balise_Part>& cutted) {
+            if(cutted.size() == 0) return "";
+
             // Check for the main balise of the block
             std::string to_return = "";
             if(cutted[0].content[0] == '<') {
@@ -573,7 +575,7 @@ namespace scls
                     for(int j = 0;j<static_cast<int>(space_cutted.size());j++) {
                         _Text_Balise_Part part_to_add;
                         part_to_add.content = space_cutted[j];
-                        if(space_cutted[j] != "") cutted.push_back(part_to_add);
+                        cutted.push_back(part_to_add);
 
                         if(j < static_cast<int>(space_cutted.size()) - 1 || first_cutted[i].content[first_cutted[i].content.size() - 1] == ' ') {
                             _Text_Balise_Part part_to_add;
@@ -629,7 +631,7 @@ namespace scls
         };
 
         // Return an image with a block in it
-        Image* _block(std::string block_text, unsigned int start_text_position, unsigned int start_plain_text_position) {
+        Image* _block(std::string block_text, unsigned int start_text_position, unsigned int start_plain_text_position, bool main_block = false) {
             const std::string content = block_text;
 
             // Cut the block by its variables and spaces
@@ -661,6 +663,15 @@ namespace scls
             unsigned int min_y = made.min_y;
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(current_font_size) / 2.0);
             unsigned int total_height = made.total_height;
+
+            // Check the cursor if the text is empty
+            if(main_block && content == "" && use_cursor()) {
+                a_cursor_x = 0;
+                a_cursor_y = 0;
+
+                max_width = cursor_width();
+                total_height = current_style().font_size;
+            }
 
             // Update total height according to the cursor
             if(use_cursor() && made.has_cursor && a_cursor_x + cursor_width() > max_width) {
@@ -763,8 +774,9 @@ namespace scls
         Image* image(std::string text) {
             // Create the needed configurations
             std::string content = format_string(text);
+            Image* final_block = _block(content, 0, 0, true);
 
-            return _block(content, 0, 0);
+            return final_block;
         };
         // Return the entire text in an image
         Image* image() {
