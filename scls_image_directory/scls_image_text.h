@@ -468,6 +468,27 @@ namespace scls
 
         };
 
+        // Returns the position of the first plain text character in a unformatted text from before a position
+        unsigned int first_plain_text_character_before_position_in_informatted_text(const std::string& text_to_convert, unsigned int position) {
+            if(text_to_convert[position] == '>') {
+                // Remove balises
+                while(text_to_convert[position] != '<' && position > 0) { position--; }
+            }
+            else if(text_to_convert[position] == ';') {
+                // Remove special insertion
+                std::string part_content = "";
+                const unsigned int start_position = position;
+                while(text_to_convert[position] != '&' && position > 0) {
+                    part_content = text_to_convert[position] + part_content;
+                    position--;
+                } part_content = part_content.substr(0, part_content.size() - 1);
+
+                if(!(part_content == "lt" || part_content == "gt") || position <= 0) {
+                    position = start_position;
+                }
+            }
+            return position;
+        };
         // Returns a html text in plain text
         std::string plain_text(std::string text_to_convert) {
             std::string final_text = "";
@@ -511,6 +532,31 @@ namespace scls
 
             final_text = format_string_as_plain_text(final_text);
             return final_text;
+        };
+        // Returns a plain text position to unformatted text position
+        unsigned int plain_text_position_to_unformatted_text_position(std::string text_to_convert, unsigned int position) {
+            unsigned int final_position = 0;
+            for(int i = 0;i<static_cast<int>(text_to_convert.size()) && i < position;i++) {
+                if(text_to_convert[final_position] == '<') {
+                    // Remove balises
+                    while(text_to_convert[final_position] != '>' && final_position < static_cast<int>(text_to_convert.size())) final_position++;
+                }
+                else if(text_to_convert[final_position] == '&') {
+                    // Remove special insertion
+                    std::string part_content = "";
+                    const unsigned int start_position = final_position;
+                    while(text_to_convert[final_position] != ';' && final_position < static_cast<int>(text_to_convert.size())) {
+                        part_content += text_to_convert[final_position];
+                        final_position++;
+                    } part_content = part_content.substr(1, part_content.size() - 1);
+
+                    if(!(part_content == "lt" || part_content == "gt") || final_position >= static_cast<int>(text_to_convert.size())) {
+                        final_position = start_position;
+                    }
+                }
+                final_position++;
+            }
+            return final_position;
         };
         // Return the size of the text
         inline unsigned int plain_text_size(std::string text_to_check) { return plain_text(text_to_check).size(); };
