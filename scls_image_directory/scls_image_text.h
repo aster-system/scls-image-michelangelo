@@ -478,12 +478,12 @@ namespace scls
                 // Remove special insertion
                 std::string part_content = "";
                 const unsigned int start_position = position;
-                while(text_to_convert[position] != '&' && position > 0) {
+                while(position >= 0 && text_to_convert[position] != '&') {
                     part_content = text_to_convert[position] + part_content;
                     position--;
                 } part_content = part_content.substr(0, part_content.size() - 1);
 
-                if(!(part_content == "lt" || part_content == "gt") || position <= 0) {
+                if(!(part_content == "lt" || part_content == "gt") || position < 0) {
                     position = start_position;
                 }
             }
