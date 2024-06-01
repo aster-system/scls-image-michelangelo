@@ -603,18 +603,18 @@ namespace scls
             }
             return false;
         };
-        // Cut a block by its variables and spaces
+        // Cut a block by its balises and spaces
         std::vector<_Text_Balise_Part> _cut_block(std::string block_text) {
             std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(block_text, false, true);
             std::vector<_Text_Balise_Part> cutted = std::vector<_Text_Balise_Part>();
             for(int i = 0;i<static_cast<int>(first_cutted.size());i++) {
-                if(first_cutted[i].content[0] == '<') {
+                if(first_cutted[i].content.size() > 0 && first_cutted[i].content[0] == '<') {
                     // Erase the last blank character if necessary
                     std::string current_balise_name = balise_name(formatted_balise(first_cutted[i].content));
-                    if(cutted.size() > 0 && cutted[cutted.size() - 1].content == "" && !defined_balise(current_balise_name).is_paragraph) {
-                        cutted.erase(cutted.end() - 1);
-                    }
                     cutted.push_back(first_cutted[i]);
+                }
+                else if(first_cutted[i].content == "") {
+                    _Text_Balise_Part part_to_add; cutted.push_back(part_to_add);
                 }
                 else {
                     std::vector<std::string> space_cutted = cut_string(first_cutted[i].content, " ", false, true);
@@ -680,7 +680,7 @@ namespace scls
         Image* _block(std::string block_text, unsigned int start_text_position, unsigned int start_plain_text_position, bool main_block = false) {
             const std::string content = block_text;
 
-            // Cut the block by its variables and spaces
+            // Cut the block by its balises and spaces
             std::vector<_Text_Balise_Part> cutted = _cut_block(block_text);
 
             // Apply the balising of a block to the image
