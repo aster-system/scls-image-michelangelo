@@ -70,21 +70,23 @@ namespace scls {
         img->fill_rect(x_first_2 + l_width, (y_first_2 + l_height) - l_width, l_base_length, l_width, color_1);
 
         // Draw the SCLS logo
+        scls::Text_Image_Generator* generator = new scls::Text_Image_Generator();
         short text_x = (x_first_2 + l_width + l_base_length) - static_cast<short>((75.0/1000.0) * total_width);
         short text_y = y_first_2 + static_cast<short>((75.0/1000.0) * total_width);
         short text_y_separation = static_cast<short>(total_width/20.0);
         scls::Text_Image_Data datas; datas.font_size = static_cast<short>(total_width/5.0); datas.font.font_family = "Alte Haas Grotesk"; datas.font.font_path = LOGO_FONT_PATH;
         datas.blue = color_1.blue(); datas.green = color_1.green(); datas.red = color_1.red();
-        scls::Image* scls_text = scls::text_image("SCLS", datas);
+        scls::Image* scls_text = generator->image("SCLS");
         img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
         datas.blue = color_2.blue(); datas.green = color_2.green(); datas.red = color_2.red();
         datas.font_size = name_font_size;
-        scls_text = scls::text_image(name, datas);
+        scls_text = generator->image(name);
         img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
         datas.blue = color_3.blue(); datas.green = color_3.green(); datas.red = color_3.red();
         datas.font_size = person_font_size;
-        scls_text = scls::text_image(person, datas);
+        scls_text = generator->image(person);
         img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
+        delete generator;
 
         return img;
     }
@@ -138,17 +140,19 @@ namespace scls {
         img->fill_rect(x_first_2 + l_width, (y_first_2 + l_height) - l_width, l_base_length, l_width, color_1);
 
         // Draw the Aster system logo
+        scls::Text_Image_Generator* generator = new scls::Text_Image_Generator();
         short text_x = (x_first_2 + l_width + l_base_length) - static_cast<short>((75.0/1000.0) * total_width);
         short text_y = y_first_2 + static_cast<short>((75.0/1000.0) * total_width);
         short text_y_separation = static_cast<short>(total_width/20.0);
         scls::Text_Image_Data datas; datas.font_size = static_cast<short>(total_width/5.0); datas.font.font_family = "Alte Haas Grotesk"; datas.font.font_path = LOGO_FONT_PATH;
         datas.blue = color_1.blue(); datas.green = color_1.green(); datas.red = color_1.red();
-        scls::Image* scls_text = scls::text_image("Aster", datas);
+        scls::Image* scls_text = generator->image("Aster");
         img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
         datas.blue = color_2.blue(); datas.green = color_2.green(); datas.red = color_2.red();
         datas.font_size = static_cast<short>(total_width/5.0);
-        scls_text = scls::text_image("System", datas);
+        scls_text = generator->image("System");
         img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
+        delete generator;
 
         return img;
     }
