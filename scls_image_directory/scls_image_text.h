@@ -483,6 +483,8 @@ namespace scls
             std::string content = "";
             // Image of the block
             Image* image = 0;
+            // If the line is modified or not
+            bool modified = true;
             // Start position of the block
             unsigned int start_position = 0;
         };
@@ -499,6 +501,8 @@ namespace scls
 
             // Content of the block
             std::string content = "";
+            // If the block should be entirely regenerated
+            bool entirely_generate = true;
             // If this block should be ignored or not
             bool ignore = false;
             // Image of the block
@@ -507,12 +511,18 @@ namespace scls
             bool is_balise = false;
             // Lines in the block
             std::vector<Line*> lines = std::vector<Line*>();
+            // Max width of the block
+            int max_width = 0;
+            // If the is modified or not
+            bool modified = true;
             // Start position of the block
             unsigned int start_position = 0;
             // Style of the block
             Text_Style style;
             // Sub-blocks of the block
             std::vector<Block*> sub_blocks = std::vector<Block*>();
+            // Total height of the block
+            int total_height = 0;
         };
 
         // Most simple _Balise_Container constructor
@@ -803,54 +813,14 @@ namespace scls
         // Text_Image destructor
         ~Text_Image() { __delete_blocks(); };
 
-        // Return an image with a block in it
+        // Generates and returns an image with a block in it
         Image* _block(_Balise_Container::Block* block) {
             // Cut the block by its balises and spaces
-            std::vector<_Text_Balise_Part> cutted = _cut_block(block->content);
-
-            // Apply the balising of a block to the image
-            std::string balise_content = _block_balise(cutted);
-            bool is_balise = false;
-            if(balise_content != "") {
-                std::string block_balise_name = balise_name(balise_content);
-                current_balises().push(block_balise_name);
-                is_balise = true;
-
-                cutted.erase(cutted.end() - 1);
-                cutted.erase(cutted.begin());
-            }
-            apply_current_style();
-
-            // Cut by sub-blocks
-            block->sub_blocks = defined_balises()->_cut_by_blocks(cutted);
-            int max_width = 0;
-            unsigned int min_x = 0;
-            unsigned int min_y = 0;
-            int total_height = 0;
-            for(int i = 0;i<static_cast<int>(block->sub_blocks.size());i++) {
-                if(block->sub_blocks[i]->is_balise) {
-                    // Create the image
-                    Image* new_block = _block(block->sub_blocks[i]);
-                    if(static_cast<int>(new_block->width()) > max_width) max_width = new_block->width();
-                    block->sub_blocks[i]->image = new_block;
-                    block->sub_blocks[i]->style = current_style();
-                    total_height += new_block->height();
-                }
-                else {
-                    // Create the image
-                    Image* new_block = _block_simple(block->sub_blocks[i]);
-                    if(new_block != 0) {
-                        if(static_cast<int>(new_block->width()) > max_width) max_width = new_block->width();
-                        block->sub_blocks[i]->image = new_block;
-                        block->sub_blocks[i]->style = current_style();
-                        total_height += new_block->height();
-                    }
-                }
-            }
+            _block_parser(block);
 
             // Create the needed configurations
-            Color current_background_color = a_current_style.background_color;
-            unsigned short current_font_size = a_current_style.font_size;
+            Color current_background_color = block->style.background_color;
+            unsigned short current_font_size = block->style.font_size;
 
             /*// Check the cursor if the text is empty
             if(main_block && content == "" && use_cursor()) {
@@ -869,6 +839,10 @@ namespace scls
             // Create the final image and clear memory
             unsigned int current_x = 0;
             unsigned int current_y = 0;
+            int& max_width = block->max_width;
+            unsigned int min_x = 0;
+            unsigned int min_y = 0;
+            int& total_height = block->total_height;
             Image* final_image = new Image(max_width + min_x, total_height + min_y, current_background_color);
             for(int i = 0;i<static_cast<int>(block->sub_blocks.size());i++) {
                 _Balise_Container::Block* current_block = block->sub_blocks[i];
@@ -914,45 +888,81 @@ namespace scls
                 final_image->fill_rect(x, y, cursor_width(), current_font_size, black);
             } //*/
 
+            block->image = final_image;
+            return final_image;
+        };
+        // Parse the given block
+        void _block_parser(_Balise_Container::Block* block) {
+            // Check the needed modification
+            if(type() != Text_Image_Type::T_Always_Free_Memory) {
+                if(!block->entirely_generate) { return; }
+            }
+
+            // Cut the block by its balises and spaces
+            std::vector<_Text_Balise_Part> cutted = _cut_block(block->content);
+
+            // Apply the balising of a block to the image
+            std::string balise_content = _block_balise(cutted);
+            bool is_balise = false;
+            if(balise_content != "") {
+                std::string block_balise_name = balise_name(balise_content);
+                current_balises().push(block_balise_name);
+                is_balise = true;
+
+                cutted.erase(cutted.end() - 1);
+                cutted.erase(cutted.begin());
+            }
+            apply_current_style();
+
+            // Cut by sub-blocks
+            block->modified = false;
+            block->style = current_style();
+            block->sub_blocks = defined_balises()->_cut_by_blocks(cutted);
+            int& max_width = block->max_width;
+            int& total_height = block->total_height;
+            for(int i = 0;i<static_cast<int>(block->sub_blocks.size());i++) {
+                if(block->sub_blocks[i]->is_balise) {
+                    // Create the image
+                    Image* new_block = _block(block->sub_blocks[i]);
+                    if(static_cast<int>(new_block->width()) > max_width) max_width = new_block->width();
+                    block->sub_blocks[i]->image = new_block;
+                    block->sub_blocks[i]->style = current_style();
+                    total_height += new_block->height();
+                }
+                else {
+                    // Create the image
+                    Image* new_block = _block_simple(block->sub_blocks[i]);
+                    if(new_block != 0) {
+                        if(static_cast<int>(new_block->width()) > max_width) max_width = new_block->width();
+                        block->sub_blocks[i]->image = new_block;
+                        block->sub_blocks[i]->style = current_style();
+                        total_height += new_block->height();
+                    }
+                }
+            }
+            if(type() == Text_Image_Type::T_Always_Free_Memory)block->entirely_generate = true;
+            else block->entirely_generate = false;
+
             // If the block is a balise
             if(is_balise) {
                 current_balises().pop();
             }
-
-            return final_image;
         };
         // Returns an image with a simple block in it
         Image* _block_simple(_Balise_Container::Block* block) {
             // Cut the text by line
-            std::vector<std::string> cutted = cut_string(block->content, "</br>", false, true);
-
-            // Draw each lines
-            apply_current_style();
-            std::vector<_Balise_Container::Line*>& lines = block->lines;
-            unsigned int max_width = 0;
-            unsigned int total_height = 0;
-            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                _Balise_Container::Line* current_line = _line(cutted[i]);
-                if(current_line != 0) {
-                    Image* current_image = current_line->image;
-                    if(current_image != 0) {
-                        lines.push_back(current_line);
-                        total_height += current_image->height();
-
-                        // Check the max width
-                        if(current_image->width() > max_width) {
-                            max_width = current_image->width();
-                        }
-                    }
-                }
-            }
+            _block_simple_parser(block);
 
             // Draw the final image
             unsigned int current_x = 0;
             unsigned int current_y = 0;
+            int& max_width = block->max_width;
+            unsigned int min_x = 0;
+            unsigned int min_y = 0;
+            int& total_height = block->total_height;
             Image* to_return = new Image(max_width, total_height, Color(0, 0, 0, 0));
-            for(int i = 0;i<static_cast<int>(lines.size());i++) {
-                _Balise_Container::Line* current_line = lines[i];
+            for(int i = 0;i<static_cast<int>(block->lines.size());i++) {
+                _Balise_Container::Line* current_line = block->lines[i];
                 if(current_line != 0) {
                     Image* current_image = current_line->image;
                     if(current_image != 0) {
@@ -961,12 +971,81 @@ namespace scls
                     }
 
                     // Free the memory
-                    if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_line; lines[i] = 0;}
+                    if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_line; block->lines[i] = 0;}
                 }
             }
-            if(type() == Text_Image_Type::T_Always_Free_Memory) lines.clear();
+            if(type() == Text_Image_Type::T_Always_Free_Memory) block->lines.clear();
 
+            block->image = to_return;
             return to_return;
+        };
+        // Parse the given simple block
+        void _block_simple_parser(_Balise_Container::Block* block) {
+            // Check the needed modification
+            // Only a memory not full of sub lines can pass
+            if(type() != Text_Image_Type::T_Always_Free_Memory) {
+                if(!block->entirely_generate && !block->modified) { return; }
+            }
+
+            // Cut the text by line
+            std::vector<std::string> cutted = cut_string(block->content, "</br>", false, true);
+
+            // Draw each lines
+            apply_current_style();
+            block->modified = false;
+            std::vector<_Balise_Container::Line*>& lines = block->lines;
+            if(lines.size() > 0) lines[lines.size() - 1]->modified = true;
+            int& max_width = block->max_width;
+            int& total_height = block->total_height; total_height = 0;
+            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+                // Check if the line is modified or not
+                if(!block->entirely_generate && i < lines.size() && !lines[i]->modified) {
+                    // Keep an already generated line
+                    _Balise_Container::Line* current_line = lines[i];
+                    Image* current_image = current_line->image;
+                    if(current_image != 0) {
+                        total_height += current_image->height();
+
+                        // Check the max width
+                        if(current_image->width() > max_width) {
+                            max_width = current_image->width();
+                        }
+                    }
+
+                    continue;
+                }
+
+                // Create the new line
+                _Balise_Container::Line* current_line = _line(cutted[i]);
+                if(current_line != 0) {
+                    Image* current_image = current_line->image;
+                    if(current_image != 0) {
+                        current_line->modified = false;
+                        total_height += current_image->height();
+
+                        // Check the max width
+                        if(current_image->width() > max_width) {
+                            max_width = current_image->width();
+                        }
+
+                        // Add the line
+                        if(i >= lines.size()) {
+                            lines.push_back(current_line);
+                        }
+                        else {
+                            lines[i] = current_line;
+                        }
+                    }
+                }
+            }
+
+            // Delete uneeded lines
+            for(int i = 0;i<static_cast<int>(lines.size()) - static_cast<int>(cutted.size());i++) {
+                delete lines[lines.size() - 1]; lines.pop_back(); i--;
+            }
+
+            if(type() == Text_Image_Type::T_Always_Free_Memory) block->entirely_generate = true;
+            else block->entirely_generate = false;
         };
         // Returns the balise of the block or a blank string if it is not
         inline std::string _block_balise(std::vector<_Text_Balise_Part>& cutted) {
@@ -977,10 +1056,24 @@ namespace scls
             return defined_balises()->_cut_block(block_text);
         };
         // Deletes the blocks in the image
-        void __delete_blocks() {
+        void __delete_blocks(unsigned int max_size = 0) {
+            std::vector<_Balise_Container::Block*> new_blocks = std::vector<_Balise_Container::Block*>();
             for(int i = 0;i<static_cast<int>(a_blocks_found.size());i++) {
-                delete a_blocks_found[i];
-            } a_blocks_found.clear();
+                if(type() == Text_Image_Type::T_Always_Free_Memory || a_blocks_found[i]->entirely_generate) {
+                    delete a_blocks_found[i];
+                    if(i < max_size) {
+                        new_blocks.push_back(0);
+                    }
+                }
+                else if(a_blocks_found[i]->modified) {
+                    delete a_blocks_found[i]->image;
+                    new_blocks.push_back(a_blocks_found[i]);
+                }
+                else {
+                    new_blocks.push_back(a_blocks_found[i]);
+                }
+            }
+            a_blocks_found = new_blocks;
         };
         // Generate each blocks for the text
         void __generate_blocks(const std::string& text) {
@@ -1003,27 +1096,82 @@ namespace scls
             apply_current_style();
 
             // Cut by sub-blocks
-            __delete_blocks();
-            a_blocks_found = defined_balises()->_cut_by_blocks(cutted);
+            std::vector<_Balise_Container::Block*> new_blocks = defined_balises()->_cut_by_blocks(cutted);
+            __delete_blocks(new_blocks.size());
             a_max_width = 0;
             unsigned int min_x = 0;
             unsigned int min_y = 0;
             a_total_height = 0;
-            for(int i = 0;i<static_cast<int>(a_blocks_found.size());i++) {
-                _Balise_Container::Block* current_block = a_blocks_found[i];
-                Image* block_image = 0;
-                if(current_block->is_balise) {
-                    block_image = _block(current_block);
+            for(int i = 0;i<static_cast<int>(new_blocks.size());i++) {
+                _Balise_Container::Block* current_block = new_blocks[i];
+
+                if(i >= a_blocks_found.size()) {
+                    // The size limit is reached
+                    Image* block_image = 0;
+                    if(current_block->is_balise) {
+                        block_image = _block(current_block);
+                    }
+                    else {
+                        block_image = _block_simple(current_block);
+                    }
+
+                    if(block_image != 0) {
+                        if(static_cast<int>(block_image->width()) > a_max_width) a_max_width = block_image->width();
+                        current_block->style = current_style();
+                        a_total_height += block_image->height();
+                    }
+
+                    if(i < a_blocks_found.size()) a_blocks_found[i] = new_blocks[i];
+                    else a_blocks_found.push_back(new_blocks[i]);
                 }
                 else {
-                    block_image = _block_simple(current_block);
-                }
+                    if(a_blocks_found[i] == 0) {
+                        // A block should be created from scratch
+                        Image* block_image = 0;
+                        if(current_block->is_balise) {
+                            block_image = _block(current_block);
+                        }
+                        else {
+                            block_image = _block_simple(current_block);
+                        }
 
-                if(block_image != 0) {
-                    if(static_cast<int>(block_image->width()) > a_max_width) a_max_width = block_image->width();
-                    current_block->image = block_image;
-                    current_block->style = current_style();
-                    a_total_height += block_image->height();
+                        if(block_image != 0) {
+                            if(static_cast<int>(block_image->width()) > a_max_width) a_max_width = block_image->width();
+                            current_block->style = current_style();
+                            a_total_height += block_image->height();
+                        }
+
+                        if(i < a_blocks_found.size()) a_blocks_found[i] = new_blocks[i];
+                        else a_blocks_found.push_back(new_blocks[i]);
+                    }
+                    else if(a_blocks_found[i]->modified || i == 0) {
+                        // An already created modified block is handled
+                        std::string content = current_block->content;
+                        delete current_block; current_block = a_blocks_found[i]; current_block->modified = true;
+                        current_block->content = content;
+                        Image* block_image = 0;
+                        if(current_block->is_balise) {
+                            block_image = _block(current_block);
+                        }
+                        else {
+                            block_image = _block_simple(current_block);
+                        }
+
+                        if(block_image != 0) {
+                            if(static_cast<int>(block_image->width()) > a_max_width) a_max_width = block_image->width();
+                            current_block->style = current_style();
+                            a_total_height += block_image->height();
+                        }
+                    }
+                    else {
+                        // An already created unmodified block is handled
+                        delete current_block; current_block = a_blocks_found[i];
+                        Image* block_image = current_block->image;
+                        if(block_image != 0) {
+                            if(static_cast<int>(block_image->width()) > a_max_width) a_max_width = block_image->width();
+                            a_total_height += block_image->height();
+                        }
+                    }
                 }
             }
         };
