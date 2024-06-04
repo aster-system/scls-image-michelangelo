@@ -959,6 +959,7 @@ namespace scls
             int& max_width = block->max_width;
             unsigned int min_x = 0;
             unsigned int min_y = 0;
+            std::vector<std::thread*> threads = std::vector<std::thread*>();
             int& total_height = block->total_height;
             Image* to_return = new Image(max_width, total_height, Color(0, 0, 0, 0));
             for(int i = 0;i<static_cast<int>(block->lines.size());i++) {
@@ -966,18 +967,45 @@ namespace scls
                 if(current_line != 0) {
                     Image* current_image = current_line->image;
                     if(current_image != 0) {
-                        to_return->paste(current_image, current_x, current_y);
-                        current_y += current_image->height();
-                    }
+                        if(a_line_pasting_max_thread_number > 0) {
+                            // Check for the number of thread
+                            if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
+                                // Wait to each thread to finish
+                                for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                                    threads[i]->join();
+                                    delete threads[i];
+                                } threads.clear();
+                            }
 
-                    // Free the memory
-                    if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_line; block->lines[i] = 0;}
+                            std::thread* current_thread = new std::thread(&Text_Image::_block_simple_paste, this, to_return, current_line, current_x, current_y);
+                            threads.push_back(current_thread);
+
+                            current_y += current_image->height();
+                        }
+                        else {
+                            Text_Image::_block_simple_paste(to_return, current_line, current_x, current_y);
+                            current_y += current_image->height();
+                        }
+                    }
                 }
             }
             if(type() == Text_Image_Type::T_Always_Free_Memory) block->lines.clear();
 
+            // Wait to each thread to finish
+            for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                threads[i]->join();
+                delete threads[i];
+            } threads.clear();
+
             block->image = to_return;
             return to_return;
+        };
+        // Pastes an image on an another image for multi threading
+        void _block_simple_paste(Image* block, _Balise_Container::Line* current_line, unsigned int current_x, unsigned int current_y) {
+            block->paste(current_line->image, current_x, current_y);
+
+            // Free the memory
+            if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_line;}
         };
         // Parse the given simple block
         void _block_simple_parser(_Balise_Container::Block* block) {
@@ -999,20 +1027,25 @@ namespace scls
             int& total_height = block->total_height; total_height = 0;
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
                 // Check if the line is modified or not
-                if(!block->entirely_generate && i < lines.size() && !lines[i]->modified) {
-                    // Keep an already generated line
-                    _Balise_Container::Line* current_line = lines[i];
-                    Image* current_image = current_line->image;
-                    if(current_image != 0) {
-                        total_height += current_image->height();
+                if(i < lines.size()) {
+                    if(!block->entirely_generate && !lines[i]->modified) {
+                        // Keep an already generated line
+                        _Balise_Container::Line* current_line = lines[i];
+                        Image* current_image = current_line->image;
+                        if(current_image != 0) {
+                            total_height += current_image->height();
 
-                        // Check the max width
-                        if(current_image->width() > max_width) {
-                            max_width = current_image->width();
+                            // Check the max width
+                            if(current_image->width() > max_width) {
+                                max_width = current_image->width();
+                            }
                         }
-                    }
 
-                    continue;
+                        continue;
+                    }
+                    else {
+                        delete lines[i]; lines[i] = 0;
+                    }
                 }
 
                 // Create the new line
@@ -1148,7 +1181,7 @@ namespace scls
                         // An already created modified block is handled
                         std::string content = current_block->content;
                         delete current_block; current_block = a_blocks_found[i]; current_block->modified = true;
-                        current_block->content = content;
+                        delete current_block->image; current_block->image = 0; current_block->content = content;
                         Image* block_image = 0;
                         if(current_block->is_balise) {
                             block_image = _block(current_block);
@@ -1505,7 +1538,9 @@ namespace scls
         inline _Balise_Container* defined_balises() {return a_defined_balises;};
         inline Text_Balise defined_balises(std::string balise) {return defined_balises()->defined_balise(balise);};
         inline Text_Style& global_style() {return a_global_style;};
+        inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_cursor_position(unsigned int new_cursor_position) {a_cursor_position = new_cursor_position;};
+        inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
         inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;if(move_cursor)set_cursor_position(plain_text_size());};
         inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
         inline std::string text() const {return a_text;};
@@ -1547,6 +1582,8 @@ namespace scls
 
         // Last created blocks
         std::vector<_Balise_Container::Block*> a_blocks_found = std::vector<_Balise_Container::Block*>();
+        // Max numbers of thread to paste the lines
+        unsigned char a_line_pasting_max_thread_number = 0;
         // Max width in the image
         int a_max_width = 0;
         // Total height of the image
