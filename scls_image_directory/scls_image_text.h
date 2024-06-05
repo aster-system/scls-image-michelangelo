@@ -202,6 +202,14 @@ namespace scls
         unsigned short font_size = 20;
         // Max width of the text (only in pixel for now)
         double max_width = -1;
+        // Height pos of the text offset
+        double text_offset_height = 0;
+        // Width pos of the text offset
+        double text_offset_width = 0;
+        // X pos of the text offset
+        double text_offset_x = 0;
+        // Y pos of the text offset
+        double text_offset_y = 0;
     };
 
     // Balise in a text
@@ -815,10 +823,14 @@ namespace scls
             set_text(text);
         };
         // Text_Image_Line destructor
-        ~Text_Image_Line() {clear_words();if(a_last_image != 0) delete a_last_image; a_last_image = 0;};
+        ~Text_Image_Line() {free_memory();};
 
         // Getters and setters
         inline Text_Style global_style() const {return a_global_style;};
+        inline bool has_been_modified() const {return a_has_been_modified;};
+        inline bool is_modified() const {return a_modified;};
+        inline void set_has_been_modified(bool new_has_been_modified) {a_has_been_modified = new_has_been_modified;};
+        inline void set_modified(bool new_modified) {a_modified = new_modified;};
         inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;};
         inline std::string text() const {return a_text;};
 
@@ -830,6 +842,8 @@ namespace scls
 
         // Clear the memory from the words
         inline void clear_words() {for(int i = 0;i<static_cast<int>(a_words.size());i++) { if(a_words[i] != 0) delete a_words[i]; } a_words.clear(); };
+        // Free the memory of the line
+        inline void free_memory() {clear_words();a_last_image.reset();};
         // Generate the needed words
         void generate_words() {
             // Create the needed configurations
@@ -1036,7 +1050,7 @@ namespace scls
         };
         // Generates and returns an image of the line
         Image* image() {
-            if(a_last_image != 0) return a_last_image;
+            if(a_last_image.get() != 0) return a_last_image.get();
 
             // Generate the words
             generate_words();
@@ -1044,7 +1058,8 @@ namespace scls
             // Draw the line
             int current_x = 0;
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(global_style().font_size) / 2.0);
-            Image* final_image = new Image(a_current_width, global_style().font_size - a_y_offset, Color(0, 0, 0, 0));
+            a_last_image.reset(new Image(a_current_width, global_style().font_size - a_y_offset, Color(0, 0, 0, 0)));
+            Image* final_image = a_last_image.get();
             for(int i = 0;i<static_cast<int>(a_words.size());i++) {
                 _Balise_Container::Word* current_word = a_words[i];
                 if(current_word != 0) {
@@ -1061,9 +1076,10 @@ namespace scls
                 }
             } clear_words();
 
-            a_last_image = final_image;
             return final_image;
         }
+        // Returns the shared image
+        std::shared_ptr<Image>& shared_image() {return a_last_image;};
         // Paste a letter of a word in an image with thread system
         void __word_letter(Image* image_to_apply, Image* image_to_paste, unsigned int x, unsigned int y) {
             image_to_apply->paste(image_to_paste, x, y);
@@ -1083,6 +1099,10 @@ namespace scls
         _Balise_Container* a_defined_balises = 0;
         // Global style in the block
         Text_Style a_global_style;
+        // If the line has been modified or not
+        bool a_has_been_modified = true;
+        // If the line is modified or not
+        bool a_modified = false;
         // Text in the block
         std::string a_text = "";
         // Y offset of the image
@@ -1095,7 +1115,7 @@ namespace scls
         //*********
 
         // Last generated image
-        Image* a_last_image = 0;
+        std::shared_ptr<Image> a_last_image;
         // Last created words in the block
         std::vector<_Balise_Container::Word*> a_words = std::vector<_Balise_Container::Word*>();
     };
@@ -1124,7 +1144,7 @@ namespace scls
             set_text(text);
         };
         // Text_Image_Block destructor
-        ~Text_Image_Block() { clear_lines(); };
+        ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
         inline Text_Style& global_style() {return a_global_style;};
@@ -1138,8 +1158,20 @@ namespace scls
         //
         //*********
 
+        // Check the modified lines
+        void _check_modified_lines() {
+            for(int i = 0;i<static_cast<int>(a_lines.size());i++) {
+                if(a_lines[i] != 0) {
+                    if(a_lines[i]->is_modified()) {
+                        delete a_lines[i]; a_lines[i] = 0;
+                    }
+                }
+            }
+        };
         // Clear the memory from the lines
         inline void clear_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) { if(a_lines[i] != 0) delete a_lines[i]; } a_lines.clear(); };
+        // Free the memory of the line
+        inline void free_memory() {clear_lines();};
         // Generate a single line of text
         Text_Image_Line* _generate_line(const std::string& content, const Text_Style& style) {
             // Create the line
@@ -1150,6 +1182,14 @@ namespace scls
         };
         // Generate the lines of the block
         void generate_lines(bool entirely = true) {
+            if(!entirely && type() != Block_Type::BT_Always_Free_Memory) {
+                _regenerate_lines();
+                return;
+            }
+
+            // Free the memory
+            free_memory();
+
             // Cut the text by line and delete useless lines
             Text_Style current_style = global_style();
             std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
@@ -1263,6 +1303,80 @@ namespace scls
         void __image_paste(Image* block, Image* image_2, unsigned int current_x, unsigned int current_y) {
             block->paste(image_2, current_x, current_y);
         };
+        // Regenerate the lines with a new text
+        void _regenerate_lines() {
+            // Cut the text by line and delete useless lines
+            _check_modified_lines();
+            Text_Style current_style = global_style();
+            std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
+            std::vector<Text_Image_Line*>& lines = a_lines;
+
+            // Draw each lines
+            int& max_width = a_max_width; max_width = 0;
+            int& total_height = a_total_height; total_height = 0;
+            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+                // Check if the line is modified or not
+                if(i < lines.size()) {
+                    if(lines[i] == 0) {
+                        // Create the new line
+                        Text_Image_Line* current_line = _generate_line(cutted[i], current_style);
+                        if(current_line != 0) {
+                            Image* current_image = current_line->image();
+                            if(current_image != 0) {
+                                total_height += current_image->height();
+
+                                // Check the max width
+                                if(current_image->width() > max_width) {
+                                    max_width = current_image->width();
+                                }
+
+                                // Add the line
+                                lines[i] = current_line;
+                            }
+                        }
+                    }
+                    else {
+                        // Keep an already generated line
+                        Text_Image_Line* current_line = lines[i];
+                        Image* current_image = current_line->image();
+                        if(current_image != 0) {
+                            total_height += current_image->height();
+
+                            // Check the max width
+                            if(current_image->width() > max_width) {
+                                max_width = current_image->width();
+                            }
+                        }
+
+                        continue;
+                    }
+                }
+                else {
+                    // Create the new line
+                    Text_Image_Line* current_line = _generate_line(cutted[i], current_style);
+                    if(current_line != 0) {
+                        Image* current_image = current_line->image();
+                        if(current_image != 0) {
+                            total_height += current_image->height();
+
+                            // Check the max width
+                            if(current_image->width() > max_width) {
+                                max_width = current_image->width();
+                            }
+
+                            // Add the line
+                            lines.push_back(current_line);
+                        }
+                    }
+                }
+            }
+
+            // Delete the useless lines
+            for(int i = 0;i<static_cast<int>(lines.size()) - static_cast<int>(cutted.size());i++) {
+                delete lines[lines.size() - 1];
+                lines.pop_back();
+            }
+        }
 
         // Getters and setter
         inline std::vector<Text_Image_Line*>& lines() { return a_lines; };

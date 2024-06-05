@@ -25,6 +25,7 @@
 
 #include <map>
 #include <math.h>
+#include <memory>
 #include <stack>
 #include <thread>
 #include <zlib/zlib.h>
