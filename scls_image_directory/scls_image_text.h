@@ -809,6 +809,18 @@ namespace scls
         std::map<std::string, Text_Balise> a_defined_balises = std::map<std::string, Text_Balise>();
     };
 
+    struct Line_Datas {
+        // Struct containing the datas necessary for a line
+        // Content of the line
+        std::string content = "";
+        // Content in plain text of the line
+        std::string content_in_plain_text = "";
+        // Start of the text in the parent block in absolute text
+        unsigned int start_position = 0;
+        // Start of the text in the parent block in plain text
+        unsigned int start_position_in_plain_text = 0;
+    };
+
     class Text_Image_Line {
         // Class containing a single line text
     public:
@@ -825,14 +837,25 @@ namespace scls
         // Text_Image_Line destructor
         ~Text_Image_Line() {free_memory();};
 
+        // Returns the text in plain text
+        inline std::string plain_text() const { return a_defined_balises->plain_text(text()); };
+        // Returns the size of the line in plain text
+        inline unsigned int plain_text_size() const { return plain_text().size(); };
+
         // Getters and setters
+        inline Line_Datas datas() const {return a_datas;};
         inline Text_Style global_style() const {return a_global_style;};
         inline bool has_been_modified() const {return a_has_been_modified;};
         inline bool is_modified() const {return a_modified;};
+        inline unsigned int line_start_position() const {return a_datas.start_position;};
+        inline unsigned int line_start_position_in_plain_text() const {return a_datas.start_position_in_plain_text;};
+        inline void set_datas(Line_Datas new_datas) {a_datas = new_datas;};
         inline void set_has_been_modified(bool new_has_been_modified) {a_has_been_modified = new_has_been_modified;};
+        inline void set_line_start_position(unsigned int new_line_start_position) {a_datas.start_position = new_line_start_position;};
+        inline void set_line_start_position_in_plain_text(unsigned int new_line_start_position_in_plain_text) {a_datas.start_position_in_plain_text = new_line_start_position_in_plain_text;};
         inline void set_modified(bool new_modified) {a_modified = new_modified;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;};
-        inline std::string text() const {return a_text;};
+        inline void set_text(std::string new_text, bool move_cursor = true) {a_datas.content = new_text;a_datas.content_in_plain_text = a_defined_balises->plain_text(new_text);};
+        inline std::string text() const {return a_datas.content;};
 
         //*********
         //
@@ -1095,6 +1118,8 @@ namespace scls
 
         // Current width of the line
         unsigned int a_current_width = 0;
+        // Datas about the line
+        Line_Datas a_datas;
         // Containers of each defined balises
         _Balise_Container* a_defined_balises = 0;
         // Global style in the block
@@ -1103,8 +1128,6 @@ namespace scls
         bool a_has_been_modified = true;
         // If the line is modified or not
         bool a_modified = false;
-        // Text in the block
-        std::string a_text = "";
         // Y offset of the image
         short a_y_offset = 0;
 
@@ -1148,7 +1171,7 @@ namespace scls
 
         // Getters and setters
         inline Text_Style& global_style() {return a_global_style;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;};
+        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;update_line_text();};
         inline std::string text() const {return a_text;};
         inline Block_Type type() const {return a_type;};
 
@@ -1173,10 +1196,10 @@ namespace scls
         // Free the memory of the line
         inline void free_memory() {clear_lines();};
         // Generate a single line of text
-        Text_Image_Line* _generate_line(const std::string& content, const Text_Style& style) {
+        Text_Image_Line* _generate_line(Line_Datas datas, const Text_Style& style) {
             // Create the line
-            Text_Image_Line* to_return = new Text_Image_Line(a_defined_balises, content, style);
-            to_return->set_text(content);
+            Text_Image_Line* to_return = new Text_Image_Line(a_defined_balises, datas.content, style);
+            to_return->set_datas(datas);
 
             return to_return;
         };
@@ -1184,65 +1207,10 @@ namespace scls
         void generate_lines(bool entirely = true) {
             if(!entirely && type() != Block_Type::BT_Always_Free_Memory) {
                 _regenerate_lines();
-                return;
             }
-
-            // Free the memory
-            free_memory();
-
-            // Cut the text by line and delete useless lines
-            Text_Style current_style = global_style();
-            std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
-            std::vector<Text_Image_Line*>& lines = a_lines;
-            if(type() == Block_Type::BT_Always_Free_Memory) clear_lines();
-
-            // Draw each lines
-            int& max_width = a_max_width; max_width = 0;
-            int& total_height = a_total_height; total_height = 0;
-            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                // Check if the line is modified or not
-                if(i < lines.size()) {
-                    if(false) {
-                        // Keep an already generated line
-                        Text_Image_Line* current_line = lines[i];
-                        Image* current_image = current_line->image();
-                        if(current_image != 0) {
-                            total_height += current_image->height();
-
-                            // Check the max width
-                            if(current_image->width() > max_width) {
-                                max_width = current_image->width();
-                            }
-                        }
-
-                        continue;
-                    }
-                    else {
-                        delete lines[i]; lines[i] = 0;
-                    }
-                }
-
-                // Create the new line
-                Text_Image_Line* current_line = _generate_line(cutted[i], current_style);
-                if(current_line != 0) {
-                    Image* current_image = current_line->image();
-                    if(current_image != 0) {
-                        total_height += current_image->height();
-
-                        // Check the max width
-                        if(current_image->width() > max_width) {
-                            max_width = current_image->width();
-                        }
-
-                        // Add the line
-                        if(i >= lines.size()) {
-                            lines.push_back(current_line);
-                        }
-                        else {
-                            lines[i] = current_line;
-                        }
-                    }
-                }
+            else {
+                free_memory();
+                _regenerate_lines();
             }
         };
         // Generates and returns an image with the block on it
@@ -1299,6 +1267,24 @@ namespace scls
 
             return to_return;
         };
+        // Returns the line at a plain text position given, or 0
+        Text_Image_Line* line_at_position_in_plain_text(unsigned int position) {
+            int final_position = line_number_at_position_in_plain_text(position);
+            if(final_position == -1) return 0;
+            return lines()[final_position];
+        };
+        // Returns the line number at a plain text position given, or 0
+        int line_number_at_position_in_plain_text(unsigned int position) {
+            for(int i = 0;i<static_cast<int>(lines().size());i++) {
+                if(lines()[i] != 0) {
+                    unsigned int line_size = lines()[i]->plain_text_size();
+                    if(lines()[i]->line_start_position_in_plain_text() + line_size >= position) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        };
         // Pastes an image on an another image for multi threading
         void __image_paste(Image* block, Image* image_2, unsigned int current_x, unsigned int current_y) {
             block->paste(image_2, current_x, current_y);
@@ -1308,7 +1294,7 @@ namespace scls
             // Cut the text by line and delete useless lines
             _check_modified_lines();
             Text_Style current_style = global_style();
-            std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
+            std::vector<Line_Datas>& cutted = a_lines_text;
             std::vector<Text_Image_Line*>& lines = a_lines;
 
             // Draw each lines
@@ -1317,9 +1303,10 @@ namespace scls
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
                 // Check if the line is modified or not
                 if(i < lines.size()) {
+                    Text_Image_Line* current_line = 0;
                     if(lines[i] == 0) {
                         // Create the new line
-                        Text_Image_Line* current_line = _generate_line(cutted[i], current_style);
+                        current_line = _generate_line(cutted[i], current_style);
                         if(current_line != 0) {
                             Image* current_image = current_line->image();
                             if(current_image != 0) {
@@ -1337,7 +1324,8 @@ namespace scls
                     }
                     else {
                         // Keep an already generated line
-                        Text_Image_Line* current_line = lines[i];
+                        current_line = lines[i];
+                        current_line->set_datas(cutted[i]);
                         Image* current_image = current_line->image();
                         if(current_image != 0) {
                             total_height += current_image->height();
@@ -1347,8 +1335,6 @@ namespace scls
                                 max_width = current_image->width();
                             }
                         }
-
-                        continue;
                     }
                 }
                 else {
@@ -1377,9 +1363,31 @@ namespace scls
                 lines.pop_back();
             }
         }
+        // Update the text in each lines, without others modification
+        void update_line_text() {
+            std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
+            std::vector<Line_Datas>& lines_text = a_lines_text; a_lines_text.clear();
+            unsigned int current_position = 0;
+            unsigned int current_position_in_plain_text = 0;
+
+            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+                // Check if the line exists or not
+                Line_Datas datas;
+                datas.content = cutted[i];
+                datas.content_in_plain_text = a_defined_balises->plain_text(cutted[i]);
+                datas.start_position = current_position;
+                datas.start_position_in_plain_text = current_position_in_plain_text;
+                lines_text.push_back(datas);
+
+                // Update the positions
+                current_position += datas.content.size() + 5;
+                current_position_in_plain_text += datas.content_in_plain_text.size() + 1;
+            }
+        };
 
         // Getters and setter
         inline std::vector<Text_Image_Line*>& lines() { return a_lines; };
+        inline std::vector<Line_Datas>& lines_datas() { return a_lines_text; };
     private:
         //*********
         //
@@ -1408,6 +1416,8 @@ namespace scls
 
         // Last created lines in the block
         std::vector<Text_Image_Line*> a_lines = std::vector<Text_Image_Line*>();
+        // Last created lines text in the block
+        std::vector<Line_Datas> a_lines_text = std::vector<Line_Datas>();
     };
 
     /*class Text_Image_Multi_Block {
