@@ -891,6 +891,7 @@ namespace scls
             Text_Style current_style = a_global_style;
 
             // Create each words
+            a_characters_position.clear();
             unsigned int current_position_in_plain_text = 0;
             unsigned int& current_width = a_current_width;
             std::vector<_Text_Balise_Part> cutted = a_defined_balises->_cut_block(text());
@@ -915,6 +916,7 @@ namespace scls
                     current_width += space_width; word_to_add->is_space = true;
                     word_to_add->content = " ";
                     current_position_in_plain_text++;
+                    a_characters_position.push_back(std::vector<int>());
                 }
                 else {
                     // Draw the image
@@ -926,57 +928,6 @@ namespace scls
                         if(word_to_add->y_offset < y_offset) y_offset = word_to_add->y_offset;
                     }
                     current_position_in_plain_text += word_content.size();
-
-                    /*// Check for the position of the cursor
-                    int cursor_x_position = -1;
-                    if(cursor_position() >= start_plain_text_position && cursor_position() <= start_plain_text_position + word_content.size()) {
-                        cursor_x_position = cursor_position() - start_plain_text_position;
-                    }
-
-                    if(image != 0) {
-                        // Check max width
-                        if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
-                            // Break a line
-                            current_line++;
-                            to_return.lines_width.push_back(current_width);
-                            if(current_width > to_return.max_width) to_return.max_width = current_width;
-                            current_width = 0;
-                            to_return.total_height += current_font_size;
-                        }
-
-                        // Check the cursor position
-                        if(cursor_x_position != -1) {
-                            std::string part_1 = word_content.substr(0, cursor_x_position);
-                            std::string part_2 = word_content.substr(cursor_x_position, word_content.size() - cursor_x_position);
-
-                            to_return.has_cursor = true;
-                            if(part_1 == "") {
-                                a_cursor_x = current_width;
-                            }
-                            else if(part_2 == "") {
-                                a_cursor_x = current_width + image->width();
-                            }
-                            else {
-                                if(part_1.size() < part_2.size()) {
-                                    int temp_int = 0;
-                                    Image* temp = _word(part_1, temp_int);
-                                    a_cursor_x = current_width + (temp->width());
-                                    delete temp; temp = 0;
-                                }
-                                else {
-                                    int temp_int = 0;
-                                    Image* temp = _word(part_2, temp_int);
-                                    a_cursor_x = current_width + (image->width() - temp->width());
-                                    delete temp; temp = 0;
-                                }
-                            }
-                            a_cursor_y = to_return.total_height - current_font_size;
-                        } //
-
-                        word_to_add.content = word_content;
-                        word_to_add.image = image; word_to_add.y_offset = (current_font_size - image->height());
-                        current_width += image->width();
-                    } //*/
                 }
 
                 // Add the part
@@ -1042,7 +993,7 @@ namespace scls
                 y_pos.push_back(y_position);
                 if(y_position < min_y_position) min_y_position = y_position;
                 total_width += image->width() + cursor_position;
-            }
+            } a_characters_position.push_back(cursor_pos);
 
             for(int i = 0;i<static_cast<int>(characters.size());i++)
             {
@@ -1085,23 +1036,6 @@ namespace scls
             }
             FT_Done_Face(face);
 
-            // Draw the cursor
-            unsigned int cursor_height = style.font_size;
-            unsigned int cursor_width = 2;
-            unsigned int cursor_x = 0;
-            if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
-                if(cursor_position_in_plain_text() >= start_position_in_plain_text && cursor_position_in_plain_text() <= start_position_in_plain_text + word.size()) {
-                    unsigned int local_cursor_position = cursor_position_in_plain_text() - start_position_in_plain_text;
-                    if(local_cursor_position == word.size()) {
-                        cursor_x = final_image->width() - cursor_width;
-                    }
-                    else {
-                        cursor_x = cursor_pos[local_cursor_position] - static_cast<double>(cursor_width) / 2.0;
-                    }
-                    final_image->fill_rect(cursor_x, 0, cursor_width, max_height - to_add_font_size, Color(0, 0, 0));
-                }
-            }
-
             // Create the word
             _Balise_Container::Word* word_to_add = 0;
             long long t = time_ns();
@@ -1119,7 +1053,16 @@ namespace scls
             // Generate the words
             generate_words();
 
+            // Check for the cursor
+            unsigned int cursor_width = 2;
+            if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
+                if(static_cast<int>(a_words.size()) <= 0) {
+                    a_current_width = cursor_width;
+                }
+            }
+
             // Draw the line
+            unsigned int current_position_in_plain_text = 0;
             int current_x = 0;
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(global_style().font_size) / 2.0);
             a_last_image.reset(new Image(a_current_width, global_style().font_size - a_y_offset, Color(0, 0, 0, 0)));
@@ -1129,16 +1072,49 @@ namespace scls
                 if(current_word != 0) {
                     Image* current_image = current_word->image;
                     if(current_image != 0) {
+                        // Check for the cursor
+                        if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
+                            if(cursor_position_in_plain_text() >= current_position_in_plain_text && cursor_position_in_plain_text() <= current_position_in_plain_text + current_word->content.size()) {
+                                unsigned int local_cursor_position = cursor_position_in_plain_text() - current_position_in_plain_text;
+                                if(local_cursor_position == current_word->content.size()) {
+                                    a_cursor_x = current_x + current_image->width() - static_cast<double>(cursor_width) / 2.0;
+                                }
+                                else {
+                                    a_cursor_x = current_x + a_characters_position[i][local_cursor_position];
+                                }
+                            }
+                        }
+
                         // Paste the word
                         final_image->paste(current_image, current_x, global_style().font_size - (current_image->height() + current_word->y_offset));
                         current_x += current_image->width();
+                        current_position_in_plain_text += current_word->content.size();
                     }
                     else if(current_word->is_space) {
                         current_x += space_width;
+                        current_position_in_plain_text++;
+
+                        // Check for the cursor
+                        if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
+                            if(cursor_position_in_plain_text() == current_position_in_plain_text) {
+                                a_cursor_x = current_x;
+                                if(i == static_cast<int>(a_words.size()) - 1) {
+                                    a_cursor_x -= static_cast<double>(cursor_width) / 2.0;
+                                }
+                            }
+                        }
                     }
                     delete current_word; a_words[i] = 0;
                 }
             } clear_words();
+
+            // Draw the cursor
+            if(cursor_position_in_plain_text() == 0) a_cursor_x = 0;
+            else a_cursor_x -= static_cast<double>(cursor_width) / 2.0;
+            unsigned int cursor_height = final_image->height();
+            if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
+                final_image->fill_rect(a_cursor_x, 0, cursor_width, final_image->height(), Color(0, 0, 0));
+            }
 
             return final_image;
         }
@@ -1180,6 +1156,8 @@ namespace scls
 
         // Position of the cursor in plain text position
         unsigned int a_cursor_position_in_plain_text = 0;
+        // X position of the cursor
+        int a_cursor_x = 0;
         // If the line is the cursor or not
         bool a_use_cursor = false;
 
@@ -1189,6 +1167,8 @@ namespace scls
         //
         //*********
 
+        // Last positions of the character
+        std::vector<std::vector<int>> a_characters_position = std::vector<std::vector<int>>();
         // Last generated image
         std::shared_ptr<Image> a_last_image;
         // Last created words in the block
