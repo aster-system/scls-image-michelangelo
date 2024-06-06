@@ -854,8 +854,24 @@ namespace scls
         inline void set_line_start_position(unsigned int new_line_start_position) {a_datas.start_position = new_line_start_position;};
         inline void set_line_start_position_in_plain_text(unsigned int new_line_start_position_in_plain_text) {a_datas.start_position_in_plain_text = new_line_start_position_in_plain_text;};
         inline void set_modified(bool new_modified) {a_modified = new_modified;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_datas.content = new_text;a_datas.content_in_plain_text = a_defined_balises->plain_text(new_text);};
+        inline void set_text(std::string new_text, bool move_cursor = true) {
+            a_datas.content = new_text;
+            a_datas.content_in_plain_text = a_defined_balises->plain_text(new_text);
+            if(move_cursor) set_cursor_position_in_plain_text(a_datas.content_in_plain_text.size());
+        };
         inline std::string text() const {return a_datas.content;};
+
+        //*********
+        //
+        // Cursor handling
+        //
+        //*********
+
+        // Getters and setters
+        inline unsigned int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
+        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;};
+        inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
+        inline bool use_cursor() const {return a_use_cursor;};
 
         //*********
         //
@@ -875,6 +891,7 @@ namespace scls
             Text_Style current_style = a_global_style;
 
             // Create each words
+            unsigned int current_position_in_plain_text = 0;
             unsigned int& current_width = a_current_width;
             std::vector<_Text_Balise_Part> cutted = a_defined_balises->_cut_block(text());
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(current_font_size) / 2.0);
@@ -893,16 +910,22 @@ namespace scls
                     std::string balise_content = formatted_balise(balise);
                     std::string current_balise_name = balise_name(balise_content);
                 }
-                else if(cutted[i].content == " ") { word_to_add = new _Balise_Container::Word(); current_width += space_width; word_to_add->is_space = true; word_to_add->content = " "; }
+                else if(cutted[i].content == " ") {
+                    word_to_add = new _Balise_Container::Word();
+                    current_width += space_width; word_to_add->is_space = true;
+                    word_to_add->content = " ";
+                    current_position_in_plain_text++;
+                }
                 else {
                     // Draw the image
                     std::string word_content = format_string_as_plain_text(cutted[i].content);
                     long long t = time_ns();
-                    word_to_add = _generate_word(word_content, current_style);
+                    word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
                     if(word_to_add != 0) {
                         current_width += word_to_add->image->width();
                         if(word_to_add->y_offset < y_offset) y_offset = word_to_add->y_offset;
                     }
+                    current_position_in_plain_text += word_content.size();
 
                     /*// Check for the position of the cursor
                     int cursor_x_position = -1;
@@ -961,7 +984,7 @@ namespace scls
             }
         };
         // Generate a word
-        _Balise_Container::Word* _generate_word(const std::string& word, const Text_Style& style) {
+        _Balise_Container::Word* _generate_word(const std::string& word, const Text_Style& style, unsigned int start_position_in_plain_text) {
             // Create the needed configurations
             Color current_background_color = style.background_color;
             unsigned short current_font_size = style.font_size;
@@ -1032,6 +1055,7 @@ namespace scls
             // Create the final image and clear the memory
             Image* final_image = new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0));
             unsigned char max_thread_number = 0;
+            std::vector<unsigned int> positions = std::vector<unsigned int>();
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             for(int i = 0;i<static_cast<int>(characters.size());i++)
             {
@@ -1060,6 +1084,23 @@ namespace scls
                 delete threads[i];
             }
             FT_Done_Face(face);
+
+            // Draw the cursor
+            unsigned int cursor_height = style.font_size;
+            unsigned int cursor_width = 2;
+            unsigned int cursor_x = 0;
+            if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
+                if(cursor_position_in_plain_text() >= start_position_in_plain_text && cursor_position_in_plain_text() <= start_position_in_plain_text + word.size()) {
+                    unsigned int local_cursor_position = cursor_position_in_plain_text() - start_position_in_plain_text;
+                    if(local_cursor_position == word.size()) {
+                        cursor_x = final_image->width() - cursor_width;
+                    }
+                    else {
+                        cursor_x = cursor_pos[local_cursor_position] - static_cast<double>(cursor_width) / 2.0;
+                    }
+                    final_image->fill_rect(cursor_x, 0, cursor_width, max_height - to_add_font_size, Color(0, 0, 0));
+                }
+            }
 
             // Create the word
             _Balise_Container::Word* word_to_add = 0;
@@ -1133,6 +1174,17 @@ namespace scls
 
         //*********
         //
+        // Cursor handling
+        //
+        //*********
+
+        // Position of the cursor in plain text position
+        unsigned int a_cursor_position_in_plain_text = 0;
+        // If the line is the cursor or not
+        bool a_use_cursor = false;
+
+        //*********
+        //
         // Optimisation system
         //
         //*********
@@ -1177,6 +1229,18 @@ namespace scls
 
         //*********
         //
+        // Cursor handling
+        //
+        //*********
+
+        // Getters and setters
+        inline unsigned int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
+        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;};
+        inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
+        inline bool use_cursor() const {return a_use_cursor;};
+
+        //*********
+        //
         // Optimisation system
         //
         //*********
@@ -1200,6 +1264,14 @@ namespace scls
             // Create the line
             Text_Image_Line* to_return = new Text_Image_Line(a_defined_balises, datas.content, style);
             to_return->set_datas(datas);
+
+            // Handle the cursor
+            if(use_cursor()) {
+                if(cursor_position_in_plain_text() >= datas.start_position_in_plain_text && cursor_position_in_plain_text() <= datas.start_position_in_plain_text + datas.content_in_plain_text.size()) {
+                    to_return->set_cursor_position_in_plain_text(cursor_position_in_plain_text() - datas.start_position_in_plain_text);
+                    to_return->set_use_cursor(true);
+                }
+            }
 
             return to_return;
         };
@@ -1407,6 +1479,17 @@ namespace scls
         int a_total_height = 0;
         // Type of the block
         const Block_Type a_type = Block_Type::BT_Always_Free_Memory;
+
+        //*********
+        //
+        // Cursor handling
+        //
+        //*********
+
+        // Position of the cursor in plain text position
+        unsigned int a_cursor_position_in_plain_text = 0;
+        // If the line is the cursor or not
+        bool a_use_cursor = false;
 
         //*********
         //
