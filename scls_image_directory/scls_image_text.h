@@ -311,18 +311,17 @@ namespace scls
         FT_GlyphSlot binary_datas = face->glyph;
         error = FT_Render_Glyph(binary_datas, FT_RENDER_MODE_NORMAL);
 
-        std::cout << "U " << binary_datas->bitmap.width << std::endl;
-
         return static_cast<unsigned short>(binary_datas->bitmap.width);
     };
 
     // Return a pointer to an image with a char on it
-    inline Image* _char_image(char character, FT_Face& face, int& cursor_pos, int& y_pos, Color color) {
+    inline Image* _char_image(char character, FT_Face& face, int& cursor_pos, unsigned int& real_width, int& y_pos, Color color) {
         // Configure and load the FreeType glyph system
         FT_UInt index = FT_Get_Char_Index(face, (static_cast<unsigned char>(character)));
         FT_Error error = FT_Load_Glyph(face, index, 0);
         FT_GlyphSlot binary_datas = face->glyph;
         error = FT_Render_Glyph(binary_datas, FT_RENDER_MODE_NORMAL);
+        FT_Glyph_Metrics metrics = binary_datas->metrics;
 
         // Create and draw the image
         unsigned short height = static_cast<unsigned short>(binary_datas->bitmap.rows);
@@ -332,6 +331,7 @@ namespace scls
 
         // Get the position of the cursor
         cursor_pos = binary_datas->bitmap_left;
+        real_width = static_cast<unsigned int>(static_cast<double>(binary_datas->advance.x) / 64.0);
         y_pos = binary_datas->bitmap_top - height;
 
         return img;
@@ -863,6 +863,7 @@ namespace scls
             // Create each characters
             std::vector<Image*> characters;
             std::vector<unsigned int> characters_width;
+            std::vector<int> characters_x;
             std::vector<int> cursor_pos;
             int max_height = 0;
             short min_y_position = 0;
@@ -873,19 +874,20 @@ namespace scls
             for(int i = 0;i<static_cast<int>(word.size());i++)
             {
                 int cursor_position = 0;
+                unsigned int real_width = 0;
                 int y_position = 0;
-                Image* image = _char_image(word.at(i), face, cursor_position, y_position, style().color);
-                characters.push_back(image);
+                Image* image = _char_image(word.at(i), face, cursor_position, real_width, y_position, style().color);
+                characters.push_back(image); characters_x.push_back(total_width);
                 cursor_pos.push_back(total_width + cursor_position);
                 if(cursor_pos[cursor_pos.size() - 1] < 0) cursor_pos[cursor_pos.size() - 1] = 0; // Avoid a little bug with X position
                 if(static_cast<int>(image->height()) + y_position > max_height) max_height = image->height() + y_position;
                 if(y_position < to_add_font_size) to_add_font_size = y_position;
                 y_pos.push_back(y_position);
                 if(y_position < min_y_position) min_y_position = y_position;
-                total_width += image->width() + cursor_position;
-                characters_width.push_back(image->width());
+                total_width += real_width;
+                characters_width.push_back(real_width);
             }
-            a_datas.set_characters_position(cursor_pos);
+            a_datas.set_characters_position(characters_x);
             a_datas.set_characters_width(characters_width);
             a_datas.set_y_offset(min_y_position);
 
@@ -939,7 +941,7 @@ namespace scls
 
         // Getters and setters
         inline Word_Datas datas() const {return a_datas;};
-        inline Image* image() { if(text() == " ") return 0; return a_last_image.get(); };
+        inline Image* image() { return a_last_image.get(); };
         std::shared_ptr<Image>& image_shared_pointer() {
             if(a_last_image.get() == 0) return a_last_image;
         };
@@ -1071,11 +1073,6 @@ namespace scls
 
                     std::string balise_content = formatted_balise(balise);
                     std::string current_balise_name = balise_name(balise_content);
-                }
-                else if(cutted[i].content == " ") {
-                    word_to_add = new Text_Image_Word(); word_to_add->set_x_position(current_width); word_to_add->set_width(space_width);
-                    current_width += space_width;
-                    current_position_in_plain_text++;
                 }
                 else {
                     // Draw the image
