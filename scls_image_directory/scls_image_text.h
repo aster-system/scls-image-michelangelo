@@ -50,11 +50,19 @@ namespace scls
 	};
 
 	// List of all the fonts in the system
-	inline std::map<std::string, Font> _system_fonts = std::map<std::string, Font>();
+	inline std::map<std::string, Font> __system_fonts = std::map<std::string, Font>();
+
+	// Returns if a certain system font is stored in the program or not
+	inline bool contains_system_font(std::string font) {
+	    for(std::map<std::string, Font>::iterator it = __system_fonts.begin();it!=__system_fonts.end();it++) {
+            if(it->first == font) return true;
+	    }
+	    return false;
+	};
 
 	// Load all the fonts system fonts
 	inline void load_system_font() {
-        _system_fonts.clear();
+        __system_fonts.clear();
         std::vector<std::string> font_files = std::vector<std::string>();
         std::vector<std::string> subpaths = directory_content(BASE_FONT_PATH, true);
 
@@ -99,27 +107,33 @@ namespace scls
                 font.font_family = cutted[0];
                 font_name = cutted[0];
             }
-            _system_fonts[font_name + last_name] = font;
+            __system_fonts[font_name + last_name] = font;
         }
 	};
 
 	// Return the system path of a font
 	inline Font get_system_font(std::string font, bool bold = false, bool italic = false, bool condensed = false, bool light = false) {
-	    if(_system_fonts.size() <= 0) load_system_font();
+	    if(__system_fonts.size() <= 0) load_system_font();
 
 	    std::string last_name = "";
 	    if(bold) last_name += "b";
 	    if(italic) last_name += "i";
 	    if(condensed) last_name += "c";
 	    if(light) last_name += "l";
-        return _system_fonts[font + last_name];
+
+	    if(!contains_system_font(font + last_name)) {
+            print("Error", "SCLS Image Michelangelo", "The \"" + font + last_name + "\" system font you want to get does not exist.");
+            return __system_fonts[DEFAULT_FONT];
+	    }
+
+        return __system_fonts[font + last_name];
 	};
 
 	// Print each system fonts
 	inline void print_system_fonts() {
-	    if(_system_fonts.size() <= 0) load_system_font();
+	    if(__system_fonts.size() <= 0) load_system_font();
 
-	    for(std::map<std::string, Font>::iterator it = _system_fonts.begin();it!=_system_fonts.end();it++)
+	    for(std::map<std::string, Font>::iterator it = __system_fonts.begin();it!=__system_fonts.end();it++)
         {
             std::string message = "System font \"" + it->second.font_family + "\"";
             if(it->second.bold) message += " bold";
@@ -415,7 +429,7 @@ namespace scls
         std::vector<std::string> parts = cut_string(content, "\n");
 
         // Load the font if necessary
-        if(_system_fonts.size() <= 0) load_system_font();
+        if(__system_fonts.size() <= 0) load_system_font();
 
         if(datas.font.font_family == "") datas.font = get_system_font(DEFAULT_FONT);
 
@@ -696,18 +710,8 @@ namespace scls
         Word_Datas(std::string content, Text_Style style) : a_content(content), a_style(style) {};
 
         // Getters and setters
-        inline std::vector<int>& characters_position() {return a_characters_position;};
-        inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
         inline std::string content() const {return a_content;};
-        inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
-        inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
-        inline void set_width(unsigned int new_width) {a_width = new_width;};
-        inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
-        inline void set_y_offset(short new_y_offset) {a_y_offset = new_y_offset;};
         inline Text_Style style() const {return a_style;};
-        inline unsigned int width() const {return a_width;};
-        inline short y_offset() const {return a_y_offset;};
-        inline int x_position() const {return a_x_position;};
 
         //*********
         //
@@ -717,7 +721,7 @@ namespace scls
 
         // Returns the position in the text at a X position
         inline unsigned int cursor_position_at_x(int x_position) {
-            if(content().size() == 0) return 0;
+            if(content().size() == 0 && a_characters_position.size() >= 0) return 0;
 
             unsigned int word_position = 0;
             while(word_position < a_characters_position.size() && a_characters_position[word_position] + a_characters_width[word_position] <= x_position) {
@@ -725,21 +729,46 @@ namespace scls
             }
 
             if(word_position >= a_characters_position.size()) return content().size();
-            if(word_position - a_characters_position[word_position] > a_characters_width[word_position] - word_position) {
+            if(static_cast<int>(x_position) - static_cast<int>(a_characters_position[word_position]) > static_cast<int>(a_characters_width[word_position] + a_characters_position[word_position]) - static_cast<int>(x_position)) {
                 word_position++;
             }
 
             return word_position;
         };
+
+        //*********
+        //
+        // Post-generation datas
+        //
+        //*********
+
+        // Getters and setters
+        inline std::vector<int>& characters_position() {return a_characters_position;};
+        inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
+        inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
+        inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
+        inline void set_width(unsigned int new_width) {a_width = new_width;};
+        inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
+        inline void set_y_offset(short new_y_offset) {a_y_offset = new_y_offset;};
+        inline unsigned int width() const {return a_width;};
+        inline short y_offset() const {return a_y_offset;};
+        inline int x_position() const {return a_x_position;};
     private:
-        // X position of each characters in the word
-        std::vector<int> a_characters_position = std::vector<int>();
-        // Width of each characters in the word
-        std::vector<unsigned int> a_characters_width = std::vector<unsigned int>();
         // Content of the line
         std::string a_content = "";
         // Style of the text
         Text_Style a_style;
+
+        //*********
+        //
+        // Post-generation datas
+        //
+        //*********
+
+        // X position of each characters in the word
+        std::vector<int> a_characters_position = std::vector<int>();
+        // Width of each characters in the word
+        std::vector<unsigned int> a_characters_width = std::vector<unsigned int>();
         // Width of the image
         unsigned int a_width = 0;
         // X position of the word
