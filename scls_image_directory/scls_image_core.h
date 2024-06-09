@@ -614,6 +614,7 @@ namespace scls
 		inline unsigned int bit_depht() { return a_bit_depth; };
 		inline unsigned int color_type() { return a_color_type; };
 		inline Bytes_Set* datas() { return a_pixels; }
+		inline unsigned int flip_x_number() const {return a_flip_x_number;};
 		inline unsigned int height() { return a_height; };
 		inline void set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
         inline void set_thread_number_for_pasting(unsigned short new_thread_number) {a_thread_number_for_pasting = new_thread_number;};
@@ -1248,6 +1249,7 @@ namespace scls
 				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 3, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 3));
 				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 3, line1[j]);
 			}
+			a_flip_x_number++;
 
 			delete[] line1;
 		};
@@ -1407,6 +1409,8 @@ namespace scls
 		unsigned int a_bit_depth = 8;
 		// Color type of the image
 		unsigned int a_color_type = 6;
+		// Number of flips by X
+		unsigned int a_flip_x_number = 0;
 		// Height of the image
 		unsigned int a_height = 0;
 		// Pixel of the image

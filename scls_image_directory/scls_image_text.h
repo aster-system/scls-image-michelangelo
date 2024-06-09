@@ -1308,6 +1308,15 @@ namespace scls
         };
         // Clear the memory from the lines
         inline void clear_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) { if(a_lines[i] != 0) delete a_lines[i]; } a_lines.clear(); };
+        // Delete the useless generated lines
+        inline void delete_useless_generated_lines() {
+            std::vector<Text_Image_Line*>& lines = a_lines;
+            std::vector<Line_Datas>& cutted = a_lines_text;
+            for(int i = 0;i<static_cast<int>(lines.size()) - static_cast<int>(cutted.size());i++) {
+                delete lines[lines.size() - 1];
+                lines.pop_back();
+            }
+        };
         // Free the memory of the line
         inline void free_memory() {clear_lines();};
         // Generate a single line of text
@@ -1337,6 +1346,80 @@ namespace scls
                 free_memory();
                 _regenerate_lines();
             }
+        };
+        // Generates the next line to be generated and returns it
+        Text_Image_Line* generate_next_line(unsigned int line_number) {
+            // Cut the text by line and delete useless lines
+            Text_Style& current_style = a_current_style;
+            std::vector<Line_Datas>& cutted = a_lines_text;
+            std::vector<Text_Image_Line*>& lines = a_lines;
+            int& max_width = a_max_width; max_width = 0;
+            int& total_height = a_total_height; total_height = 0;
+
+            // Check if the line is modified or not
+            Text_Image_Line* current_line = 0;
+            unsigned int current_line_x = 0;
+            if(line_number < lines.size()) {
+                if(lines[line_number] == 0) {
+                    // Create the new line
+                    current_line = _generate_line(cutted[line_number], current_style);
+                    if(current_line != 0) {
+                        Image* current_image = current_line->image();
+                        current_line->set_has_been_modified(true);
+                        if(current_image != 0) {
+                            total_height += current_image->height();
+
+                            // Check the max width
+                            if(current_image->width() > max_width) {
+                                max_width = current_image->width();
+                            }
+
+                            // Add the line
+                            lines[line_number] = current_line;
+                        }
+                    }
+                }
+                else {
+                    // Keep an already generated line
+                    current_line = lines[line_number];
+                    current_line->set_datas(cutted[line_number]);
+                    Image* current_image = current_line->image();
+                    if(current_image != 0) {
+                        total_height += current_image->height();
+
+                        // Check the max width
+                        if(current_image->width() > max_width) {
+                            max_width = current_image->width();
+                        }
+                    }
+                }
+            }
+            else {
+                // Create the new line
+                current_line = _generate_line(cutted[line_number], current_style);
+                if(current_line != 0) {
+                    Image* current_image = current_line->image();
+                    if(current_image != 0) {
+                        total_height += current_image->height();
+
+                        // Check the max width
+                        if(current_image->width() > max_width) {
+                            max_width = current_image->width();
+                        }
+
+                        // Add the line
+                        lines.push_back(current_line);
+                    }
+                }
+            }
+
+            return current_line;
+        };
+        // Generates the next line to be generated and returns it
+        Text_Image_Line* generate_next_line() {
+            Text_Image_Line* to_return = generate_next_line(a_current_line);
+            a_current_line++;
+            return to_return;
         };
         // Generates and returns an image with the block on it
         Image* image() {
@@ -1416,85 +1499,22 @@ namespace scls
         };
         // Regenerate the lines with a new text
         void _regenerate_lines() {
-            // Cut the text by line and delete useless lines
-            _check_modified_lines(); soft_reset();
-            Text_Style current_style = global_style();
-            std::vector<Line_Datas>& cutted = a_lines_text;
             std::vector<Text_Image_Line*>& lines = a_lines;
-
-            // Draw each lines
-            int& max_width = a_max_width; max_width = 0;
-            int& total_height = a_total_height; total_height = 0;
+            std::vector<Line_Datas>& cutted = a_lines_text;
+            reset_line_generation();
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                // Check if the line is modified or not
-                unsigned int current_line_x = 0;
-                if(i < lines.size()) {
-                    Text_Image_Line* current_line = 0;
-                    if(lines[i] == 0) {
-                        // Create the new line
-                        current_line = _generate_line(cutted[i], current_style);
-                        if(current_line != 0) {
-                            Image* current_image = current_line->image();
-                            if(current_image != 0) {
-                                total_height += current_image->height();
-
-                                // Check the max width
-                                if(current_image->width() > max_width) {
-                                    max_width = current_image->width();
-                                }
-
-                                // Add the line
-                                lines[i] = current_line;
-                            }
-                        }
-                    }
-                    else {
-                        // Keep an already generated line
-                        current_line = lines[i];
-                        current_line->set_datas(cutted[i]);
-                        Image* current_image = current_line->image();
-                        if(current_image != 0) {
-                            total_height += current_image->height();
-
-                            // Check the max width
-                            if(current_image->width() > max_width) {
-                                max_width = current_image->width();
-                            }
-                        }
-                    }
-                }
-                else {
-                    // Create the new line
-                    Text_Image_Line* current_line = _generate_line(cutted[i], current_style);
-                    if(current_line != 0) {
-                        Image* current_image = current_line->image();
-                        if(current_image != 0) {
-                            total_height += current_image->height();
-
-                            // Check the max width
-                            if(current_image->width() > max_width) {
-                                max_width = current_image->width();
-                            }
-
-                            // Add the line
-                            lines.push_back(current_line);
-                        }
-                    }
-                }
-
-                // Update the datas about the cursor
-                Text_Image_Line* current_line = lines[i];
-                if(current_line == a_cursor_line && current_line != 0) {
-                    a_cursor_x = current_line_x + current_line->cursor_x();
-                }
+                generate_next_line(i);
             }
-
-            // Delete the useless lines
-            for(int i = 0;i<static_cast<int>(lines.size()) - static_cast<int>(cutted.size());i++) {
-                delete lines[lines.size() - 1];
-                lines.pop_back();
-            }
+            delete_useless_generated_lines();
         }
+        // Reset the generation of lines
+        inline void reset_line_generation() {
+            _check_modified_lines();
+            a_current_line = 0;
+            a_current_style = global_style();
+            a_max_width = 0;
+            a_total_height = 0;
+        };
         // Soft reset the block for a line renegeration
         inline void soft_reset() {
             a_cursor_line = 0;
@@ -1519,6 +1539,17 @@ namespace scls
                 // Update the positions
                 current_position += datas.content.size() + 5;
                 current_position_in_plain_text += datas.content_in_plain_text.size() + 1;
+            }
+
+            // Handle empty lines
+            if(cutted.size() <= 0) {
+                Line_Datas datas;
+                datas.content = "";
+                datas.content_in_plain_text = "";
+                datas.line_number = 0;
+                datas.start_position = 0;
+                datas.start_position_in_plain_text = 0;
+                lines_text.push_back(datas);
             }
         };
 
@@ -1568,10 +1599,16 @@ namespace scls
         //
         //*********
 
+        // Current line which should be generated
+        unsigned int a_current_line = 0;
+        // Current style for the line generation
+        Text_Style a_current_style;
         // Last created lines in the block
         std::vector<Text_Image_Line*> a_lines = std::vector<Text_Image_Line*>();
         // Last created lines text in the block
         std::vector<Line_Datas> a_lines_text = std::vector<Line_Datas>();
+        // Maximum number of line generable in one time
+        unsigned int a_max_line_number_generable = 30;
     };
 
     /*class Text_Image_Multi_Block {
