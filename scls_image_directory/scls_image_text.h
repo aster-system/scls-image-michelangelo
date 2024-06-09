@@ -1296,6 +1296,50 @@ namespace scls
         //
         //*********
 
+        // Add text to the block
+        void add_text(const std::vector<std::string>& cutted, const std::string& final_text, const std::string& text, unsigned int start_position) {
+            a_text = final_text;
+            int line_number = line_number_at_position(start_position);
+            if(line_number != -1) {
+                // Modify the text
+                Line_Datas datas = a_lines_text[line_number];
+                unsigned int inline_start_position = start_position - datas.start_position;
+                std::string end_of_first_line = "";
+                if(datas.content.size() - inline_start_position > 0) end_of_first_line = datas.content.substr(inline_start_position, datas.content.size() - inline_start_position);
+                datas.content = datas.content.substr(0, inline_start_position) + cutted.at(0);
+                datas.content_in_plain_text = a_defined_balises->plain_text(datas.content);
+                a_lines_text[line_number] = datas;
+
+                // Modify the needed lines
+                if(line_number < a_lines.size()) {
+                    a_lines[line_number]->set_modified(true);
+                    for(int i = 1;i<cutted.size();i++) {
+                        a_lines.insert(a_lines.begin() + line_number + i, 0);
+                    }
+                }
+                unsigned int current_plain_text_position = datas.start_position_in_plain_text + datas.content_in_plain_text.size() + 1;
+                unsigned int current_position = datas.start_position + datas.content.size() + 5;
+                for(int i = 1;i<cutted.size();i++) {
+                    datas.content = cutted.at(i); datas.content_in_plain_text = a_defined_balises->plain_text_size(cutted.at(i));
+                    datas.line_number = line_number + i + 1;
+                    datas.start_position = current_position; datas.start_position_in_plain_text = current_plain_text_position;
+                    current_position += datas.content.size() + 5; current_plain_text_position += datas.content_in_plain_text.size() + 1;
+                    a_lines_text.insert(a_lines_text.begin() + line_number + i, datas);
+                    line_number++;
+                }
+                datas.content += end_of_first_line;
+                datas.content_in_plain_text += a_defined_balises->plain_text(end_of_first_line);
+                a_lines_text[line_number] = datas;
+
+                // Modify the next lines
+                unsigned int plain_text_size = a_defined_balises->plain_text_size(text);
+                for(int i = line_number + 1;i<static_cast<int>(a_lines_text.size());i++) {
+                    a_lines_text[i].line_number += cutted.size() - 1;
+                    a_lines_text[i].start_position += text.size();
+                    a_lines_text[i].start_position_in_plain_text += plain_text_size;
+                }
+            }
+        };
         // Check the modified lines
         void _check_modified_lines() {
             for(int i = 0;i<static_cast<int>(a_lines.size());i++) {
@@ -1480,6 +1524,15 @@ namespace scls
             int final_position = line_number_at_position_in_plain_text(position);
             if(final_position == -1) return 0;
             return lines()[final_position];
+        };
+        // Returns the line number at the position given, or 0
+        int line_number_at_position(unsigned int position) {
+            for(int i = 0;i<static_cast<int>(lines_datas().size());i++) {
+                if(lines_datas()[i].start_position + lines_datas()[i].content.size() >= position) {
+                    return i;
+                }
+            }
+            return -1;
         };
         // Returns the line number at a plain text position given, or 0
         int line_number_at_position_in_plain_text(unsigned int position) {
