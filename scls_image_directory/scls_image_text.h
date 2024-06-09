@@ -1021,7 +1021,7 @@ namespace scls
             while(word_position < a_words_datas.size() && a_words_datas[word_position].x_position() + a_words_datas[word_position].width() < x_position) {
                 current_position += a_words_datas[word_position].content().size(); word_position++;
             }
-            if(word_position >= a_words_datas.size()) word_position = a_words_datas.size() - 1;
+            if(word_position >= a_words_datas.size()) return current_position;
 
             Word_Datas& word_to_apply = a_words_datas[word_position];
 
