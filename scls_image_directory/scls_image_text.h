@@ -1312,7 +1312,7 @@ namespace scls
 
                 // Modify the needed lines
                 if(line_number < a_lines.size()) {
-                    a_lines[line_number]->set_modified(true);
+                    if(a_lines[line_number] != 0) a_lines[line_number]->set_modified(true);
                     for(int i = 1;i<cutted.size();i++) {
                         a_lines.insert(a_lines.begin() + line_number + i, 0);
                     }
@@ -1339,6 +1339,7 @@ namespace scls
                     a_lines_text[i].start_position_in_plain_text += plain_text_size;
                 }
             }
+            else set_text(final_text);
         };
         // Check the modified lines
         void _check_modified_lines() {
@@ -1560,6 +1561,60 @@ namespace scls
             }
             delete_useless_generated_lines();
         }
+        // Removes a part of the text and returns the number of lines deleted
+        unsigned int remove_text(const std::string& final_text, unsigned int size_to_delete, unsigned int size_to_delete_in_plain_text, unsigned int start_position) {
+            unsigned int line_deleted = 0;
+            int position = line_number_at_position(start_position);
+            if(position != -1) {
+                Line_Datas* current_datas = &lines_datas()[position];
+                const unsigned int first_size_to_delete = size_to_delete;
+                const unsigned int first_size_to_delete_in_plain_text = size_to_delete_in_plain_text;
+                unsigned int local_position = start_position - current_datas->start_position;
+                std::string* text_to_remove = &(current_datas->content);
+                std::string* text_to_remove_in_plain_text = &(current_datas->content_in_plain_text);
+
+                // Remove the needed text
+                std::string content_to_keep = text_to_remove->substr(local_position, text_to_remove->size() - local_position);
+                (*text_to_remove) = text_to_remove->substr(0, local_position);
+                while(size_to_delete > 0 && position >= 0) {
+                    local_position = start_position - current_datas->start_position;
+                    if(static_cast<int>(local_position) - static_cast<int>(size_to_delete) >= 0) {
+                        (*text_to_remove) = text_to_remove->substr(0, text_to_remove->size() - size_to_delete);
+                        size_to_delete = 0;
+
+                        if(position < lines().size()) {
+                            lines()[position]->set_modified(true);
+                        }
+                    }
+                    else {
+                        size_to_delete -= local_position + 5;
+                        if(lines().size() > position) {
+                            if(lines()[position] != 0) delete lines()[position];
+                            lines().erase(lines().begin() + position);
+                        }
+                        if(position > 0) {
+                            current_datas = &lines_datas()[position - 1];
+                            position--;
+                            text_to_remove = &(current_datas->content);
+                            text_to_remove_in_plain_text = &(current_datas->content_in_plain_text);
+                        }
+                        else current_datas = 0;
+                        lines_datas().erase(lines_datas().begin() + position + 1);
+                        line_deleted++;
+                    }
+                }
+                if(position < lines().size()) { lines()[position]->set_modified(true); }
+                (*text_to_remove) += content_to_keep;
+                (*text_to_remove_in_plain_text) = a_defined_balises->plain_text(*text_to_remove);
+
+                // Modify the next lines
+                for(int i = position + 1;i<static_cast<int>(a_lines_text.size());i++) {
+                    a_lines_text[i].start_position -= first_size_to_delete;
+                    a_lines_text[i].start_position_in_plain_text -= first_size_to_delete_in_plain_text;
+                }
+            }
+            return line_deleted;
+        };
         // Reset the generation of lines
         inline void reset_line_generation() {
             _check_modified_lines();
