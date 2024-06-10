@@ -1321,7 +1321,7 @@ namespace scls
                 unsigned int current_position = datas.start_position + datas.content.size() + 5;
                 for(int i = 1;i<cutted.size();i++) {
                     datas.content = cutted.at(i); datas.content_in_plain_text = a_defined_balises->plain_text(cutted.at(i));
-                    datas.line_number = line_number + i + 1;
+                    datas.line_number = line_number + i;
                     datas.start_position = current_position; datas.start_position_in_plain_text = current_plain_text_position;
                     current_position += datas.content.size() + 5; current_plain_text_position += datas.content_in_plain_text.size() + 1;
                     a_lines_text.insert(a_lines_text.begin() + line_number + 1, datas);
