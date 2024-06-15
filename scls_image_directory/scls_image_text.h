@@ -484,6 +484,124 @@ namespace scls
 	//
 	//*********
 
+	class Word_Datas {
+        // Class containing the datas necessary for a word
+    public:
+        //*********
+        //
+        // Word_Datas mains functions
+        //
+        //*********
+
+        // Most simple Word_Datas constructor
+        Word_Datas() {};
+        // Most simple Word_Datas constructor with only the content
+        Word_Datas(std::string content) : a_content(content) {};
+        // Simple Word_Datas constructor
+        Word_Datas(std::string content, Text_Style style) : a_content(content), a_style(style) {};
+
+        // Getters and setters
+        inline std::string content() const {return a_content;};
+        inline Text_Style style() const {return a_style;};
+
+        //*********
+        //
+        // Cursor handling
+        //
+        //*********
+
+        // Returns the position in the text at a X position
+        inline unsigned int cursor_position_at_x(int x_position) {
+            if(content().size() == 0 && a_characters_position.size() >= 0) return 0;
+
+            unsigned int word_position = 0;
+            while(word_position < a_characters_position.size() && a_characters_position[word_position] + a_characters_width[word_position] <= x_position) {
+                word_position++;
+            }
+
+            if(word_position >= a_characters_position.size()) return content().size();
+            if(static_cast<int>(x_position) - static_cast<int>(a_characters_position[word_position]) > static_cast<int>(a_characters_width[word_position] + a_characters_position[word_position]) - static_cast<int>(x_position)) {
+                word_position++;
+            }
+
+            return word_position;
+        };
+
+        //*********
+        //
+        // Post-generation datas
+        //
+        //*********
+
+        // Getters and setters
+        inline std::vector<int>& characters_position() {return a_characters_position;};
+        inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
+        inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
+        inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
+        inline void set_width(unsigned int new_width) {a_width = new_width;};
+        inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
+        inline void set_y_offset(short new_y_offset) {a_y_offset = new_y_offset;};
+        inline unsigned int width() const {return a_width;};
+        inline short y_offset() const {return a_y_offset;};
+        inline int x_position() const {return a_x_position;};
+    private:
+        // Content of the line
+        std::string a_content = "";
+        // Style of the text
+        Text_Style a_style;
+
+        //*********
+        //
+        // Post-generation datas
+        //
+        //*********
+
+        // X position of each characters in the word
+        std::vector<int> a_characters_position = std::vector<int>();
+        // Width of each characters in the word
+        std::vector<unsigned int> a_characters_width = std::vector<unsigned int>();
+        // Width of the image
+        unsigned int a_width = 0;
+        // X position of the word
+        int a_x_position = 0;
+        // Offset of the y position
+        short a_y_offset = 0;
+    };
+
+    struct Line_Datas {
+        // Struct containing the datas necessary for a line
+        // Content of the line
+        std::string content = "";
+        // Content in plain text of the line
+        std::string content_in_plain_text = "";
+        // Number of the line (starting by 0)
+        unsigned int line_number = 0;
+        // Start of the text in the parent block in absolute text
+        unsigned int start_position = 0;
+        // Start of the text in the parent block in plain text
+        unsigned int start_position_in_plain_text = 0;
+    };
+
+    // Type of Text_Image_Block
+    enum Block_Type {
+        BT_Always_Free_Memory,
+        BT_Keep_Block_And_Line_In_Memory
+    };
+
+    struct Block_Datas {
+        // Struct containing the datas necessary for a block
+        // Block_Datas constructor
+        Block_Datas(std::string block_content) : content(block_content) {}
+        // Content of the block
+        std::string content = "";
+        // Global style in the block
+        Text_Style global_style;
+        // Max width of the block
+        int max_width = 0;
+        // Total height of the block
+        int total_height = 0;
+    };
+
     class _Balise_Container {
         // Class faciliting the handle of balises
     public:
@@ -632,7 +750,7 @@ namespace scls
             }
             return false;
         };
-        // Cut a block by its balises and spaces
+        // Cut a block by its sub_blocks and spaces
         std::vector<_Text_Balise_Part> _cut_block(std::string block_text) {
             std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(block_text, false, true);
             std::vector<_Text_Balise_Part> cutted = std::vector<_Text_Balise_Part>();
@@ -661,6 +779,60 @@ namespace scls
                 }
             }
             return cutted;
+        };
+        // Cut a multi-block by sub-blocks
+        std::vector<std::shared_ptr<Block_Datas>> _cut_multi_block(std::string block_text) {
+            std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(block_text, false, true);
+            std::string last_text = "";
+            std::vector<std::shared_ptr<Block_Datas>> to_return = std::vector<std::shared_ptr<Block_Datas>>();
+            for(int i = 0;i<static_cast<int>(first_cutted.size());i++) {
+                if(first_cutted[i].content.size() > 0 && first_cutted[i].content[0] == '<') {
+                    // A sub-block is here
+                    std::string current_balise_name = balise_name(formatted_balise(first_cutted[i].content));
+                    if(contains_defined_balise(current_balise_name) && defined_balise(current_balise_name).is_paragraph) {
+                        // Save the last empty paragraph
+                        std::shared_ptr<Block_Datas> block; block.reset(new Block_Datas(last_text));
+                        to_return.push_back(block); last_text = "";
+
+                        i++;
+                        unsigned int level = 1;
+                        std::string total_text = "";
+                        while(i<static_cast<int>(first_cutted.size())) {
+                            if(first_cutted[i].content[0] == '<') {
+                                first_cutted[i].content = formatted_balise(first_cutted[i].content);
+                                std::string next_balise_name = balise_name(first_cutted[i].content);
+                                if(next_balise_name == current_balise_name) {
+                                    if(first_cutted[i].content[1] == '/') {
+                                        level--;
+                                        if(level == 0) break;
+                                    }
+                                    else {
+                                        level++;
+                                    }
+                                }
+                            }
+                            total_text += first_cutted[i].content;
+                            i++;
+                        }
+
+                        // Create the block datas
+                        block.reset(new Block_Datas(total_text));
+                        to_return.push_back(block);
+                    }
+                    else {
+                        last_text += first_cutted[i].content;
+                    }
+                }
+                else {
+                    last_text += first_cutted[i].content;
+                }
+            }
+            // Save the last paragraph if necessary
+            if(last_text != "") {
+                std::shared_ptr<Block_Datas> block; block.reset(new Block_Datas(last_text));
+                to_return.push_back(block); last_text = "";
+            }
+            return to_return;
         };
         // Return the style of a balise
         inline Text_Balise& defined_balise(std::string balise_name) {
@@ -691,104 +863,6 @@ namespace scls
     private:
         // List of each defined balises
         std::map<std::string, Text_Balise> a_defined_balises = std::map<std::string, Text_Balise>();
-    };
-
-    class Word_Datas {
-        // Class containing the datas necessary for a word
-    public:
-        //*********
-        //
-        // Word_Datas mains functions
-        //
-        //*********
-
-        // Most simple Word_Datas constructor
-        Word_Datas() {};
-        // Most simple Word_Datas constructor with only the content
-        Word_Datas(std::string content) : a_content(content) {};
-        // Simple Word_Datas constructor
-        Word_Datas(std::string content, Text_Style style) : a_content(content), a_style(style) {};
-
-        // Getters and setters
-        inline std::string content() const {return a_content;};
-        inline Text_Style style() const {return a_style;};
-
-        //*********
-        //
-        // Cursor handling
-        //
-        //*********
-
-        // Returns the position in the text at a X position
-        inline unsigned int cursor_position_at_x(int x_position) {
-            if(content().size() == 0 && a_characters_position.size() >= 0) return 0;
-
-            unsigned int word_position = 0;
-            while(word_position < a_characters_position.size() && a_characters_position[word_position] + a_characters_width[word_position] <= x_position) {
-                word_position++;
-            }
-
-            if(word_position >= a_characters_position.size()) return content().size();
-            if(static_cast<int>(x_position) - static_cast<int>(a_characters_position[word_position]) > static_cast<int>(a_characters_width[word_position] + a_characters_position[word_position]) - static_cast<int>(x_position)) {
-                word_position++;
-            }
-
-            return word_position;
-        };
-
-        //*********
-        //
-        // Post-generation datas
-        //
-        //*********
-
-        // Getters and setters
-        inline std::vector<int>& characters_position() {return a_characters_position;};
-        inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
-        inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
-        inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
-        inline void set_width(unsigned int new_width) {a_width = new_width;};
-        inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
-        inline void set_y_offset(short new_y_offset) {a_y_offset = new_y_offset;};
-        inline unsigned int width() const {return a_width;};
-        inline short y_offset() const {return a_y_offset;};
-        inline int x_position() const {return a_x_position;};
-    private:
-        // Content of the line
-        std::string a_content = "";
-        // Style of the text
-        Text_Style a_style;
-
-        //*********
-        //
-        // Post-generation datas
-        //
-        //*********
-
-        // X position of each characters in the word
-        std::vector<int> a_characters_position = std::vector<int>();
-        // Width of each characters in the word
-        std::vector<unsigned int> a_characters_width = std::vector<unsigned int>();
-        // Width of the image
-        unsigned int a_width = 0;
-        // X position of the word
-        int a_x_position = 0;
-        // Offset of the y position
-        short a_y_offset = 0;
-    };
-
-    struct Line_Datas {
-        // Struct containing the datas necessary for a line
-        // Content of the line
-        std::string content = "";
-        // Content in plain text of the line
-        std::string content_in_plain_text = "";
-        // Number of the line (starting by 0)
-        unsigned int line_number = 0;
-        // Start of the text in the parent block in absolute text
-        unsigned int start_position = 0;
-        // Start of the text in the parent block in plain text
-        unsigned int start_position_in_plain_text = 0;
     };
 
     class Text_Image_Word {
@@ -1243,27 +1317,21 @@ namespace scls
         //
         //*********
 
-        // Type of Text_Image_Block
-        enum Block_Type {
-            BT_Always_Free_Memory,
-            BT_Keep_Block_And_Line_In_Memory
-        };
-
+        // Text_Image_Block constructor with a Block_Datas and an user defined type
+        Text_Image_Block(_Balise_Container* defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) { set_text(a_datas.get()->content); };
+        // Text_Image_Block constructor with a Block_Datas
+        Text_Image_Block(_Balise_Container* defined_balises, std::shared_ptr<Block_Datas> datas) : Text_Image_Block(defined_balises, datas, Block_Type::BT_Always_Free_Memory) {  };
         // Most simple Text_Image_Block constructor
-        Text_Image_Block(_Balise_Container* defined_balises, std::string text) : a_defined_balises(defined_balises) {
-            set_text(text);
-        };
+        Text_Image_Block(_Balise_Container* defined_balises, std::string text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
         // Text_Image_Block constructor with an user defined type
-        Text_Image_Block(_Balise_Container* defined_balises, std::string text, Block_Type type) : a_defined_balises(defined_balises), a_type(type) {
-            set_text(text);
-        };
+        Text_Image_Block(_Balise_Container* defined_balises, std::string text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(text), type) {};
         // Text_Image_Block destructor
         ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
-        inline Text_Style& global_style() {return a_global_style;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;update_line_text();};
-        inline std::string text() const {return a_text;};
+        inline Text_Style& global_style() {return a_datas.get()->global_style;};
+        inline void set_text(std::string new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_line_text();};
+        inline std::string text() const {return a_datas.get()->content;};
         inline Block_Type type() const {return a_type;};
 
         //*********
@@ -1298,7 +1366,7 @@ namespace scls
 
         // Add text to the block
         void add_text(const std::vector<std::string>& cutted, const std::string& final_text, const std::string& text, unsigned int start_position) {
-            a_text = final_text;
+            a_datas.get()->content = final_text;
             int line_number = line_number_at_position(start_position);
             if(line_number != -1) {
                 // Modify the text
@@ -1398,8 +1466,8 @@ namespace scls
             Text_Style& current_style = a_current_style;
             std::vector<Line_Datas>& cutted = a_lines_text;
             std::vector<Text_Image_Line*>& lines = a_lines;
-            int& max_width = a_max_width; max_width = 0;
-            int& total_height = a_total_height; total_height = 0;
+            int& max_width = a_datas.get()->max_width;
+            int& total_height = a_datas.get()->total_height;
 
             // Check if the line is modified or not
             Text_Image_Line* current_line = 0;
@@ -1468,6 +1536,8 @@ namespace scls
         };
         // Generates and returns an image with the block on it
         Image* image() {
+            if(a_last_image.get() != 0) return a_last_image.get();
+
             // Generate the lines
             generate_lines();
 
@@ -1475,11 +1545,11 @@ namespace scls
             unsigned int current_x = 0;
             unsigned int current_y = 0;
             unsigned char a_line_pasting_max_thread_number = 0;
-            int& max_width = a_max_width;
+            int& max_width = a_datas.get()->max_width;
             unsigned int min_x = 0;
             unsigned int min_y = 0;
             std::vector<std::thread*> threads = std::vector<std::thread*>();
-            int& total_height = a_total_height;
+            int& total_height = a_datas.get()->total_height;
             Image* to_return = new Image(max_width, total_height, Color(0, 0, 0, 0));
             for(int i = 0;i<static_cast<int>(lines().size());i++) {
                 Text_Image_Line* current_line = lines()[i];
@@ -1510,7 +1580,7 @@ namespace scls
                     }
                 }
             }
-            if(type() == Text_Image_Block::BT_Always_Free_Memory) clear_lines();
+            if(type() == Block_Type::BT_Always_Free_Memory) clear_lines();
 
             // Wait to each thread to finish
             for(int i = 0;i<static_cast<int>(threads.size());i++) {
@@ -1518,8 +1588,11 @@ namespace scls
                 delete threads[i];
             } threads.clear();
 
+            a_last_image.reset(to_return);
             return to_return;
         };
+        // Returns the shared pointer of the image and generates it if needed
+        std::shared_ptr<Image>& image_shared_pointer() { if(a_last_image.get() == 0) image(); return a_last_image;};
         // Returns the line at a plain text position given, or 0
         Text_Image_Line* line_at_position_in_plain_text(unsigned int position) {
             int final_position = line_number_at_position_in_plain_text(position);
@@ -1620,8 +1693,8 @@ namespace scls
             _check_modified_lines();
             a_current_line = 0;
             a_current_style = global_style();
-            a_max_width = 0;
-            a_total_height = 0;
+            a_datas.get()->max_width = 0;
+            a_datas.get()->total_height = 0;
         };
         // Soft reset the block for a line renegeration
         inline void soft_reset() {
@@ -1662,6 +1735,7 @@ namespace scls
         };
 
         // Getters and setter
+        inline Block_Datas* datas() {return a_datas.get();};
         inline std::vector<Text_Image_Line*>& lines() { return a_lines; };
         inline std::vector<Line_Datas>& lines_datas() { return a_lines_text; };
     private:
@@ -1673,14 +1747,10 @@ namespace scls
 
         // Containers of each defined balises
         _Balise_Container* a_defined_balises = 0;
-        // Global style in the block
-        Text_Style a_global_style;
-        // Max width of the block
-        int a_max_width = 0;
-        // Text in the block
-        std::string a_text = "";
-        // Total height of the block
-        int a_total_height = 0;
+        // Datas about the block
+        std::shared_ptr<Block_Datas> a_datas;
+        // Last generated image
+        std::shared_ptr<Image> a_last_image;
         // Type of the block
         const Block_Type a_type = Block_Type::BT_Always_Free_Memory;
 
@@ -1719,609 +1789,36 @@ namespace scls
         unsigned int a_max_line_number_generable = 30;
     };
 
-    /*class Text_Image_Multi_Block {
+    class Text_Image_Multi_Block {
         // Class containing a lot of block text
     public:
-        // Type of Text_Image
-        enum Text_Image_Type {
-            T_Always_Free_Memory,
-            T_Keep_Block_And_Line_In_Memory
-        };
-
         // Most simple Text_Image constructor
-        Text_Image_Multi_Block(_Balise_Container* defined_balises, std::string text) : a_defined_balises(defined_balises) {
-            set_text(text);
-        };
-        // Text_Image constructor with an user defined type
-        Text_Image_Multi_Block(_Balise_Container* defined_balises, std::string text, Text_Image_Type type) : a_defined_balises(defined_balises), a_type(type) {
-            set_text(text);
-        };
+        Text_Image_Multi_Block(_Balise_Container* defined_balises, std::string text) : a_defined_balises(defined_balises) { set_text(text); };
         // Text_Image destructor
-        ~Text_Image() { __delete_blocks(); };
+        ~Text_Image_Multi_Block() { __delete_blocks(); };
 
-        // Generates and returns an image with a block in it
-        Image* _block(_Balise_Container::Block* block) {
-            // Cut the block by its balises and spaces
-            _block_parser(block);
-
-            // Create the needed configurations
-            Color current_background_color = block->style.background_color;
-            unsigned short current_font_size = block->style.font_size;
-
-            // Check the cursor if the text is empty
-            if(main_block && content == "" && use_cursor()) {
-                a_cursor_x = 0;
-                a_cursor_y = 0;
-
-                max_width = cursor_width();
-                total_height = current_style().font_size;
-            }
-
-            // Update total height according to the cursor
-            if(use_cursor() && made.has_cursor && a_cursor_x + cursor_width() > max_width) {
-                max_width += (a_cursor_x + cursor_width()) - max_width;
-            } //
-
-            // Create the final image and clear memory
-            unsigned int current_x = 0;
-            unsigned int current_y = 0;
-            int& max_width = block->max_width;
-            unsigned int min_x = 0;
-            unsigned int min_y = 0;
-            int& total_height = block->total_height;
-            Image* final_image = new Image(max_width + min_x, total_height + min_y, current_background_color);
-            for(int i = 0;i<static_cast<int>(block->sub_blocks.size());i++) {
-                _Balise_Container::Block* current_block = block->sub_blocks[i];
-                if(current_block != 0) {
-                    if(current_block->ignore) {
-                        if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_block; block->sub_blocks[i] = 0;}
-                        continue;
-                    }
-
-                    Image* image = current_block->image;
-                    if(image == 0) {
-
-                    }
-                    else {
-                        // Apply max width
-                        if(current_style().max_width != -1 && current_x + image->width() > current_style().max_width) {
-                            // Break a line
-                            current_x = 0;
-                            current_y += current_font_size;
-                        }
-
-                        int x = current_x;
-                        int y = current_y;
-
-                        // Apply text alignment
-                        if(current_style().alignment_horizontal == Alignment_Horizontal::H_Center) {
-                            x = static_cast<int>(static_cast<double>(final_image->width()) / 2.0 - static_cast<double>(image->width()) / 2.0) + current_x;
-                        }
-
-                        final_image->paste(image, x, y);
-                        current_y += image->height();
-                    }
-
-                    if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_block; block->sub_blocks[i] = 0;}
-                }
-            }
-            if(type() == Text_Image_Type::T_Always_Free_Memory) block->sub_blocks.clear();
-            // Draw the cursor if necessary
-            if(use_cursor() && a_cursor_x != -1) {
-                int x = a_cursor_x;
-                int y = a_cursor_y;
-                if(x >= (static_cast<double>(cursor_width()) / 2.0)) x -= (static_cast<double>(cursor_width()) / 2.0);
-                final_image->fill_rect(x, y, cursor_width(), current_font_size, black);
-            } //
-
-            block->image = final_image;
-            return final_image;
-        };
-        // Parse the given block
-        void _block_parser(_Balise_Container::Block* block) {
-            // Check the needed modification
-            if(type() != Text_Image_Type::T_Always_Free_Memory) {
-                if(!block->entirely_generate) { return; }
-            }
-
-            // Cut the block by its balises and spaces
-            std::vector<_Text_Balise_Part> cutted = _cut_block(block->content);
-
-            // Apply the balising of a block to the image
-            std::string balise_content = _block_balise(cutted);
-            bool is_balise = false;
-            if(balise_content != "") {
-                std::string block_balise_name = balise_name(balise_content);
-                current_balises().push(block_balise_name);
-                is_balise = true;
-
-                cutted.erase(cutted.end() - 1);
-                cutted.erase(cutted.begin());
-            }
-            apply_current_style();
-
-            // Cut by sub-blocks
-            block->modified = false; block->style = current_style();
-            __generate_block_with_values(block->sub_blocks, cutted, block->max_width, block->total_height);
-
-            if(type() == Text_Image_Type::T_Always_Free_Memory)block->entirely_generate = true;
-            else block->entirely_generate = false;
-
-            // If the block is a balise
-            if(is_balise) {
-                current_balises().pop();
-            }
-        };
-        // Returns an image with a simple block with only modified content regenerated (disabled for now)
-        Image* _block_simple(_Balise_Container::Block* block) {
-            return _block_simple_entirely(block);
-
-            // Cut the text by line
-            // _block_simple_parser(block);
-
-            // Draw the final image
-            unsigned int current_x = 0;
-            unsigned int current_y = 0;
-            int& max_width = block->max_width;
-            unsigned int min_x = 0;
-            unsigned int min_y = 0;
-            std::vector<std::thread*> threads = std::vector<std::thread*>();
-            int& total_height = block->total_height;
-            Image* to_return = block->image;
-            for(int i = 0;i<static_cast<int>(block->lines.size());i++) {
-                _Balise_Container::Line* current_line = block->lines[i];
-                if(current_line != 0) {
-                    Image* current_image = current_line->image;
-                    if(current_image != 0) {
-                        if(a_line_pasting_max_thread_number > 0) {
-                            // Check for the number of thread
-                            if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
-                                // Wait to each thread to finish
-                                for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                                    threads[i]->join();
-                                    delete threads[i];
-                                } threads.clear();
-                            }
-
-                            if(current_line->just_modified) {
-                                std::thread* current_thread = new std::thread(&Text_Image::_block_simple_paste, this, to_return, current_line, current_x, current_y);
-                                threads.push_back(current_thread);
-                                current_line->just_modified = false;
-                            }
-
-                            current_y += current_image->height();
-                        }
-                        else {
-                            if(current_line->just_modified) {
-                                Text_Image::_block_simple_paste(to_return, current_line, current_x, current_y);
-                                current_line->just_modified = false;
-                            }
-                            current_y += current_image->height();
-                        }
-                    }
-                }
-            }
-            if(type() == Text_Image_Type::T_Always_Free_Memory) block->lines.clear();
-
-            // Wait to each thread to finish
-            for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                threads[i]->join();
-                delete threads[i];
-            } threads.clear();
-
-            block->image = to_return;
-            return to_return;
-        };
-        // Returns an image with a simple block entirely regenerate in it
-        Image* _block_simple_entirely(_Balise_Container::Block* block) {
-            // Cut the text by line
-            _block_simple_parser(block);
-
-            // Draw the final image
-            unsigned int current_x = 0;
-            unsigned int current_y = 0;
-            int& max_width = block->max_width;
-            unsigned int min_x = 0;
-            unsigned int min_y = 0;
-            std::vector<std::thread*> threads = std::vector<std::thread*>();
-            int& total_height = block->total_height;
-            Image* to_return = new Image(max_width, total_height, Color(0, 0, 0, 0));
-            for(int i = 0;i<static_cast<int>(block->lines.size());i++) {
-                _Balise_Container::Line* current_line = block->lines[i];
-                if(current_line != 0) {
-                    current_line->just_modified = false;
-                    Image* current_image = current_line->image;
-                    if(current_image != 0) {
-                        if(a_line_pasting_max_thread_number > 0) {
-                            // Check for the number of thread
-                            if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
-                                // Wait to each thread to finish
-                                for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                                    threads[i]->join();
-                                    delete threads[i];
-                                } threads.clear();
-                            }
-
-                            std::thread* current_thread = new std::thread(&Text_Image::_block_simple_paste, this, to_return, current_line, current_x, current_y);
-                            threads.push_back(current_thread);
-
-                            current_y += current_image->height();
-                        }
-                        else {
-                            unsigned int height_to_apply = current_image->height();
-                            Text_Image::_block_simple_paste(to_return, current_line, current_x, current_y);
-                            current_y += height_to_apply;
-                        }
-                    }
-                }
-            }
-            if(type() == Text_Image_Type::T_Always_Free_Memory) block->lines.clear();
-
-            // Wait to each thread to finish
-            for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                threads[i]->join();
-                delete threads[i];
-            } threads.clear();
-
-            block->image = to_return;
-            return to_return;
-        };
-        // Pastes an image on an another image for multi threading
-        void _block_simple_paste(Image* block, _Balise_Container::Line* current_line, unsigned int current_x, unsigned int current_y) {
-            block->paste(current_line->image, current_x, current_y);
-
-            // Free the memory
-            if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_line;}
-        };
-        // Parse the given simple block
-        void _block_simple_parser(_Balise_Container::Block* block) {
-            // Check the needed modification
-            // Only a memory not full of sub lines can pass
-            if(type() != Text_Image_Type::T_Always_Free_Memory) {
-                if(!block->entirely_generate && !block->modified) { return; }
-            }
-            else {
-                for(int i = 0;i<static_cast<int>(block->lines.size());i++) delete block->lines[i];
-                block->lines.clear();
-            }
-
-            // Cut the text by line
-            std::vector<std::string> cutted = cut_string(block->content, "</br>", false, true);
-
-            // Draw each lines
-            apply_current_style();
-            block->modified = false;
-            std::vector<_Balise_Container::Line*>& lines = block->lines;
-            if(lines.size() > 0) lines[lines.size() - 1]->modified = true;
-            int& max_width = block->max_width;
-            int& total_height = block->total_height; total_height = 0;
-            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                // Check if the line is modified or not
-                if(i < lines.size()) {
-                    if(!block->entirely_generate && !lines[i]->modified) {
-                        // Keep an already generated line
-                        _Balise_Container::Line* current_line = lines[i];
-                        Image* current_image = current_line->image;
-                        if(current_image != 0) {
-                            total_height += current_image->height();
-
-                            // Check the max width
-                            if(current_image->width() > max_width) {
-                                max_width = current_image->width();
-                            }
-                        }
-
-                        continue;
-                    }
-                    else {
-                        delete lines[i]; lines[i] = 0;
-                    }
-                }
-
-                // Create the new line
-                _Balise_Container::Line* current_line = _line(cutted[i]);
-                if(current_line != 0) {
-                    current_line->just_modified = true;
-                    Image* current_image = current_line->image;
-                    if(current_image != 0) {
-                        current_line->modified = false;
-                        total_height += current_image->height();
-
-                        // Check the max width
-                        if(current_image->width() > max_width) {
-                            max_width = current_image->width();
-                        }
-
-                        // Add the line
-                        if(i >= lines.size()) {
-                            lines.push_back(current_line);
-                        }
-                        else {
-                            lines[i] = current_line;
-                        }
-                    }
-                }
-            }
-
-            // Delete uneeded lines
-            for(int i = 0;i<static_cast<int>(lines.size()) - static_cast<int>(cutted.size());i++) {
-                delete lines[lines.size() - 1]; lines.pop_back(); i--;
-            }
-
-            if(type() == Text_Image_Type::T_Always_Free_Memory) block->entirely_generate = true;
-            else block->entirely_generate = false;
-        };
-        // Returns the balise of the block or a blank string if it is not
-        inline std::string _block_balise(std::vector<_Text_Balise_Part>& cutted) {
-            return defined_balises()->_block_balise(cutted);
-        };
-        // Cuts a block by its variables and spaces
-        inline std::vector<_Text_Balise_Part> _cut_block(std::string block_text) {
-            return defined_balises()->_cut_block(block_text);
-        };
+        // Generates and returns a block
+        Text_Image_Block* _block(std::shared_ptr<Block_Datas> block) { Text_Image_Block* new_block = new Text_Image_Block(defined_balises(), block); return new_block; };
         // Deletes the blocks in the image
-        void __delete_blocks(unsigned int max_size = 0) { __delete_last_blocks(a_blocks_found, max_size); };
+        void __delete_blocks(unsigned int max_size = 0) { a_blocks.clear(); };
         // Deletes the last blocks in a vector
-        void __delete_last_blocks(std::vector<_Balise_Container::Block*>& blocks_found, unsigned int max_size = 0) {
-            std::vector<_Balise_Container::Block*> new_blocks = std::vector<_Balise_Container::Block*>();
-            for(int i = 0;i<static_cast<int>(blocks_found.size());i++) {
-                if(type() == Text_Image_Type::T_Always_Free_Memory || blocks_found[i]->entirely_generate) {
-                    delete blocks_found[i];
-                    if(i < max_size) {
-                        new_blocks.push_back(0);
-                    }
-                }
-                else if(blocks_found[i]->modified) {
-                    delete blocks_found[i]->image;
-                    if(i < max_size) {
-                        new_blocks.push_back(blocks_found[i]);
-                    }
-                    else {
-                        delete blocks_found[i];
-                    }
-                }
-                else {
-                    if(i < max_size) {
-                        new_blocks.push_back(blocks_found[i]);
-                    }
-                    else {
-                        delete blocks_found[i];
-                    }
-                }
-            }
-            blocks_found = new_blocks;
-        };
-        // Free the memory for the Text Image
         void free_memory() {__delete_blocks();};
-        // Generate a list of blocks with only values
-        void __generate_block_with_values(std::vector<_Balise_Container::Block*>& blocks_found, std::vector<_Text_Balise_Part>& cutted, int& max_width, int& total_height) {
-            std::vector<_Balise_Container::Block*> new_blocks = defined_balises()->_cut_by_blocks(cutted);
-            __delete_last_blocks(blocks_found, new_blocks.size());
-            max_width = 0;
-            unsigned int min_x = 0;
-            unsigned int min_y = 0;
-            total_height = 0;
-            for(int i = 0;i<static_cast<int>(new_blocks.size());i++) {
-                _Balise_Container::Block* current_block = new_blocks[i];
+        // Generate each blocks in the multiblocks
+        void generate_blocks() {
+            // Generate the needed datas
+            update_blocks_datas();
 
-                if(i >= blocks_found.size()) {
-                    // The size limit is reached
-                    Image* block_image = 0;
-                    if(current_block->is_balise) {
-                        block_image = _block(current_block);
-                    }
-                    else {
-                        block_image = _block_simple_entirely(current_block);
-                    }
+            // Generate each blocks
+            a_max_width = 0;
+            a_total_height = 0;
+            for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
+                std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(defined_balises(), a_blocks_datas[i]);
+                new_block.get()->image();
+                a_blocks.push_back(new_block);
 
-                    if(block_image != 0) {
-                        if(static_cast<int>(block_image->width()) > max_width) max_width = block_image->width();
-                        current_block->style = current_style();
-                        total_height += block_image->height();
-                    }
-
-                    if(i < blocks_found.size()) blocks_found[i] = new_blocks[i];
-                    else blocks_found.push_back(new_blocks[i]);
-                }
-                else {
-                    if(blocks_found[i] == 0) {
-                        // A block should be created from scratch
-                        Image* block_image = 0;
-                        if(current_block->is_balise) {
-                            block_image = _block(current_block);
-                        }
-                        else {
-                            block_image = _block_simple_entirely(current_block);
-                        }
-
-                        if(block_image != 0) {
-                            if(static_cast<int>(block_image->width()) > max_width) max_width = block_image->width();
-                            current_block->style = current_style();
-                            total_height += block_image->height();
-                        }
-
-                        if(i < blocks_found.size()) blocks_found[i] = new_blocks[i];
-                        else blocks_found.push_back(new_blocks[i]);
-                    }
-                    else if(blocks_found[i]->modified || i == 0) {
-                        // An already created modified block is handled
-                        std::string content = current_block->content;
-                        delete current_block; current_block = blocks_found[i]; current_block->modified = true;
-                        current_block->content = content;
-                        Image* block_image = 0;
-                        if(current_block->is_balise) {
-                            delete current_block->image; current_block->image = 0;
-                            block_image = _block(current_block);
-                        }
-                        else {
-                            block_image = _block_simple(current_block);
-                        }
-
-                        if(block_image != 0) {
-                            if(static_cast<int>(block_image->width()) > max_width) max_width = block_image->width();
-                            current_block->style = current_style();
-                            total_height += block_image->height();
-                        }
-                    }
-                    else {
-                        // An already created unmodified block is handled
-                        delete current_block; current_block = blocks_found[i];
-                        Image* block_image = current_block->image;
-                        if(block_image != 0) {
-                            if(static_cast<int>(block_image->width()) > max_width) max_width = block_image->width();
-                            total_height += block_image->height();
-                        }
-                    }
-                }
+                if(a_max_width < new_block.get()->datas()->max_width) a_max_width = new_block.get()->datas()->max_width;
+                a_total_height += new_block.get()->datas()->total_height;
             }
-
-        };
-        // Generate each blocks for the text
-        void __generate_blocks(const std::string& text) {
-            const std::string content = format_string(text);
-
-            // Cut the block by its balises and spaces
-            std::vector<_Text_Balise_Part> cutted = _cut_block(content);
-
-            // Apply the balising of a block to the image
-            std::string balise_content = _block_balise(cutted);
-            bool is_balise = false;
-            if(balise_content != "") {
-                std::string block_balise_name = balise_name(balise_content);
-                current_balises().push(block_balise_name);
-                is_balise = true;
-
-                cutted.erase(cutted.end() - 1);
-                cutted.erase(cutted.begin());
-            }
-            apply_current_style();
-
-            // Cut by blocks
-            __generate_block_with_values(a_blocks_found, cutted, a_max_width, a_total_height);
-        };
-        // Generate the blocks in the text
-        void generate_blocks() { __generate_blocks(text());};
-        // Generate a line of text
-        _Balise_Container::Line* _line(const std::string& content) {
-            // Create the needed configurations
-            Color current_background_color = a_current_style.background_color;
-            unsigned short current_font_size = a_current_style.font_size;
-
-            // Create each words
-            unsigned int current_line = 0;
-            int current_width = 0;
-            std::vector<_Text_Balise_Part> cutted = _cut_block(content);
-            unsigned short space_width = static_cast<unsigned short>(static_cast<double>(current_font_size) / 2.0);
-            std::vector<_Balise_Container::Word*> words = std::vector<_Balise_Container::Word*>();
-            short y_offset = 0;
-            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                _Balise_Container::Word* word_to_add = 0;
-                if(cutted[i].content.size() > 0 && cutted[i].content[0] == '<') {
-                    // Apply a balise
-                    std::string balise = cutted[i].content;
-                    if(balise.size() <= 0 || balise[balise.size() - 1] != '>') {
-                        print("Warning", "SCLS Image \"Michelangelo\"", "A balise you want to parse is badly syntaxed.");
-                        continue;
-                    }
-
-                    std::string balise_content = formatted_balise(balise);
-                    std::string current_balise_name = balise_name(balise_content);
-                }
-                else if(cutted[i].content == " ") { word_to_add = new _Balise_Container::Word(); current_width += space_width; word_to_add->is_space = true; word_to_add->content = " "; }
-                else {
-                    // Draw the image
-                    std::string word_content = format_string_as_plain_text(cutted[i].content);
-                    long long t = time_ns();
-                    word_to_add = _word(word_content);
-                    if(word_to_add != 0) {
-                        current_width += word_to_add->image->width();
-                        if(word_to_add->y_offset < y_offset) y_offset = word_to_add->y_offset;
-                    }
-
-                    // Check for the position of the cursor
-                    int cursor_x_position = -1;
-                    if(cursor_position() >= start_plain_text_position && cursor_position() <= start_plain_text_position + word_content.size()) {
-                        cursor_x_position = cursor_position() - start_plain_text_position;
-                    }
-
-                    if(image != 0) {
-                        // Check max width
-                        if(current_style().max_width != -1 && image->width() < current_style().max_width && current_width + image->width() > current_style().max_width) {
-                            // Break a line
-                            current_line++;
-                            to_return.lines_width.push_back(current_width);
-                            if(current_width > to_return.max_width) to_return.max_width = current_width;
-                            current_width = 0;
-                            to_return.total_height += current_font_size;
-                        }
-
-                        // Check the cursor position
-                        if(cursor_x_position != -1) {
-                            std::string part_1 = word_content.substr(0, cursor_x_position);
-                            std::string part_2 = word_content.substr(cursor_x_position, word_content.size() - cursor_x_position);
-
-                            to_return.has_cursor = true;
-                            if(part_1 == "") {
-                                a_cursor_x = current_width;
-                            }
-                            else if(part_2 == "") {
-                                a_cursor_x = current_width + image->width();
-                            }
-                            else {
-                                if(part_1.size() < part_2.size()) {
-                                    int temp_int = 0;
-                                    Image* temp = _word(part_1, temp_int);
-                                    a_cursor_x = current_width + (temp->width());
-                                    delete temp; temp = 0;
-                                }
-                                else {
-                                    int temp_int = 0;
-                                    Image* temp = _word(part_2, temp_int);
-                                    a_cursor_x = current_width + (image->width() - temp->width());
-                                    delete temp; temp = 0;
-                                }
-                            }
-                            a_cursor_y = to_return.total_height - current_font_size;
-                        } //
-
-                        word_to_add.content = word_content;
-                        word_to_add.image = image; word_to_add.y_offset = (current_font_size - image->height());
-                        current_width += image->width();
-                    } //
-                }
-
-                // Add the part
-                words.push_back(word_to_add);
-            }
-
-            // Draw the line
-            int current_x = 0;
-            Image* final_image = new Image(current_width, current_font_size - y_offset, Color(0, 0, 0, 0));
-            for(int i = 0;i<static_cast<int>(words.size());i++) {
-                _Balise_Container::Word* current_word = words[i];
-                if(current_word != 0) {
-                    Image* current_image = current_word->image;
-                    if(current_image != 0) {
-                        // Paste the word
-                        final_image->paste(current_image, current_x, current_font_size - (current_image->height() + current_word->y_offset));
-                        current_x += current_image->width();
-                    }
-                    else if(current_word->is_space) {
-                        current_x += space_width;
-                    }
-                    if(type() == Text_Image_Type::T_Always_Free_Memory || true) {delete current_word;words[i] = 0;}
-                }
-            }
-
-            // Free the memory
-            if(type() == Text_Image_Type::T_Always_Free_Memory || true) {for(int i = 0;i<static_cast<int>(words.size());i++){if(words[i] != 0) delete words[i];}words.clear();}
-
-            // Create the line
-            _Balise_Container::Line* to_return = new _Balise_Container::Line();
-            to_return->content = content;
-            to_return->image = final_image;
-
-            return to_return;
         };
         // Return the entire text in an image
         Image* image(const std::string& text) {
@@ -2330,188 +1827,46 @@ namespace scls
             int max_width = a_max_width;
             int total_height = a_total_height;
 
-            // Check the cursor if the text is empty
-            if(text == "" && use_cursor()) {
-                a_cursor_x = 0;
-                a_cursor_y = 0;
-
-                max_width = cursor_width();
-                total_height = current_style().font_size;
-            }
-
-            // Update total height according to the cursor
-            if(use_cursor() && a_cursor_x + cursor_width() > max_width) {
-                max_width += (a_cursor_x + cursor_width()) - max_width;
-            }
-
             // Create the final image and clear memory
             Color current_background_color = a_current_style.background_color;
             unsigned short current_font_size = a_current_style.font_size;
             unsigned int current_x = 0;
             unsigned int current_y = 0;
             Image* final_image = new Image(max_width, total_height, current_background_color);
-            for(int i = 0;i<static_cast<int>(a_blocks_found.size());i++) {
-                _Balise_Container::Block* current_block = a_blocks_found[i];
+            for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
+                Text_Image_Block* current_block = a_blocks[i].get();
                 if(current_block != 0) {
-                    if(current_block->ignore) continue;
-
-                    Image* image = current_block->image;
+                    Image* image = current_block->image();
                     if(image == 0) {
 
                     }
                     else {
-                        // Apply max width
-                        if(current_style().max_width != -1 && current_x + image->width() > current_style().max_width) {
-                            // Break a line
-                            current_x = 0;
-                            current_y += current_font_size;
-                        }
-
                         int x = current_x;
                         int y = current_y;
-
-                        // Apply text alignment
-                        if(current_style().alignment_horizontal == Alignment_Horizontal::H_Center) {
-                            x = static_cast<int>(static_cast<double>(final_image->width()) / 2.0 - static_cast<double>(image->width()) / 2.0) + current_x;
-                        }
 
                         final_image->paste(image, x, y);
                         current_y += image->height();
                     }
-                    if(type() == Text_Image_Type::T_Always_Free_Memory) {delete current_block; a_blocks_found[i] = 0;}
-                }
-            }
-            if(type() == Text_Image_Type::T_Always_Free_Memory) __delete_blocks();
-
-            // Draw the cursor if necessary
-            if(use_cursor() && a_cursor_x != -1) {
-                int x = a_cursor_x;
-                int y = a_cursor_y;
-                if(x >= (static_cast<double>(cursor_width()) / 2.0)) x -= (static_cast<double>(cursor_width()) / 2.0);
-                final_image->fill_rect(x, y, cursor_width(), current_font_size, black);
-            }
+                } a_blocks[i].reset();
+            } __delete_blocks();
 
             return final_image;
         };
         // Return the entire text in an image
-        Image* image() {
-            return image(text());
-        };
+        Image* image() { return image(text()); };
+        // Returns a shared pointer of the image
+        std::shared_ptr<Image> image_shared_pointer() { std::shared_ptr<Image> to_return;to_return.reset(image());return to_return;};
         // Save the image as an image
         inline void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;};
-        // Create a single word of the text without any balising and spaces
-        _Balise_Container::Word* _word(const std::string& word) {
-            // Base variables for the creation
-            std::string path = a_current_style.font.font_path;
-            if(path == "") path = get_system_font(DEFAULT_FONT).font_path;
+        // Update the datas of each blocks
+        void update_blocks_datas() {
+            a_blocks_datas = a_defined_balises->_cut_multi_block(text());
 
-            // Load the FreeType base system
-            if(!_free_type_library_inited)
-            {
-                FT_Error error = FT_Init_FreeType(&_freetype_library);
-                if ( error )
-                {
-                    print("Error", "SCLS", "Unable to load the FreeType engine.");
-                    return 0;
-                }
-                _free_type_library_inited = true;
+            // Apply the style of each blocks
+            for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
+                a_blocks_datas[i].get()->global_style = global_style();
             }
-            FT_Face face;
-            FT_Error error = FT_New_Face(_freetype_library, path.c_str(), 0, &face);
-            if (!std::filesystem::exists(path))
-            {
-                print("Error", "SCLS", "Unable to load the \"" + path + "\" font, it does not exist.");
-                return 0;
-            }
-            else if ( error )
-            {
-                print("Error", "SCLS", "Unable to load the \"" + path + "\" font.");
-                return 0;
-            }
-
-            // Configure and load the FreeType glyph system
-            error = FT_Select_Charmap(face, FT_ENCODING_UNICODE);
-            error = FT_Set_Pixel_Sizes(face, 0, a_current_style.font_size);
-
-            // Create each characters
-            std::vector<Image*> characters;
-            std::vector<int> cursor_pos;
-            int max_height = 0;
-            int min_y_position = 0;
-            int to_add_font_size = 0;
-            unsigned int total_width = 0;
-            std::vector<unsigned int> y_pos;
-            for(int i = 0;i<static_cast<int>(word.size());i++)
-            {
-                int cursor_position = 0;
-                int y_position = 0;
-                Image* image = _char_image(word.at(i), face, cursor_position, y_position, a_current_style.color);
-                characters.push_back(image);
-                cursor_pos.push_back(total_width + cursor_position);
-                if(cursor_pos[cursor_pos.size() - 1] < 0) cursor_pos[cursor_pos.size() - 1] = 0; // Avoid a little bug with X position
-                if(static_cast<int>(image->height()) + y_position > max_height) max_height = image->height() + y_position;
-                if(y_position < to_add_font_size) to_add_font_size = y_position;
-                y_pos.push_back(y_position);
-                if(y_position < min_y_position) min_y_position = y_position;
-                total_width += image->width() + cursor_position;
-            }
-
-            for(int i = 0;i<static_cast<int>(characters.size());i++)
-            {
-                if(characters[i] != 0)
-                {
-                    y_pos[i] = max_height - (characters[i]->height() + y_pos[i]);
-                }
-            }
-
-            // Create the final image and clear the memory
-            Image* final_image = new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0));
-            unsigned char max_thread_number = 0;
-            std::vector<std::thread*> threads = std::vector<std::thread*>();
-            for(int i = 0;i<static_cast<int>(characters.size());i++)
-            {
-                if(characters[i] != 0)
-                {
-                    if(max_thread_number > 0) {
-                        if(threads.size() >= max_thread_number) {
-                            for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                                threads[i]->join();
-                                delete threads[i];
-                            } threads.clear();
-                        }
-
-                        std::thread* current_thread = new std::thread(&Text_Image::__word_letter, this, final_image, characters[i], cursor_pos[i], y_pos[i]);
-                        threads.push_back(current_thread);
-                    }
-                    else {
-                        __word_letter(final_image, characters[i], cursor_pos[i], y_pos[i]);
-                    }
-                }
-            }
-
-            // Join each threads
-            for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                threads[i]->join();
-                delete threads[i];
-            }
-            FT_Done_Face(face);
-
-            // Create the word
-            _Balise_Container::Word* current_word = new _Balise_Container::Word();
-            current_word->image = final_image;
-            current_word->content = word;
-            current_word->y_offset = min_y_position;
-
-            return current_word;
-        }
-
-        // Apply a style to the text
-        inline void apply_current_style() {
-            if(current_balises().size() == 0) apply_global_style();
-            else apply_style(defined_balises()->defined_balise(current_balises().top()).style);
         };
-        inline void apply_global_style() {apply_style(global_style());};
-        inline void apply_style(Text_Style style) {a_current_style = style;};
 
         // Plain text handling
         // Returns the plain text of the image
@@ -2520,28 +1875,17 @@ namespace scls
         inline unsigned int plain_text_size() { return plain_text().size(); };
 
         // Getters and setters
-        inline std::vector<_Balise_Container::Block*>& blocks_found() {return a_blocks_found;};
-        inline std::stack<std::string>& current_balises() {return a_current_balises;};
-        inline Text_Style current_style() const {return a_current_style;};
-        inline unsigned int cursor_position() const {return a_cursor_position;};
-        inline unsigned short cursor_width() const {return a_cursor_width;};
+        inline std::vector<std::shared_ptr<Text_Image_Block>>& blocks() {return a_blocks;};
         inline _Balise_Container* defined_balises() {return a_defined_balises;};
         inline Text_Balise defined_balises(std::string balise) {return defined_balises()->defined_balise(balise);};
         inline Text_Style& global_style() {return a_global_style;};
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
-        inline void set_cursor_position(unsigned int new_cursor_position) {a_cursor_position = new_cursor_position;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;if(move_cursor)set_cursor_position(plain_text_size());};
-        inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
+        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;};
         inline std::string text() const {return a_text;};
-        inline Text_Image_Type type() const {return a_type;};
-        inline bool use_cursor() const {return a_use_cursor;};
     private:
         // Current style used for the formatting
         Text_Style a_current_style;
-        // Current balise stack in the text
-        std::stack<std::string> a_current_balises = std::stack<std::string>();
-
         // Global style in the text
         Text_Style a_global_style;
 
@@ -2549,20 +1893,6 @@ namespace scls
         _Balise_Container* a_defined_balises = 0;
         // HTML Text in the image
         std::string a_text = "";
-        // Type of the image
-        const Text_Image_Type a_type = Text_Image_Type::T_Always_Free_Memory;
-
-        // Cursor datas
-        // Position of the cursor in the text (0 = before the first character, size = after the last character)
-        unsigned int a_cursor_position = 0;
-        // Width of the cursor
-        unsigned short a_cursor_width = 2;
-        // X position of the cursor
-        int a_cursor_x = -1;
-        // Y position of the cursor
-        int a_cursor_y = -1;
-        // If the image use the cursor or not
-        bool a_use_cursor = false;
 
         //*********
         //
@@ -2571,7 +1901,9 @@ namespace scls
         //*********
 
         // Last created blocks
-        std::vector<_Balise_Container::Block*> a_blocks_found = std::vector<_Balise_Container::Block*>();
+        std::vector<std::shared_ptr<Text_Image_Block>> a_blocks = std::vector<std::shared_ptr<Text_Image_Block>>();
+        // Last created blocks datas
+        std::vector<std::shared_ptr<Block_Datas>> a_blocks_datas = std::vector<std::shared_ptr<Block_Datas>>();
         // Max numbers of thread to paste the lines
         unsigned char a_line_pasting_max_thread_number = 0;
         // Max width in the image
@@ -2595,7 +1927,9 @@ namespace scls
         // Create an image from a text and return it
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(this, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
         // Returns a newly created text image
-        inline Text_Image_Block* new_text_image_block(std::string text, Text_Image_Block::Block_Type type = Text_Image_Block::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(this, text, type);return img;};
+        inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(this, text, type);return img;};
+        // Returns a newly created text image multi block
+        inline Text_Image_Multi_Block* new_text_image_multi_block(std::string text) {Text_Image_Multi_Block *img = new Text_Image_Multi_Block(this, text);return img;};
         // Save the image in a path
         // inline void save_image(std::string path, std::string text) {Text_Image_Block *img = new Text_Image_Block(this, text);img->save_image(path);delete img;img = 0;}
 
