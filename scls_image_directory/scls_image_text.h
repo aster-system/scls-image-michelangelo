@@ -226,18 +226,6 @@ namespace scls
         double text_offset_y = 0;
     };
 
-    // Balise in a text
-    struct Text_Balise {
-        // If the balise
-        bool has_content = true;
-        // If the balise is a paragraph or not
-        bool is_paragraph = false;
-        // Name of the balise
-        std::string name = "";
-        // Style of the balise
-        Text_Style style;
-    };
-
     // Block of text in a text
     struct Text_Block {
         // Content of the block
@@ -484,6 +472,53 @@ namespace scls
 	//
 	//*********
 
+	// Balise in a text
+    struct Balise_Style_Datas : public Balise_Datas {
+        // Style of the balis
+        Text_Style style;
+    };
+
+    class _Balise_Style_Container : public _Balise_Container {
+        // Class faciliting the handle of balises, with style
+    public:
+
+        // Most simple _Balise_Style_Container constructor
+        _Balise_Style_Container() {};
+        // _Balise_Style_Container destructor
+        ~_Balise_Style_Container() {};
+
+        // Return a style balise
+        inline Balise_Style_Datas* defined_balise_style(std::string balise_name) { return reinterpret_cast<Balise_Style_Datas*>(defined_balise(balise_name)); };
+
+        // Load the built-ins balises
+        virtual void _load_built_in_balises() {
+            std::shared_ptr<Balise_Style_Datas> current_balise = std::make_shared<Balise_Style_Datas>();
+            // Create the <br> style
+            current_balise.get()->is_break_line = true;
+            set_defined_balise("br", current_balise);
+            // Create the <div> style
+            current_balise = std::make_shared<Balise_Style_Datas>();
+            current_balise.get()->is_paragraph = true;
+            set_defined_balise<Balise_Style_Datas>("div", current_balise);
+            // Create the <p> style
+            current_balise = std::make_shared<Balise_Style_Datas>();
+            current_balise.get()->is_paragraph = true;
+            set_defined_balise<Balise_Style_Datas>("p", current_balise);
+            // Create the <h1> style
+            current_balise = std::make_shared<Balise_Style_Datas>();
+            current_balise.get()->is_paragraph = true;
+            current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Center;
+            current_balise.get()->style.color = red; current_balise.get()->style.font_size = 50; current_balise.get()->style.font = get_system_font("arialbd");
+            set_defined_balise<Balise_Style_Datas>("h1", current_balise);
+            // Create the <h2> style
+            current_balise = std::make_shared<Balise_Style_Datas>();
+            current_balise.get()->is_paragraph = true;
+            current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Left;
+            current_balise.get()->style.color = black; current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font("arialbd");
+            set_defined_balise<Balise_Style_Datas>("h2", current_balise);
+        }
+    };
+
 	class Word_Datas {
         // Class containing the datas necessary for a word
     public:
@@ -600,269 +635,6 @@ namespace scls
         int max_width = 0;
         // Total height of the block
         int total_height = 0;
-    };
-
-    class _Balise_Container {
-        // Class faciliting the handle of balises
-    public:
-
-        // Most simple _Balise_Container constructor
-        _Balise_Container() {
-
-        };
-        // _Balise_Container destructor
-        ~_Balise_Container() {
-
-        };
-
-        // Returns the position of the first plain text character in a unformatted text from before a position
-        unsigned int first_plain_text_character_before_position_in_informatted_text(const std::string& text_to_convert, unsigned int position) {
-            if(text_to_convert[position] == '>') {
-                // Remove balises
-                while(text_to_convert[position] != '<' && position > 0) { position--; }
-            }
-            else if(text_to_convert[position] == ';') {
-                // Remove special insertion
-                std::string part_content = "";
-                const unsigned int start_position = position;
-                while(position >= 0 && text_to_convert[position] != '&') {
-                    part_content = text_to_convert[position] + part_content;
-                    position--;
-                } part_content = part_content.substr(0, part_content.size() - 1);
-
-                if(!(part_content == "lt" || part_content == "gt") || position < 0) {
-                    position = start_position;
-                }
-            }
-            return position;
-        };
-        // Returns a html text in plain text
-        std::string plain_text(std::string text_to_convert) {
-            std::string final_text = "";
-            std::stack<std::string> found_balises = std::stack<std::string>();
-            std::string last_balise = "";
-            text_to_convert = replace(format_string(text_to_convert), "</br>", "\n");
-            for(int i = 0;i<static_cast<int>(text_to_convert.size());i++) {
-                if(text_to_convert[i] == '<') {
-                    std::string balise = "";
-                    unsigned int start = i;
-                    while(text_to_convert[i] != '>' && i < static_cast<int>(text_to_convert.size())) {
-                        balise += text_to_convert[i];
-                        i++;
-                    }
-                    balise += ">";
-                    balise = formatted_balise(balise);
-
-                    if(start != 0) {
-                        // Check the balise
-                        std::string current_balise_name = balise_name(balise);
-
-                        if(defined_balise(current_balise_name).is_paragraph && final_text != "" && i < static_cast<int>(text_to_convert.size()) - 1 && !defined_balise(last_balise).is_paragraph) {
-                            final_text += "\n";
-                        }
-
-                        // Check in the balise stack
-                        if(balise[1] == '/') {
-                            if(found_balises.size() > 0 && found_balises.top() == current_balise_name) {
-                                found_balises.pop();
-                            }
-                        }
-                        else found_balises.push(current_balise_name);
-                        last_balise = current_balise_name;
-                    }
-                }
-                else {
-                    final_text += text_to_convert[i];
-                    last_balise = "";
-                }
-            }
-
-            final_text = format_string_as_plain_text(final_text);
-            return final_text;
-        };
-        // Returns a plain text position to unformatted text position
-        unsigned int plain_text_position_to_unformatted_text_position(std::string text_to_convert, unsigned int position) {
-            unsigned int final_position = 0;
-            for(int i = 0;i<static_cast<int>(text_to_convert.size()) && i < position;i++) {
-                if(text_to_convert[final_position] == '<') {
-                    // Remove balises
-                    while(text_to_convert[final_position] != '>' && final_position < static_cast<int>(text_to_convert.size())) final_position++;
-                }
-                else if(text_to_convert[final_position] == '&') {
-                    // Remove special insertion
-                    std::string part_content = "";
-                    const unsigned int start_position = final_position;
-                    while(text_to_convert[final_position] != ';' && final_position < static_cast<int>(text_to_convert.size())) {
-                        part_content += text_to_convert[final_position];
-                        final_position++;
-                    } part_content = part_content.substr(1, part_content.size() - 1);
-
-                    if(!(part_content == "lt" || part_content == "gt") || final_position >= static_cast<int>(text_to_convert.size())) {
-                        final_position = start_position;
-                    }
-                }
-                final_position++;
-            }
-            return final_position;
-        };
-        // Return the size of the text
-        inline unsigned int plain_text_size(std::string text_to_check) { return plain_text(text_to_check).size(); };
-
-        // Returns the balise of the block or a blank string if it is not
-        std::string _block_balise(std::vector<_Text_Balise_Part>& cutted) {
-            if(cutted.size() == 0) return "";
-
-            // Check for the main balise of the block
-            std::string to_return = "";
-            if(cutted[0].content[0] == '<') {
-                std::string block_balise_name = balise_name(cutted[0].content);
-
-                // Check if the block is an entire balise
-                unsigned int level = 0;
-                for(int i = 0;i<static_cast<int>(cutted.size())-1;i++) {
-                    if(cutted[i].content.size() > 2 && cutted[i].content[0] == '<' && cutted[i].content[cutted[i].content.size() - 1] == '>') {
-                        std::string parsed_balise_name = balise_name(cutted[i].content);
-                        if(parsed_balise_name == block_balise_name) {
-                            if(cutted[i].content[1] == '/') {
-                                level--;
-                                if(level == 0) break;
-                            }
-                            else {
-                                level++;
-                            }
-                        }
-                    }
-                }
-
-                // If the block can be an entire balise
-                if(level == 1) {
-                    if(contains_defined_balise(block_balise_name)) {
-                        to_return = block_balise_name;
-                    }
-                }
-            }
-            return to_return;
-        };
-        // If the generator contains the style of a balise
-        inline bool contains_defined_balise(std::string balise_name) {
-            for(std::map<std::string, Text_Balise>::iterator it = a_defined_balises.begin();it!=a_defined_balises.end();it++){
-                if(it->first == balise_name) return true;
-            }
-            return false;
-        };
-        // Cut a block by its sub_blocks and spaces
-        std::vector<_Text_Balise_Part> _cut_block(std::string block_text) {
-            std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(block_text, false, true);
-            std::vector<_Text_Balise_Part> cutted = std::vector<_Text_Balise_Part>();
-            for(int i = 0;i<static_cast<int>(first_cutted.size());i++) {
-                if(first_cutted[i].content.size() > 0 && first_cutted[i].content[0] == '<') {
-                    // Erase the last blank character if necessary
-                    std::string current_balise_name = balise_name(formatted_balise(first_cutted[i].content));
-                    cutted.push_back(first_cutted[i]);
-                }
-                else if(first_cutted[i].content == "") {
-                    _Text_Balise_Part part_to_add; cutted.push_back(part_to_add);
-                }
-                else {
-                    std::vector<std::string> space_cutted = cut_string(first_cutted[i].content, " ", false, true);
-                    for(int j = 0;j<static_cast<int>(space_cutted.size());j++) {
-                        _Text_Balise_Part part_to_add;
-                        part_to_add.content = space_cutted[j];
-                        cutted.push_back(part_to_add);
-
-                        if(j < static_cast<int>(space_cutted.size()) - 1 || first_cutted[i].content[first_cutted[i].content.size() - 1] == ' ') {
-                            _Text_Balise_Part part_to_add;
-                            part_to_add.content = " ";
-                            cutted.push_back(part_to_add);
-                        }
-                    }
-                }
-            }
-            return cutted;
-        };
-        // Cut a multi-block by sub-blocks
-        std::vector<std::shared_ptr<Block_Datas>> _cut_multi_block(std::string block_text) {
-            std::vector<_Text_Balise_Part> first_cutted = cut_string_by_balise(block_text, false, true);
-            std::string last_text = "";
-            std::vector<std::shared_ptr<Block_Datas>> to_return = std::vector<std::shared_ptr<Block_Datas>>();
-            for(int i = 0;i<static_cast<int>(first_cutted.size());i++) {
-                if(first_cutted[i].content.size() > 0 && first_cutted[i].content[0] == '<') {
-                    // A sub-block is here
-                    std::string current_balise_name = balise_name(formatted_balise(first_cutted[i].content));
-                    if(contains_defined_balise(current_balise_name) && defined_balise(current_balise_name).is_paragraph) {
-                        // Save the last empty paragraph
-                        std::shared_ptr<Block_Datas> block; block.reset(new Block_Datas(last_text));
-                        to_return.push_back(block); last_text = "";
-
-                        i++;
-                        unsigned int level = 1;
-                        std::string total_text = "";
-                        while(i<static_cast<int>(first_cutted.size())) {
-                            if(first_cutted[i].content[0] == '<') {
-                                first_cutted[i].content = formatted_balise(first_cutted[i].content);
-                                std::string next_balise_name = balise_name(first_cutted[i].content);
-                                if(next_balise_name == current_balise_name) {
-                                    if(first_cutted[i].content[1] == '/') {
-                                        level--;
-                                        if(level == 0) break;
-                                    }
-                                    else {
-                                        level++;
-                                    }
-                                }
-                            }
-                            total_text += first_cutted[i].content;
-                            i++;
-                        }
-
-                        // Create the block datas
-                        block.reset(new Block_Datas(total_text));
-                        to_return.push_back(block);
-                    }
-                    else {
-                        last_text += first_cutted[i].content;
-                    }
-                }
-                else {
-                    last_text += first_cutted[i].content;
-                }
-            }
-            // Save the last paragraph if necessary
-            if(last_text != "") {
-                std::shared_ptr<Block_Datas> block; block.reset(new Block_Datas(last_text));
-                to_return.push_back(block); last_text = "";
-            }
-            return to_return;
-        };
-        // Return the style of a balise
-        inline Text_Balise& defined_balise(std::string balise_name) {
-            return a_defined_balises[balise_name];
-        };
-        // Set a balise to the container
-        inline void set_defined_balise(std::string name, Text_Balise balise_datas) { a_defined_balises[name] = balise_datas; };
-
-        // Load the built-ins balises
-        void _load_built_in_balises() {
-            Text_Balise current_balise;
-            // Create the <div> style
-            current_balise.is_paragraph = true;
-            set_defined_balise("div", current_balise);
-            // Create the <p> style
-            set_defined_balise("p", current_balise);
-            // Create the <h1> style
-            current_balise.is_paragraph = true;
-            current_balise.style.alignment_horizontal = Alignment_Horizontal::H_Center;
-            current_balise.style.color = red; current_balise.style.font_size = 50; current_balise.style.font = get_system_font("arialbd");
-            set_defined_balise("h1", current_balise);
-            // Create the <h2> style
-            current_balise.is_paragraph = true;
-            current_balise.style.alignment_horizontal = Alignment_Horizontal::H_Left;
-            current_balise.style.color = black; current_balise.style.font_size = 35; current_balise.style.font = get_system_font("arialbd");
-            set_defined_balise("h2", current_balise);
-        }
-    private:
-        // List of each defined balises
-        std::map<std::string, Text_Balise> a_defined_balises = std::map<std::string, Text_Balise>();
     };
 
     class Text_Image_Word {
@@ -1050,7 +822,7 @@ namespace scls
         //*********
 
         // Most simple Text_Image_Line constructor
-        Text_Image_Line(_Balise_Container* defined_balises, std::string text, Text_Style global_style) : a_defined_balises(defined_balises), a_global_style(global_style) {
+        Text_Image_Line(_Balise_Style_Container* defined_balises, std::string text, Text_Style global_style) : a_defined_balises(defined_balises), a_global_style(global_style) {
             set_text(text);
         };
         // Text_Image_Line destructor
@@ -1271,7 +1043,7 @@ namespace scls
         // Datas about the line
         Line_Datas a_datas;
         // Containers of each defined balises
-        _Balise_Container* a_defined_balises = 0;
+        _Balise_Style_Container* a_defined_balises = 0;
         // Global style in the block
         Text_Style a_global_style;
         // If the line has been modified or not
@@ -1318,13 +1090,13 @@ namespace scls
         //*********
 
         // Text_Image_Block constructor with a Block_Datas and an user defined type
-        Text_Image_Block(_Balise_Container* defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) { set_text(a_datas.get()->content); };
+        Text_Image_Block(_Balise_Style_Container* defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) { set_text(a_datas.get()->content); };
         // Text_Image_Block constructor with a Block_Datas
-        Text_Image_Block(_Balise_Container* defined_balises, std::shared_ptr<Block_Datas> datas) : Text_Image_Block(defined_balises, datas, Block_Type::BT_Always_Free_Memory) {  };
+        Text_Image_Block(_Balise_Style_Container* defined_balises, std::shared_ptr<Block_Datas> datas) : Text_Image_Block(defined_balises, datas, Block_Type::BT_Always_Free_Memory) {  };
         // Most simple Text_Image_Block constructor
-        Text_Image_Block(_Balise_Container* defined_balises, std::string text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
+        Text_Image_Block(_Balise_Style_Container* defined_balises, std::string text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
         // Text_Image_Block constructor with an user defined type
-        Text_Image_Block(_Balise_Container* defined_balises, std::string text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(text), type) {};
+        Text_Image_Block(_Balise_Style_Container* defined_balises, std::string text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(text), type) {};
         // Text_Image_Block destructor
         ~Text_Image_Block() { free_memory(); };
 
@@ -1746,7 +1518,7 @@ namespace scls
         //*********
 
         // Containers of each defined balises
-        _Balise_Container* a_defined_balises = 0;
+        _Balise_Style_Container* a_defined_balises = 0;
         // Datas about the block
         std::shared_ptr<Block_Datas> a_datas;
         // Last generated image
@@ -1793,7 +1565,7 @@ namespace scls
         // Class containing a lot of block text
     public:
         // Most simple Text_Image constructor
-        Text_Image_Multi_Block(_Balise_Container* defined_balises, std::string text) : a_defined_balises(defined_balises) { set_text(text); };
+        Text_Image_Multi_Block(_Balise_Style_Container* defined_balises, std::string text) : a_defined_balises(defined_balises) { set_text(text); };
         // Text_Image destructor
         ~Text_Image_Multi_Block() { __delete_blocks(); };
 
@@ -1860,7 +1632,12 @@ namespace scls
         inline void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;};
         // Update the datas of each blocks
         void update_blocks_datas() {
-            a_blocks_datas = a_defined_balises->_cut_multi_block(text());
+            a_blocks_datas.clear();
+            std::vector<std::string> cutted = a_defined_balises->_cut_multi_block(text());
+            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+                std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted[i]);
+                a_blocks_datas.push_back(current_block_data);
+            }
 
             // Apply the style of each blocks
             for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
@@ -1876,8 +1653,8 @@ namespace scls
 
         // Getters and setters
         inline std::vector<std::shared_ptr<Text_Image_Block>>& blocks() {return a_blocks;};
-        inline _Balise_Container* defined_balises() {return a_defined_balises;};
-        inline Text_Balise defined_balises(std::string balise) {return defined_balises()->defined_balise(balise);};
+        inline _Balise_Style_Container* defined_balises() {return a_defined_balises;};
+        inline Balise_Style_Datas* defined_balises(std::string balise) {return defined_balises()->defined_balise_style(balise);};
         inline Text_Style& global_style() {return a_global_style;};
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
@@ -1890,7 +1667,7 @@ namespace scls
         Text_Style a_global_style;
 
         // Containers of each defined balises
-        _Balise_Container* a_defined_balises = 0;
+        _Balise_Style_Container* a_defined_balises = 0;
         // HTML Text in the image
         std::string a_text = "";
 
@@ -1912,7 +1689,7 @@ namespace scls
         int a_total_height = 0;
     }; //*/
 
-    class Text_Image_Generator : public _Balise_Container {
+    class Text_Image_Generator : public _Balise_Style_Container {
         // Class simplifying the creation of text image
     public:
         // Most simple Text_Image_Generator constructor
@@ -1930,8 +1707,6 @@ namespace scls
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(this, text, type);return img;};
         // Returns a newly created text image multi block
         inline Text_Image_Multi_Block* new_text_image_multi_block(std::string text) {Text_Image_Multi_Block *img = new Text_Image_Multi_Block(this, text);return img;};
-        // Save the image in a path
-        // inline void save_image(std::string path, std::string text) {Text_Image_Block *img = new Text_Image_Block(this, text);img->save_image(path);delete img;img = 0;}
 
         // Getters and setters
         inline Color global_color() const {return a_global_color;};
