@@ -1059,8 +1059,27 @@ namespace scls
         // Drawing methods
         // Draw a line on the image
 		void draw_line(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width = 1) {
-			if (width == 1 || true)
-			{
+			// Only case which the algorithm does not work correctly
+			if(x_1 == x_2) {
+                y_2++;
+                if(y_2 < y_1) {
+                    y_2 += y_1;
+                    y_1 = y_2 - y_1;
+                    y_2 = y_2 - y_1;
+                }
+                for(unsigned short i = 0;i<y_2 - y_1;i++) set_pixel(x_1, y_1 + i, red, green, blue, alpha, width);
+			}
+			else if(y_1 == y_2) {
+			    x_2++;
+                if(x_2 < x_1) {
+                    x_2 += x_1;
+                    x_1 = x_2 - x_1;
+                    x_2 = x_2 - x_1;
+                }
+                for(unsigned short i = 0;i<x_2 - x_1;i++) set_pixel(x_1 + i, y_1, red, green, blue, alpha, width);
+			}
+            else {
+                x_2++; y_2++;
 				float distance_x = static_cast<float>(x_2 - x_1);
 				float distance_y = static_cast<float>(y_2 - y_1);
 
@@ -1336,7 +1355,82 @@ namespace scls
             }
         };
 
+        //*********
+        //
+        // Image gradients
+        //
+        //*********
 
+        // Apply a simple circle gradient in the image
+        inline void apply_gradient_circle(Color in, Color out, unsigned int x, unsigned int y, unsigned short radius) {
+            for(unsigned short i = 0;i<width();i++) {
+                for(unsigned short j = 0;j<height();j++) {
+                    double distance = std::sqrt((i - x) * (i - x) + (j - y) * (j - y));
+                    double pourcentage = distance / static_cast<double>(radius);
+                    if(pourcentage <= 1) {
+                        double current_alpha = static_cast<double>(in.alpha()) + (static_cast<double>(out.alpha()) - static_cast<double>(in.alpha())) * pourcentage;
+                        double current_blue = static_cast<double>(in.blue()) + (static_cast<double>(out.blue()) - static_cast<double>(in.blue())) * pourcentage;
+                        double current_green = static_cast<double>(in.green()) + (static_cast<double>(out.green()) - static_cast<double>(in.green())) * pourcentage;
+                        double current_red = static_cast<double>(in.red()) + (static_cast<double>(out.red()) - static_cast<double>(in.red())) * pourcentage;
+                        set_pixel(i, j, current_red, current_green, current_blue, current_alpha);
+                    }
+                }
+            }
+        };
+        // Apply a more complex horizontal gradient from the left to the right in the image
+        inline void apply_gradient_horizontal(Color left, Color right, int start_x, int end_x) {
+            // Calculate the variant of each colors
+            unsigned int current_x = end_x - start_x;
+            double alpha_variant = (static_cast<double>(right.alpha()) - static_cast<double>(left.alpha())) / static_cast<double>(current_x - 1);
+            double blue_variant = (static_cast<double>(right.blue()) - static_cast<double>(left.blue())) / static_cast<double>(current_x - 1);
+            double green_variant = (static_cast<double>(right.green()) - static_cast<double>(left.green())) / static_cast<double>(current_x - 1);
+            double red_variant = (static_cast<double>(right.red()) - static_cast<double>(left.red())) / static_cast<double>(current_x - 1);
+
+            // Apply the gradiant
+            double current_alpha = left.alpha();
+            double current_blue = left.blue();
+            double current_green = left.green();
+            double current_red = left.red();
+            for(unsigned int i = 0;i<current_x;i++) {
+                Color current_color = Color(current_red, current_green, current_blue, current_alpha);
+                if(height() > 1) draw_line(start_x + i, 0, start_x + i, height() - 1, current_color);
+                else draw_line(start_x + i, 0, start_x + i, 1, current_color);
+
+                current_alpha += alpha_variant;
+                current_blue += blue_variant;
+                current_green += green_variant;
+                current_red += red_variant;
+            }
+        };
+        // Apply a simple horizontal gradient from the left to the right in the image
+        inline void apply_gradient_horizontal(Color left, Color right) { apply_gradient_horizontal(left, right, 0, width()); };
+        // Apply a more complex vertical gradient from the left to the right in the image
+        inline void apply_gradient_vertical(Color top, Color bottom, int start_y, int end_y) {
+            // Calculate the variant of each colors
+            unsigned int current_y = end_y - start_y;
+            double alpha_variant = (static_cast<double>(bottom.alpha()) - static_cast<double>(top.alpha())) / static_cast<double>(current_y - 1);
+            double blue_variant = (static_cast<double>(bottom.blue()) - static_cast<double>(top.blue())) / static_cast<double>(current_y - 1);
+            double green_variant = (static_cast<double>(bottom.green()) - static_cast<double>(top.green())) / static_cast<double>(current_y - 1);
+            double red_variant = (static_cast<double>(bottom.red()) - static_cast<double>(top.red())) / static_cast<double>(current_y - 1);
+
+            // Apply the gradiant
+            double current_alpha = top.alpha();
+            double current_blue = top.blue();
+            double current_green = top.green();
+            double current_red = top.red();
+            for(unsigned int i = 0;i<current_y;i++) {
+                Color current_color = Color(current_red, current_green, current_blue, current_alpha);
+                if(width() > 1) draw_line(0, start_y + i, width() - 1, start_y + i, current_color);
+                else draw_line(0, start_y + i, 1, start_y + i, current_color);
+
+                current_alpha += alpha_variant;
+                current_blue += blue_variant;
+                current_green += green_variant;
+                current_red += red_variant;
+            }
+        };
+        // Apply a simple vertical gradient from the left to the right in the image
+        inline void apply_gradient_vertical(Color top, Color bottom) { apply_gradient_vertical(top, bottom, 0, height()); };
 
 
 

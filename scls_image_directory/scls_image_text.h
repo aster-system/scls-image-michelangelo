@@ -1600,6 +1600,7 @@ namespace scls
             int total_height = a_total_height;
 
             // Create the final image and clear memory
+            a_current_style = a_global_style;
             Color current_background_color = a_current_style.background_color;
             unsigned short current_font_size = a_current_style.font_size;
             unsigned int current_x = 0;
@@ -1703,6 +1704,8 @@ namespace scls
 
         // Create an image from a text and return it
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(this, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
+        // Create an image from a text and return it
+        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<Text_Image_Block> img = std::make_shared<Text_Image_Block>(this, text);img.get()->global_style() = style;return img.get()->image_shared_pointer();};
         // Returns a newly created text image
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(this, text, type);return img;};
         // Returns a newly created text image multi block

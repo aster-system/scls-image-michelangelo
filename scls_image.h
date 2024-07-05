@@ -113,9 +113,10 @@ namespace scls {
     }
 
     // Make the logo of Aster System
-    inline scls::Image* aster_system_logo() {
-        double total_width = 5000;
-        scls::Image* img = new scls::Image(static_cast<short>(total_width), static_cast<short>(total_width), scls::white);
+    inline std::shared_ptr<scls::Image> aster_system_logo() {
+        double total_width = 500;
+        std::shared_ptr<scls::Image> img_shared_ptr = std::make_shared<scls::Image>(static_cast<short>(total_width), static_cast<short>(total_width), scls::white);
+        Image* img = img_shared_ptr.get();
 
         short l_width = static_cast<short>(total_width/40.0);
         short l_base_length = static_cast<short>(total_width/5.0);
@@ -140,21 +141,23 @@ namespace scls {
         img->fill_rect(x_first_2 + l_width, (y_first_2 + l_height) - l_width, l_base_length, l_width, color_1);
 
         // Draw the Aster system logo
-        scls::Text_Image_Generator* generator = new scls::Text_Image_Generator();
+        std::shared_ptr<scls::Text_Image_Generator> generator = std::make_shared<scls::Text_Image_Generator>();
         short text_x = (x_first_2 + l_width + l_base_length) - static_cast<short>((75.0/1000.0) * total_width);
         short text_y = y_first_2 + static_cast<short>((75.0/1000.0) * total_width);
         short text_y_separation = static_cast<short>(total_width/20.0);
-        scls::Text_Image_Data datas; datas.font_size = static_cast<short>(total_width/5.0); datas.font.font_family = "Alte Haas Grotesk"; datas.font.font_path = LOGO_FONT_PATH;
-        datas.blue = color_1.blue(); datas.green = color_1.green(); datas.red = color_1.red();
-        scls::Image* scls_text = generator->image("Aster");
-        img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
-        datas.blue = color_2.blue(); datas.green = color_2.green(); datas.red = color_2.red();
+        scls::Text_Style datas;
         datas.font_size = static_cast<short>(total_width/5.0);
-        scls_text = generator->image("System");
-        img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
-        delete generator;
+        datas.font.font_family = "Alte Haas Grotesk";
+        datas.font.font_path = LOGO_FONT_PATH;
+        datas.color = color_1;
+        std::shared_ptr<scls::Image> scls_text = generator->image_shared_ptr("Aster", datas);
+        img->paste(scls_text.get(), text_x, text_y); text_y += scls_text.get()->height() + text_y_separation;
+        datas.color = color_2;
+        datas.font_size = static_cast<short>(total_width/5.0);
+        scls_text = generator->image_shared_ptr("System", datas);
+        img->paste(scls_text.get(), text_x, text_y); text_y += scls_text.get()->height() + text_y_separation;
 
-        return img;
+        return img_shared_ptr;
     }
 
     // Make the text about the Leclerc
