@@ -759,7 +759,8 @@ namespace scls
 
 				// Get the size of the chunks
 				unsigned int current_size = 0;
-				for (int i = 0; i < static_cast<int>(chunk.size()); i++) {
+				for (int i = 0; i < static_cast<int>(chunk.size()); i++)
+				{
 					current_size += chunk[i].size;
 				}
 
@@ -767,7 +768,8 @@ namespace scls
 				Bytes_Set* all_data = new Bytes_Set();
 
 				// Read into the chunk
-				for (int i = 0; i < static_cast<int>(chunk.size()); i++) {
+				for (int i = 0; i < static_cast<int>(chunk.size()); i++)
+				{
 					all_data->add_datas(file->extract_datas(chunk[i].size, chunk[i].position), chunk[i].size);
 				}
 
@@ -782,7 +784,8 @@ namespace scls
 				ret = uncompress_binary(all_data->datas(), current_size, (char*)out, out_size);
 				delete all_data; all_data = 0;
 
-				if (ret != 1) {
+				if (ret != 1)
+				{
 					delete[] out;
 					return false;
 				}
@@ -798,22 +801,22 @@ namespace scls
 					if (part >= 0 && part < width() * component_size)
 					{
 						unsigned char component = part % component_size;
-						if (component == 0) {
-                            // Apply red component
+						if (component == 0) // Apply red component
+						{
 							a_processed_data++;
 							current_collumn++;
 							set_pixel_red(current_collumn, current_line, (unsigned char)(out[i]));
 						}
-						else if (component == 1) {
-						    // Apply green component
+						else if (component == 1) // Apply green component
+						{
 							set_pixel_green(current_collumn, current_line, (unsigned char)(out[i]));
 						}
-						else if (component == 2) {
-						    // Apply blue component
+						else if (component == 2) // Apply blue component
+						{
 							set_pixel_blue(current_collumn, current_line, (unsigned char)(out[i]));
 						}
-						else if (component == 3) {
-						    // Apply alpha component
+						else if (component == 3) // Apply alpha component
+						{
 						    set_pixel_alpha(current_collumn, current_line, (unsigned char)(out[i]));
 						}
 						part++;
@@ -886,7 +889,7 @@ namespace scls
 										force_pixel(j, current_line, current_color.red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())),
                                                                      current_color.green() + static_cast<unsigned char>(paeth_function(pixel1.green(), pixel2.green(), pixel3.green())),
                                                                      current_color.blue() + static_cast<unsigned char>(paeth_function(pixel1.blue(), pixel2.blue(), pixel3.blue())),
-                                                                     current_color.alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel3.alpha())));
+                                                                     current_color.alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel2.alpha())));
 									}
 								}
 							}
