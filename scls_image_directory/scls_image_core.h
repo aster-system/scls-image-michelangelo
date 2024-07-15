@@ -41,6 +41,35 @@
 
 #define PNG_CRC_POLY 0x04C11DB7
 
+// Define each PNG possibles errors
+#ifndef SCLS_IMAGE_ERROR_UNKNOW_FILE
+#define SCLS_IMAGE_ERROR_UNKNOW_FILE -1
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_BAD_FILE_SIGNATURE
+#define SCLS_IMAGE_PNG_ERROR_BAD_FILE_SIGNATURE -2
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_BIT_DEPHT
+#define SCLS_IMAGE_PNG_ERROR_BIT_DEPHT -100
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_NO_CHUNK
+#define SCLS_IMAGE_PNG_ERROR_NO_CHUNK -101
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_PLTE_CHUNK
+#define SCLS_IMAGE_PNG_ERROR_PLTE_CHUNK -102
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_UNKNOW_COLOR_TYPE
+#define SCLS_IMAGE_PNG_ERROR_UNKNOW_COLOR_TYPE -103
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_WRONG_PHYS_CHUNK
+#define SCLS_IMAGE_PNG_ERROR_WRONG_PHYS_CHUNK -104
+#endif
+#ifndef SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK
+#define SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK -105
+#endif
+#ifndef SCLS_IMAGE_ERROR_UNKNOW
+#define SCLS_IMAGE_ERROR_UNKNOW -2000000000
+#endif
+
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
@@ -241,6 +270,47 @@ namespace scls
 		unsigned int size = 0;
 	};
 
+	class __Image_Error {
+	    // Class representing an image text error handler
+    public:
+        // __Image_Error constructor
+        __Image_Error(){};
+
+        // Returns if there is an error
+        inline bool has_error() const {return value() != 0 && value() != 1;};
+        // Returns the error in a std::string
+        std::string to_std_string() const {
+            // Normal behavior
+            if(!has_error()) return std::string("This image has no errors.");
+
+            // Handles error
+            if(value() == SCLS_IMAGE_ERROR_UNKNOW_FILE) { return std::string("The file at path \"") + path() + std::string("\" does not exist."); }
+            else if(value() == SCLS_IMAGE_PNG_ERROR_BAD_FILE_SIGNATURE) { return std::string("The file at path \"") + path() + std::string("\" has no the signature of a PNG file."); }
+            else if(value() == SCLS_IMAGE_PNG_ERROR_BIT_DEPHT) { return std::string("The file at path \"") + path() + std::string("\" has an unsupported bit depht (") + std::to_string(bit_depht()) + std::string(")."); }
+            else if(value() == SCLS_IMAGE_PNG_ERROR_PLTE_CHUNK) { return std::string("The file at path \"") + path() + std::string("\" use the unsupported chunk PLTE (palette colors)."); }
+            else if(value() == SCLS_IMAGE_PNG_ERROR_UNKNOW_COLOR_TYPE) { return std::string("The file at path \"") + path() + std::string("\" use the unsupported color type \"") + std::to_string(color_type()) + std::string("\"."); }
+
+            return std::string("An unknow error of ID \"") + std::to_string(value()) + std::string("\" occured.");
+        };
+
+        // Getters and setters
+        inline unsigned short bit_depht() const {return a_bit_depht;};
+        inline unsigned char color_type() const {return a_color_type;};
+        inline std::string path() const {return a_path;};
+        inline void set_path(std::string new_path) {a_path = new_path;};
+        inline void set_value(int new_value) {a_value = new_value;};
+        inline int value() const {return a_value;};
+    private:
+        // Bit depth for the error
+        unsigned short a_bit_depht = 0;
+        // Color type for the error
+        unsigned char a_color_type = 0;
+        // Path for the error
+        std::string a_path = "";
+        // Value of the error
+        int a_value = 0;
+    };
+
 	class Image {
 		// Class representing a PNG image handler
 	public:
@@ -255,7 +325,10 @@ namespace scls
 		// Image most basic constructor
 		Image() {};
 		// Image constructor with a path
-		Image(std::string path) : Image() { if(!load_from_path(path)) print("Warning", "SCLS Image \"Michelangelo\"", "The path \"" + path + "\" you want to load an image does not exist."); };
+		Image(std::string path) : Image() {
+		    std::shared_ptr<__Image_Error> final_error = load_from_path(path);
+		    if(final_error.get()->has_error()) print("Warning", "SCLS Image \"Michelangelo\"", final_error.get()->to_std_string());
+        };
 		// Image constructor from scratch, easier to use
 		Image(unsigned short width, unsigned short height, Color color, unsigned int color_type = 6) : Image(width, height, color.red(), color.green(), color.blue(), color.alpha(), color_type) {
 
@@ -352,9 +425,10 @@ namespace scls
             if(color_type() == 6) a_pixels->set_data_at(position + 3 * multiplier, normalize_value(alpha, 0, 255));
 		};
         // Load the image from a path
-		bool load_from_path(std::string path) {
-			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path))
-			{
+		std::shared_ptr<__Image_Error> load_from_path(std::string path) {
+		    std::shared_ptr<__Image_Error> to_return = std::make_shared<__Image_Error>();
+		    to_return.get()->set_path(path);
+			if (std::filesystem::exists(path) && !std::filesystem::is_directory(path)) {
 			    // Create the necessary things to read the PNG file
 				Bytes_Set file = Bytes_Set();
 				file.load_from_file(path);
@@ -364,12 +438,16 @@ namespace scls
 				std::vector<unsigned char> signature = png_signature();
 				for (int i = 0; i < static_cast<int>(signature.size()); i++)
 				{
-				    if (signature[i] != static_cast<unsigned char>(file_signature[i])) return false;
+				    if (signature[i] != static_cast<unsigned char>(file_signature[i])) {
+                        to_return.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW_FILE);
+                        return to_return;
+				    }
 				}
 
-				return _load_png_file(&file);
+				_load_png_file(&file, to_return);
 			}
-			return false;
+			else to_return.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW_FILE);
+			return to_return;
 		};
 
 		// Getters and setters (ONLY WITHOUT ATTRIBUTES)
@@ -521,8 +599,7 @@ namespace scls
         inline void set_pixel_by_number(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
             unsigned char multiplier = (bit_depht() / 8.0);
             position *= components() * (bit_depht() / 8.0);
-            if(color_type() == 6)
-            {
+            if(color_type() == 6) {
                 Color color = pixel_by_number(position);
 
                 float alpha_f = normalize_value(alpha, 0, 255) / 255.0;
@@ -541,8 +618,7 @@ namespace scls
                 a_pixels->set_data_at(position + 2 * multiplier, blue);
                 a_pixels->set_data_at(position + 3 * multiplier,  alpha);
             }
-            else
-            {
+            else {
                 a_pixels->set_data_at(position, red);
                 a_pixels->set_data_at(position + multiplier, green);
                 a_pixels->set_data_at(position + 2 * multiplier, blue);
@@ -683,10 +759,9 @@ namespace scls
 			return datas;
 		}
         // Get every chunks into a PNG image
-		bool _load_all_chunks_from_png_file(Bytes_Set* file) {
+		void _load_all_chunks_from_png_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
 			std::vector<_PNG_Chunk> chunks = std::vector<_PNG_Chunk>();
-			if (file != 0)
-			{
+			if (file != 0) {
 				// Create the necessary things to read the PNG file
 				a_idat_chunk.clear();
 				std::string name = "";
@@ -707,36 +782,28 @@ namespace scls
 					size_offset += chunk_size + 12;
 					chunks.push_back(chunk);
 
-					if (name == "pHYs") {
-						_load_png_pHYS_from_file(file, chunk);
+					if (name == "pHYs") { _load_png_pHYS_from_file(file, chunk, error_handler); }
+					else if (name == "IDAT") { a_idat_chunk.push_back(chunk); }
+					else if (name == "sRGB") { _load_png_sRGB_from_file(file, chunk, error_handler); }
+					else if (name == "bKGD") { // background_color = _load_bKGD_from_file(file, chunk);
 					}
-					else if (name == "IDAT" && is_loadable()) {
-						a_idat_chunk.push_back(chunk);
-					}
-					else if (name == "sRGB") {
-						_load_png_sRGB_from_file(file, chunk);
-					}
-					else if (name == "bKGD") {
-                        // background_color = _load_bKGD_from_file(file, chunk);
-					}
-					else if (name == "PLTE") // Not implemented yet
-					{
-						a_loadable = false;
-					}
+					else if (name == "PLTE") { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); }
+
+					// Check for an error
+					if(error_handler.get()->has_error()) return;
 
 					iter++;
 				}
 				fill(background_color);
 
 				// Not implemented yet
-				if(!(color_type() == 4 || color_type() == 6)) a_loadable = false;
+				if(!(color_type() == 4 || color_type() == 6)) { error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_UNKNOW_COLOR_TYPE); return; }
 
 				// Load IDAT chunks
-				if (a_idat_chunk.size() > 0 && is_loadable()) { a_loadable = _load_png_IDAT_from_file(file); }
-				else return false;
+				if (a_idat_chunk.size() > 0) { _load_png_IDAT_from_file(file, error_handler); }
+				else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_NO_CHUNK);
 			}
-			else { fill(0, 0, 0); return false; }
-			return true;
+			else { fill(0, 0, 0); error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW);}
 		};
 		// Loads the bKGD chunk from a path and returns the color
 		static Color _load_bKGD_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
@@ -752,10 +819,10 @@ namespace scls
 			return Color(0, 0, 0);
 		};
         // Load a IDAT chunk grom a path
-		bool _load_png_IDAT_from_file(Bytes_Set* file) {
+		void _load_png_IDAT_from_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
 			std::vector<_PNG_Chunk>& chunk = a_idat_chunk;
 			if (file != 0) {
-				if (a_pixels == 0) return -1;
+				if (a_pixels == 0) { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); return; }
 
 				// Get the size of the chunks
 				unsigned int current_size = 0;
@@ -782,10 +849,7 @@ namespace scls
 				ret = uncompress_binary(all_data->datas(), current_size, (char*)out, out_size);
 				delete all_data; all_data = 0;
 
-				if (ret != 1) {
-					delete[] out;
-					return false;
-				}
+				if (ret != 1) { delete[] out; return; }
 
 				// Process data
 				unsigned int a_processed_data = 0;
@@ -978,27 +1042,20 @@ namespace scls
 				// Free memory
 				delete[] out;
 			}
-			else
-			{
-				return false;
-			}
-			return true;
+			else { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); }
 		};
         // Load the pHYS chunk from a path
-		bool _load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
-			if (file != 0 && chunk.name == "pHYs" && chunk.size == 9)
-			{
+		void _load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
+			if (file != 0 && chunk.name == "pHYs" && chunk.size == 9) {
 				// Read into the chunk
 				a_physical_height_ratio = file->extract_uint(chunk.position + 4, true);
 				a_physical_width_ratio = file->extract_uint(chunk.position, true);
 				a_physical_unit = file->extract_data(chunk.position + 8);
-
-				return true;
 			}
-			return false;
+			else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_PHYS_CHUNK);
 		};
         // Load the Image from a PNG file
-        inline bool _load_png_file(Bytes_Set* file) {
+        inline void _load_png_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
             // Check the first chunk of the file
             a_width = file->extract_uint(16, true);
             a_height = file->extract_uint(20, true);
@@ -1009,20 +1066,16 @@ namespace scls
             a_interlace_method = file->extract_data(28);
 
             // Not implemented yet
-            if(bit_depht() != 8) { a_loadable = false; return false; }
-
-            return _load_all_chunks_from_png_file(file);
+            if(bit_depht() != 8) { error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_BIT_DEPHT);; }
+            else _load_all_chunks_from_png_file(file, error_handler);
         }
         // Load the sRGB chunk from a path
-		bool _load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
-			if (file != 0 && chunk.name == "sRGB" && chunk.size == 1)
-			{
+		void _load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
+		    if (file != 0 && chunk.name == "sRGB" && chunk.size == 1) {
 				// Read into the chunk
 				a_srgb_value = file->extract_data(chunk.position);
-
-				return true;
 			}
-			return false;
+			else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK);
 		}
         // Save the image into the PNG format
 		inline void save_png(std::string path) {
@@ -1050,7 +1103,6 @@ namespace scls
 		inline unsigned int compression_method() { return a_compression_method; };
 		inline unsigned int filter_method() { return a_filter_method; };
 		inline unsigned int interlace_method() { return a_interlace_method; };
-		inline bool is_loadable() { return a_loadable; };
 		inline unsigned int physical_height_ratio() { return a_physical_height_ratio; };
 		inline unsigned int physical_unit() { return a_physical_unit; };
 		inline unsigned int physical_width_ratio() { return a_physical_width_ratio; };
@@ -1284,8 +1336,7 @@ namespace scls
 			unsigned char* line1 = new unsigned char[height()];
 			unsigned int max = width();
 
-			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
-			{
+			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++) {
 				// Red
 				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components());
 				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components(), a_pixels->data_at(((max - (i + 1)) + j * width()) * components()));
@@ -1313,7 +1364,7 @@ namespace scls
 		};
 
 		// Paste an Image on this Image
-		inline void paste(Image* to_paste, unsigned short x, unsigned short y, double opacity = 1.0, bool force_pasting = false) {
+		inline void paste(Image* to_paste, short x, short y, double opacity = 1.0, bool force_pasting = false) {
             unsigned int current_thread_position = 0;
 			unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
@@ -1617,8 +1668,6 @@ namespace scls
 		std::vector<_PNG_Chunk> a_idat_chunk = std::vector<_PNG_Chunk>();
 		// Interlace method of the image
 		unsigned int a_interlace_method = 0;
-		// If the image can be loaded or not
-		bool a_loadable = true;
 		// Physical height of the image
 		unsigned int a_physical_height_ratio = 10000;
 		// Physical unit of the image (0 = unknow, 1 = meter)

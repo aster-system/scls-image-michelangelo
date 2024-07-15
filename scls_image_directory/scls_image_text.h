@@ -325,147 +325,6 @@ namespace scls
         return img;
     };
 
-    // Return a pointer to an image with a text on it
-    static Image* _line_image(std::string content, Text_Image_Data datas) {
-        // Base variables for the creation
-        unsigned int font_size = datas.font_size;
-        std::string path = datas.font.font_path;
-
-        // Load the FreeType base system
-        if(!_free_type_library_inited)
-        {
-            FT_Error error = FT_Init_FreeType(&_freetype_library);
-            if ( error )
-            {
-                print("Error", "SCLS", "Unable to load the FreeType engine.");
-                return 0;
-            }
-            _free_type_library_inited = true;
-        }
-        FT_Face face;
-        FT_Error error = FT_New_Face(_freetype_library, path.c_str(), 0, &face);
-        if (!std::filesystem::exists(path))
-        {
-            print("Error", "SCLS", "Unable to load the \"" + path + "\" font, it does not exist.");
-            return 0;
-        }
-        else if ( error )
-        {
-            print("Error", "SCLS", "Unable to load the \"" + path + "\" font.");
-            return 0;
-        }
-
-        // Configure and load the FreeType glyph system
-        error = FT_Select_Charmap(face, FT_ENCODING_UNICODE);
-        error = FT_Set_Pixel_Sizes(face, 0, font_size);
-
-        // Create each characters
-        std::vector<Image*> characters;
-        std::vector<int> cursor_pos;
-        int max_height = 0;
-        int to_add_font_size = 0;
-        unsigned int total_width = 0;
-        std::vector<unsigned int> y_pos;
-        for(int i = 0;i<static_cast<int>(content.size());i++)
-        {
-            if(content[i] == ' ')
-            {
-                characters.push_back(0);
-                cursor_pos.push_back(0);
-                y_pos.push_back(0);
-                total_width += font_size / 2.0;
-                continue;
-            }
-            int cursor_position = 0;
-            int y_position = 0;
-            Image* image = _char_image(content[i], face, cursor_position, y_position, datas);
-            characters.push_back(image);
-            cursor_pos.push_back(total_width + cursor_position);
-            if(cursor_pos[cursor_pos.size() - 1] < 0) cursor_pos[cursor_pos.size() - 1] = 0; // Avoid a little bug with X position
-            if(static_cast<int>(image->height()) + y_position > max_height) max_height = image->height() + y_position;
-            if(y_position < to_add_font_size) to_add_font_size = y_position;
-            y_pos.push_back(y_position);
-            total_width += image->width() + cursor_position;
-        }
-
-        for(int i = 0;i<static_cast<int>(characters.size());i++)
-        {
-            if(characters[i] != 0)
-            {
-                y_pos[i] = max_height - (characters[i]->height() + y_pos[i]);
-            }
-        }
-
-        // Create the final image and clear the memory
-        Image* final_image = new Image(total_width, max_height - to_add_font_size, datas.background_red, datas.background_green, datas.background_blue, datas.background_alpha);
-        for(int i = 0;i<static_cast<int>(characters.size());i++)
-        {
-            if(characters[i] != 0)
-            {
-                unsigned int x = cursor_pos[i];
-                final_image->paste(characters[i], x, y_pos[i]);
-                delete characters[i]; characters[i] = 0;
-            }
-        }
-
-        return final_image;
-    };
-
-    // Return a pointer to an image with a text on it
-    static Image* text_image(std::string content, Text_Image_Data datas) {
-        // Construct each text parts
-        std::vector<std::string> parts = cut_string(content, "\n");
-
-        // Load the font if necessary
-        if(__system_fonts.size() <= 0) load_system_font();
-
-        if(datas.font.font_family == "") datas.font = get_system_font(DEFAULT_FONT);
-
-        // Create each lines
-        std::vector<Image*> image_parts = std::vector<Image*>();
-        unsigned int max_width = 0;
-        unsigned int min_x = datas.out_offset_left_width;
-        unsigned int min_y = datas.out_offset_top_width;
-        unsigned int total_height = 0;
-        for(int i = 0;i<static_cast<int>(parts.size());i++)
-        {
-            if(parts[i] == "") {
-                image_parts.push_back(0);
-                total_height += datas.font_size;
-            }
-            else {
-                Image* image = _line_image(parts[i], datas);
-                if(image != 0)
-                {
-                    image_parts.push_back(image);
-                    total_height += image->height();
-                    if(image->width() > max_width) max_width = image->width();
-                }
-            }
-        }
-
-        // Create the final image and clear memory
-        Image* final_image = new Image(max_width + min_x + datas.out_offset_right_width, total_height + min_y + datas.out_offset_bottom_width, datas.background_red, datas.background_green, datas.background_blue, datas.background_alpha);
-        unsigned int y_position = min_y;
-        for(int i = 0;i<static_cast<int>(image_parts.size());i++)
-        {
-            Image* image = image_parts[i]; if(image == 0) { y_position += datas.font_size; continue; }
-            unsigned int x = min_x;
-            if(datas.alignment == H_Center)x = min_x + static_cast<int>(static_cast<float>(max_width - image->width()) / 2.0);
-            else if(datas.alignment == H_Right) x = min_x + max_width - image->width();
-            final_image->paste(image, x, y_position); y_position += image->height();
-            delete image_parts[i]; image_parts[i] = 0;
-        }
-
-        return final_image;
-    };
-
-    // Most simple text_image function
-    inline Image* text_image(std::string content) {
-        Text_Image_Data datas;
-        return text_image(content, datas);
-    }
-
     //*********
 	//
 	// Text classes
@@ -517,6 +376,31 @@ namespace scls
             current_balise.get()->style.color = black; current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font("arialbd");
             set_defined_balise<Balise_Style_Datas>("h2", current_balise);
         }
+
+        //*********
+        //
+        // _Balise_Style_Container images
+        //
+        //*********
+
+        // Adds an image to the container
+        inline std::shared_ptr<Image>* add_image(std::string name, std::shared_ptr<Image> img) {if(contains_image(name))return 0;a_images[name]=img;return &a_images[name];};
+        // Returns if the container contains an image
+        inline bool contains_image(std::string src) {for(std::map<std::string, std::shared_ptr<Image>>::iterator it = a_images.begin();it!=a_images.end();it++){if(it->first==src)return true;}return false;};
+        inline std::shared_ptr<Image>* image(std::string src) {for(std::map<std::string, std::shared_ptr<Image>>::iterator it = a_images.begin();it!=a_images.end();it++){if(it->first==src)return &it->second;}return 0;};
+        // Creates a new image in the container
+        inline std::shared_ptr<Image>* new_image(std::string name, std::string img_path) {if(contains_image(name))return 0;std::shared_ptr<Image> img=std::make_shared<Image>(img_path);return add_image(name,img);};
+
+    private:
+
+        //*********
+        //
+        // _Balise_Style_Container images
+        //
+        //*********
+
+        // Every loaded images, with their source name as key
+        std::map<std::string, std::shared_ptr<Image>> a_images;
     };
 
 	class Word_Datas {
@@ -648,6 +532,8 @@ namespace scls
 
         // Most simple Text_Image_Word constructor to create an empty word
         Text_Image_Word() : a_datas(Word_Datas(" ")) {};
+        // Simple Text_Image_Word constructor to create a little text
+        Text_Image_Word(std::string text) : a_datas(Word_Datas(text)) {};
         // Simple Text_Image_Word constructor to create a word
         Text_Image_Word(Word_Datas datas) : a_datas(datas) {};
         // Most simple Text_Image_Word destructor
@@ -791,6 +677,7 @@ namespace scls
         std::shared_ptr<Image>& image_shared_pointer() {
             if(a_last_image.get() == 0) return a_last_image;
         };
+        inline void set_image_shared_ptr(const std::shared_ptr<Image>& img) {a_last_image=img;};
 
     private:
         //*********
@@ -888,10 +775,10 @@ namespace scls
         //*********
 
         // Clear the memory from the words
-        inline void clear_words() {for(int i = 0;i<static_cast<int>(a_words.size());i++) { if(a_words[i] != 0) delete a_words[i]; } a_words.clear(); };
+        inline void clear_words() { a_words.clear(); };
         // Free the memory of the line
         inline void free_memory() {clear_words();a_last_image.reset();};
-        // Generate the needed words
+        // Generate the needed words (and balises)
         void generate_words() {
             // Create the needed configurations
             Color current_background_color = a_global_style.background_color;
@@ -904,10 +791,10 @@ namespace scls
             unsigned int& current_width = a_current_width; current_width = 0;
             std::vector<_Text_Balise_Part> cutted = a_defined_balises->_cut_block(text());
             unsigned short space_width = static_cast<unsigned short>(static_cast<double>(current_font_size) / 2.0);
-            std::vector<Text_Image_Word*>& words = a_words;
+            std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
             short& y_offset = a_y_offset;
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                Text_Image_Word* word_to_add = 0;
+                std::shared_ptr<Text_Image_Word> word_to_add;
                 Word_Datas data_to_add = Word_Datas();
                 if(cutted[i].content.size() > 0 && cutted[i].content[0] == '<') {
                     // Apply a balise
@@ -919,20 +806,57 @@ namespace scls
 
                     std::string balise_content = formatted_balise(balise);
                     std::string current_balise_name = balise_name(balise_content);
+                    if(current_balise_name == "img") {
+                        // The balise is an image
+                        std::vector<std::string> attributes = cut_balise_by_attributes(balise_content);
+                        for(int i = 0;i<static_cast<int>(attributes.size());i++) {
+                            std::string &current_attribute = attributes[i];
+                            if(attribute_name(current_attribute) == "src") {
+                                std::string src = attribute_value(current_attribute);
+                                if(src.size() > 0 && src[0] == '\"') src = src.substr(1, src.size() - 1);
+                                if(src.size() > 0 && src[src.size() - 1] == '\"') src = src.substr(0, src.size() - 1);
+
+                                if(src.size() > 0 && src[0] == '#') {
+                                    // The image is a preload image
+                                    src = src.substr(1, src.size() - 1);
+                                    if(a_defined_balises->contains_image(src)) {
+                                        // Size of the icon
+                                        unsigned int height = current_style.font_size;
+                                        unsigned int width = current_style.font_size;
+
+                                        std::shared_ptr<Image>* src_img = a_defined_balises->image(src);
+                                        if(src_img != 0) {
+                                            word_to_add = std::make_shared<Text_Image_Word>("Salut salut");
+                                            std::shared_ptr<Image> resize_image;
+                                            if(src_img->get()->width() > width && src_img->get()->height() > height)resize_image = src_img->get()->resize_adaptative(width, height);
+                                            else resize_image = *src_img;
+                                            word_to_add.get()->set_image_shared_ptr(resize_image);
+                                            word_to_add.get()->set_x_position(current_width);
+                                            current_position_in_plain_text++;
+                                            current_width += resize_image.get()->width();
+                                        }
+                                    }
+                                    else {
+                                        print("Warning", "SCLS Image \"Michelangelo\"", "The \"" + src + "\" <img> you want to load does not exist.");
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 else {
                     // Draw the image
                     std::string word_content = format_string_as_plain_text(cutted[i].content);
                     long long t = time_ns();
                     word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
-                    if(word_to_add != 0) {
-                        word_to_add->set_x_position(current_width);
-                        current_width += word_to_add->image()->width();
-                        if(word_to_add->y_offset() < y_offset) y_offset = word_to_add->y_offset();
+                    if(word_to_add.get() != 0) {
+                        word_to_add.get()->set_x_position(current_width);
+                        current_width += word_to_add.get()->image()->width();
+                        if(word_to_add.get()->y_offset() < y_offset) y_offset = word_to_add.get()->y_offset();
                     }
                     current_position_in_plain_text += word_content.size();
                 }
-                if(word_to_add != 0) data_to_add = word_to_add->datas();;
+                if(word_to_add.get() != 0) data_to_add = word_to_add.get()->datas();;
 
                 // Add the part
                 words.push_back(word_to_add);
@@ -940,12 +864,12 @@ namespace scls
             }
         };
         // Generate a word
-        Text_Image_Word* _generate_word(const std::string& word, const Text_Style& style, unsigned int start_position_in_plain_text) {
+        std::shared_ptr<Text_Image_Word> _generate_word(const std::string& word, const Text_Style& style, unsigned int start_position_in_plain_text) {
             // Create the word
             long long t = time_ns();
             Word_Datas datas = Word_Datas(word, style);
-            Text_Image_Word* word_to_add = new Text_Image_Word(datas);
-            word_to_add->generate_word();
+            std::shared_ptr<Text_Image_Word> word_to_add = std::make_shared<Text_Image_Word>(datas);
+            word_to_add.get()->generate_word();
 
             return word_to_add;
         };
@@ -971,7 +895,7 @@ namespace scls
             a_last_image.reset(new Image(a_current_width, global_style().font_size - a_y_offset, Color(0, 0, 0, 0)));
             Image* final_image = a_last_image.get();
             for(int i = 0;i<static_cast<int>(a_words.size());i++) {
-                Text_Image_Word* current_word = a_words[i];
+                Text_Image_Word* current_word = a_words[i].get();
                 if(current_word != 0) {
                     Image* current_image = current_word->image();
                     if(current_image != 0) {
@@ -989,7 +913,8 @@ namespace scls
                         }
 
                         // Paste the word
-                        final_image->paste(current_image, current_x, global_style().font_size - (current_image->height() + current_word->y_offset()));
+                        int y = static_cast<int>(global_style().font_size) - (static_cast<int>(current_image->height()) + static_cast<int>(current_word->y_offset()));
+                        final_image->paste(current_image, current_x, y);
                         current_word->set_x_position(current_x); a_words_datas[i].set_x_position(current_x);
                         current_x += current_image->width();
                         current_position_in_plain_text += current_word->text().size();
@@ -1009,7 +934,6 @@ namespace scls
                             }
                         }
                     }
-                    delete current_word; a_words[i] = 0;
                 }
             } clear_words();
 
@@ -1075,7 +999,7 @@ namespace scls
         // Last generated image
         std::shared_ptr<Image> a_last_image;
         // Last created words in the block
-        std::vector<Text_Image_Word*> a_words = std::vector<Text_Image_Word*>();
+        std::vector<std::shared_ptr<Text_Image_Word>> a_words = std::vector<std::shared_ptr<Text_Image_Word>>();
         // Datas about the last created words in the block
         std::vector<Word_Datas> a_words_datas = std::vector<Word_Datas>();
     };
