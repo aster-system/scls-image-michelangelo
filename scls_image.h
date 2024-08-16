@@ -23,11 +23,11 @@
 #ifndef SCLS_IMAGE
 #define SCLS_IMAGE
 
-// Include scls_foundation
+// Include SCLS Math
 #ifdef __ASTER_DEV
-#include "dev_part/scls_foundation.h"
+#include "../scls-math-carl/scls_math.h"
 #else
-#include <scls_foundation.h>
+#include <scls_math.h>
 #endif // __ASTER_DEV
 
 #ifndef LOGO_FONT_PATH

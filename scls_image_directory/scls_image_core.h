@@ -341,6 +341,9 @@ namespace scls
 
 			fill(red, green, blue, alpha);
 		};
+		// Image copy constructor
+		Image(Image& image_copy) : Image(image_copy.width(), image_copy.height(), Color(0, 0, 0, 0)) {paste(&image_copy, 0, 0);}
+		Image(Image* image_copy) : Image(image_copy->width(), image_copy->height(), Color(0, 0, 0, 0)) {paste(image_copy, 0, 0);}
         // PNG_Image destructor
 		~Image() { free_memory(); };
 
@@ -1209,16 +1212,16 @@ namespace scls
             fill_rect(x + rect_width, y + rect_width, width - rect_width * 2, height - rect_width * 2, fill_color.red(), fill_color.green(), fill_color.blue(), fill_color.alpha());
         };
         // Fill a rectangle on the image
-		void fill_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
-			for (int i = 0; i < width; i++)
-			{
-				for (int j = 0; j < height; j++)
-				{
+		void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+			for (int i = 0; i < rect_width; i++) {
+                if(x + i < 0) continue;
+                else if(x + i >= width()) break;
+				for (int j = 0; j < rect_height; j++) {
 					set_pixel(x + i, y + j, red, green, blue, alpha);
 				}
 			}
 		};
-		void fill_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {
+		void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {
 		    fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());
 		};
         // Fill a rectangle on the image
@@ -1369,7 +1372,7 @@ namespace scls
 			unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
 			// Create each threads
-			if(a_thread_number_for_pasting > 0) {
+			if(a_thread_number_for_pasting > 1) {
                 std::vector<std::thread*> threads = std::vector<std::thread*>();
                 for(unsigned short i = 0;i<a_thread_number_for_pasting - 1;i++) {
                     unsigned int start_x = floor(current_thread_position % to_paste->width());
