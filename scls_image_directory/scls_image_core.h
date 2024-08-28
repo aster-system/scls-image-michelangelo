@@ -513,20 +513,19 @@ namespace scls
 
 			return to_return;
 		};
-		inline void set_pixel(unsigned short x, unsigned short y, Color color, unsigned short width = 1) { set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width); }
-		inline void set_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1) {
-			if (x < 0 || y < 0 || x >= width() || y >= height()) {
-                print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set is out of the image.");
-                return;
-			}
-
+		inline void set_pixel(int x, int y, Color color, unsigned short width = 1) { set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width); }
+		inline void set_pixel(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1) {
 			if (width_point == 0) return;
 			else if (width_point == 1) {
+			    // Check the position
+                if (x < 0 || y < 0 || x >= width() || y >= height()) {
+                    print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set is out of the image.");
+                    return;
+                }
 
 			    unsigned char multiplier = (bit_depht() / 8.0);
 			    unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
-			    if(color_type() == 6)
-                {
+			    if(color_type() == 6) {
                     Color color = pixel(x, y);
 
                     float alpha_f = normalize_value(alpha, 0, 255) / 255.0;
@@ -545,16 +544,14 @@ namespace scls
                     a_pixels->set_data_at(position + 2 * multiplier, blue);
                     a_pixels->set_data_at(position + 3 * multiplier,  alpha);
                 }
-                else
-                {
+                else {
                     a_pixels->set_data_at(position, red);
                     a_pixels->set_data_at(position + multiplier, green);
                     a_pixels->set_data_at(position + 2 * multiplier, blue);
                 }
 			}
-			else
-			{
-				fill_rect(static_cast<unsigned short>(x - static_cast<float>(width_point) / 2.0), static_cast<unsigned short>(y - (static_cast<float>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);
+			else {
+                fill_rect(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);
 			}
 		}
         inline void set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha) {
@@ -688,11 +685,11 @@ namespace scls
 		inline unsigned int color_type() const { return a_color_type; };
 		inline Bytes_Set* datas() { return a_pixels; }
 		inline unsigned int flip_x_number() const {return a_flip_x_number;};
-		inline unsigned int height() const { return a_height; };
+		inline int height() const { return a_height; };
 		inline void set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
         inline void set_thread_number_for_pasting(unsigned short new_thread_number) {a_thread_number_for_pasting = new_thread_number;};
         inline void set_thread_number_for_pasting_text(unsigned short new_thread_number) {a_thread_number_for_pasting_text = new_thread_number;};
-		inline unsigned int width() const { return a_width; };
+		inline int width() const { return a_width; };
 
 		//*********
         //
@@ -1122,7 +1119,7 @@ namespace scls
 			// Only case which the algorithm does not work correctly
 			if(x_1 == x_2) {
                 // Check the X position
-                if(x_1 < 0 || x_1 <= width()) return;
+                if(x_1 + static_cast<int>(line_width) < 0 || x_1 <= width()) return;
                 y_2++;
                 if(y_2 < y_1) {
                     y_2 += y_1;
@@ -1130,11 +1127,9 @@ namespace scls
                     y_2 = y_2 - y_1;
                 }
                 // Check the Y position
-                if(y_1 < 0) {y_1 = 0;} if(y_2 < 0) {y_2 = 0;}
-                if(y_1 >= height()) y_1 = height(); if(y_2 >= height()) y_2 = height();
                 for(int i = 0;i<y_2 - y_1;i++) set_pixel(x_1, y_1 + i, red, green, blue, alpha, line_width);
 			}
-			else if(y_1 == y_2) {
+			else if(y_1 + static_cast<int>(line_width) == y_2) {
 			    // Check the Y position
 			    if(y_1 < 0 || y_1 >= height()) return;
 			    x_2++;
@@ -1144,8 +1139,6 @@ namespace scls
                     x_2 = x_2 - x_1;
                 }
                 // Check the X position
-                if(x_1 < 0) {x_1 = 0;} if(x_2 < 0) {x_2 = 0;}
-                if(x_1 >= width()) x_1 = width(); if(x_2 >= width()) x_2 = width();
                 for(int i = 0;i<x_2 - x_1;i++) set_pixel(x_1 + i, y_1, red, green, blue, alpha, line_width);
 			}
             else {
@@ -1166,17 +1159,13 @@ namespace scls
 						x_2 = temp;
 					}
 
-					float actual_x = x_1;
-					float actual_y = y_1;
+					double actual_x = x_1;
+					double actual_y = y_1;
 
-					// Check the position
-					if(y_2 < 0) return;
-					else if(y_2 > height()) y_2 = height();
-					while(actual_y < 0) {actual_x += x_y_ratio;actual_y++;}
-					while (actual_y < y_2 && actual_x + x_y_ratio >= 0 && actual_x + x_y_ratio < width()) {
+					while (actual_y < y_2) {
 						actual_y++;
 						actual_x += x_y_ratio;
-						if(actual_y >= 0) set_pixel(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), red, green, blue, alpha, line_width);
+						set_pixel(actual_x, actual_y, red, green, blue, alpha, line_width);
 					}
 				}
 				else {
@@ -1193,22 +1182,16 @@ namespace scls
 					float actual_x = x_1;
 					float actual_y = y_1;
 
-					// Check the position
-					if(x_2 < 0) return;
-					else if(x_2 > width()) x_2 = width();
 					float y_x_ratio = distance_y / distance_x;
-					while(actual_x < 0) {actual_y += y_x_ratio;actual_x++;}
-					while (actual_x < x_2 && actual_y + y_x_ratio >= 0 && actual_y + y_x_ratio < height()) {
+					while (actual_x < x_2) {
 						actual_y += y_x_ratio;
 						actual_x++;
-						set_pixel(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), red, green, blue, alpha, line_width);
+						set_pixel(actual_x, actual_y, red, green, blue, alpha, line_width);
 					}
 				}
 			}
 		};
-        void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1) {
-            draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);
-        };
+        void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);};
         // Draw a rectangle on the image
         void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
             fill_rect(x, y, width, rect_width, red, green, blue, alpha);
@@ -1226,10 +1209,10 @@ namespace scls
         // Fill a rectangle on the image
 		void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			// Check the position
-			if(y >= height() || x >= width() || y + static_cast<int>(rect_height) < 0 || x + static_cast<int>(rect_width) < 0) return;
-			if(x < 0) {rect_width -= static_cast<unsigned short>(-x);x = 0;}
+			if(y >= static_cast<int>(height()) || x >= static_cast<int>(width()) || y + static_cast<int>(rect_height) < 0 || x + static_cast<int>(rect_width) < 0) return;
+			if(x < 0) {x=-x;rect_width -= static_cast<unsigned short>(x);x = 0;}
 			if(x + rect_width >= width()) rect_width = width() - x;
-			if(y < 0) {rect_height -= static_cast<unsigned short>(-y);y = 0;}
+			if(y < 0) {y=-y;rect_height -= static_cast<unsigned short>(y);y = 0;}
 			if(y + rect_height >= height()) rect_height = height() - y;
 			// Fill the rect
 			for (int i = 0; i < rect_width; i++) {
@@ -1238,9 +1221,7 @@ namespace scls
 				}
 			}
 		};
-		void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {
-		    fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());
-		};
+		void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};
         // Fill a rectangle on the image
 		void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			// 3 should be the point with the largest X value
