@@ -1119,7 +1119,7 @@ namespace scls
 			// Only case which the algorithm does not work correctly
 			if(x_1 == x_2) {
                 // Check the X position
-                if(x_1 + static_cast<int>(line_width) < 0 || x_1 <= width()) return;
+                if(x_1 + static_cast<int>(line_width) < 0 || x_1 >= width()) return;
                 y_2++;
                 if(y_2 < y_1) {
                     y_2 += y_1;
