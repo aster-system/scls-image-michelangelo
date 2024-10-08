@@ -38,6 +38,7 @@
 
 #include "scls_image_directory/scls_image_core.h"
 #include "scls_image_directory/scls_image_fractal.h"
+#include "scls_image_directory/scls_image_math.h"
 #include "scls_image_directory/scls_image_text.h"
 #include "scls_image_directory/scls_image_type.h"
 
