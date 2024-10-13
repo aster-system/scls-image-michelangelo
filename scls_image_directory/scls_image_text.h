@@ -942,7 +942,7 @@ namespace scls
             else a_cursor_x -= static_cast<double>(cursor_width) / 2.0;
             unsigned int cursor_height = final_image->height();
             if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= datas().content_in_plain_text.size()) {
-                final_image->fill_rect(a_cursor_x, 0, cursor_width, final_image->height(), Color(0, 0, 0));
+                final_image->fill_rect(a_cursor_x, 0, cursor_width, final_image->height(), a_global_style.color);
             }
 
             return final_image;

@@ -90,6 +90,28 @@ namespace scls
             a_red = static_cast<double>(red) / 255.0;
         };
 
+        // Return a color loaded from a text
+        static Color from_std_string(std::string source) {
+            // Format the text
+            while(source[0] == ' ' || source[0] == '(') source = source.substr(1, source.size() - 1);
+            while(source[source.size() - 1] == ' ' || source[source.size() - 1] == ')') source = source.substr(0, source.size() - 1);
+
+            // Get the color
+            Color to_return(255, 255, 255);
+            std::vector<std::string> cutted = cut_string(source, ",");
+            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+                while(cutted[i][0] == ' ') cutted[i] = cutted[i].substr(1, cutted[i].size() - 1);
+                while(cutted[i][cutted[i].size() - 1] == ' ') cutted[i] = cutted[i].substr(0, cutted[i].size() - 1);
+
+                // Apply the color
+                if(i == 0) to_return.set_red(std::stoi(cutted[i]));
+                else if(i == 1) to_return.set_green(std::stoi(cutted[i]));
+                else if(i == 2) to_return.set_blue(std::stoi(cutted[i]));
+                else if(i == 3) to_return.set_alpha(std::stoi(cutted[i]));
+            }
+            return to_return;
+        };
+
         // Getters and setters (ONLY WITH ATTRIBUTES)
         inline unsigned char alpha() const {return static_cast<unsigned char>(a_alpha * 255.0);};
         inline unsigned char blue() const {return static_cast<unsigned char>(a_blue * 255.0);};
