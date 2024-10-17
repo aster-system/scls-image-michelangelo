@@ -327,7 +327,7 @@ namespace scls
 
     //*********
 	//
-	// Text classes
+	// Hidden classes to handle text
 	//
 	//*********
 
@@ -512,7 +512,7 @@ namespace scls
         // Block_Datas constructor
         Block_Datas(std::string block_content) : content(block_content) {}
         // Content of the block
-        std::string content = "";
+        String content = "";
         // Global style in the block
         Text_Style global_style;
         // Max width of the block
@@ -1004,6 +1004,12 @@ namespace scls
         std::vector<Word_Datas> a_words_datas = std::vector<Word_Datas>();
     };
 
+    //*********
+	//
+	// Text classes
+	//
+	//*********
+
     class Text_Image_Block {
         // Class containing a single block text
     public:
@@ -1020,14 +1026,15 @@ namespace scls
         // Most simple Text_Image_Block constructor
         Text_Image_Block(_Balise_Style_Container* defined_balises, std::string text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
         // Text_Image_Block constructor with an user defined type
-        Text_Image_Block(_Balise_Style_Container* defined_balises, std::string text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(text), type) {};
+        Text_Image_Block(_Balise_Style_Container* defined_balises, std::string text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(to_utf_8_code_point(text)), type) {};
         // Text_Image_Block destructor
         ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
         inline Text_Style& global_style() {return a_datas.get()->global_style;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_line_text();};
-        inline std::string text() const {return a_datas.get()->content;};
+        inline void set_text(std::string new_text, bool move_cursor = true) {new_text=to_utf_8_code_point(new_text);a_datas.get()->content = new_text;update_line_text();};
+        inline std::string text() const {return to_utf_8(a_datas.get()->content);};
+        inline std::string text_code_point() const {return a_datas.get()->content;};
         inline Block_Type type() const {return a_type;};
 
         //*********
@@ -1047,10 +1054,19 @@ namespace scls
 
         // Getters and setters
         inline Text_Image_Line* cursor_line() {return a_cursor_line;};
-        inline unsigned int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
+        inline unsigned int cursor_position_in_full_text() const {return defined_balises()->plain_text_position_to_unformatted_text_position(text_code_point(), cursor_position_in_plain_text());};
+        inline unsigned int cursor_position_in_code_point_in_full_text() const {
+            unsigned int to_return = cursor_position_in_full_text();
+            return to_return + utf_8_code_point_size_offset(text(), to_return);
+        };
+        inline unsigned int cursor_position_in_plain_text() const {
+            return a_cursor_position_in_plain_text - code_point_utf_8_size_offset(text_code_point(), a_cursor_position_in_plain_text);
+        };
         inline int cursor_x() const {return a_cursor_x;};
         inline int cursor_y() const {return a_cursor_y;};
-        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;};
+        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {
+            a_cursor_position_in_plain_text = new_cursor_position_in_plain_text + code_point_utf_8_size_offset(text_code_point(), new_cursor_position_in_plain_text);
+        };
         inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
         inline bool use_cursor() const {return a_use_cursor;};
 
@@ -1060,51 +1076,6 @@ namespace scls
         //
         //*********
 
-        // Add text to the block
-        void add_text(const std::vector<std::string>& cutted, const std::string& final_text, const std::string& text, unsigned int start_position) {
-            a_datas.get()->content = final_text;
-            int line_number = line_number_at_position(start_position);
-            if(line_number != -1) {
-                // Modify the text
-                Line_Datas datas = a_lines_text[line_number];
-                unsigned int inline_start_position = start_position - datas.start_position;
-                std::string end_of_first_line = "";
-                if(datas.content.size() - inline_start_position > 0) end_of_first_line = datas.content.substr(inline_start_position, datas.content.size() - inline_start_position);
-                datas.content = datas.content.substr(0, inline_start_position) + cutted.at(0);
-                datas.content_in_plain_text = a_defined_balises->plain_text(datas.content);
-                a_lines_text[line_number] = datas;
-
-                // Modify the needed lines
-                if(line_number < a_lines.size()) {
-                    if(a_lines[line_number] != 0) a_lines[line_number]->set_modified(true);
-                    for(int i = 1;i<cutted.size();i++) {
-                        a_lines.insert(a_lines.begin() + line_number + i, 0);
-                    }
-                }
-                unsigned int current_plain_text_position = datas.start_position_in_plain_text + datas.content_in_plain_text.size() + 1;
-                unsigned int current_position = datas.start_position + datas.content.size() + 5;
-                for(int i = 1;i<cutted.size();i++) {
-                    datas.content = cutted.at(i); datas.content_in_plain_text = a_defined_balises->plain_text(cutted.at(i));
-                    datas.line_number = line_number + i;
-                    datas.start_position = current_position; datas.start_position_in_plain_text = current_plain_text_position;
-                    current_position += datas.content.size() + 5; current_plain_text_position += datas.content_in_plain_text.size() + 1;
-                    a_lines_text.insert(a_lines_text.begin() + line_number + 1, datas);
-                    line_number++;
-                }
-                datas.content += end_of_first_line;
-                datas.content_in_plain_text += a_defined_balises->plain_text(end_of_first_line);
-                a_lines_text[line_number] = datas;
-
-                // Modify the next lines
-                unsigned int plain_text_size = a_defined_balises->plain_text_size(text);
-                for(int i = line_number + 1;i<static_cast<int>(a_lines_text.size());i++) {
-                    a_lines_text[i].line_number += cutted.size() - 1;
-                    a_lines_text[i].start_position += text.size();
-                    a_lines_text[i].start_position_in_plain_text += plain_text_size;
-                }
-            }
-            else set_text(final_text);
-        };
         // Check the modified lines
         void _check_modified_lines() {
             for(int i = 0;i<static_cast<int>(a_lines.size());i++) {
@@ -1126,9 +1097,7 @@ namespace scls
                 lines.pop_back();
             }
         };
-        // Free the memory of the line
-        inline void free_memory() {clear_lines();};
-        // Generate a single line of text
+        // Generate the lines of the block
         Text_Image_Line* _generate_line(Line_Datas datas, const Text_Style& style) {
             // Create the line
             Text_Image_Line* to_return = new Text_Image_Line(a_defined_balises, datas.content, style);
@@ -1146,7 +1115,6 @@ namespace scls
 
             return to_return;
         };
-        // Generate the lines of the block
         void generate_lines(bool entirely = true) {
             if(!entirely && type() != Block_Type::BT_Always_Free_Memory) {
                 _regenerate_lines();
@@ -1224,12 +1192,107 @@ namespace scls
 
             return current_line;
         };
-        // Generates the next line to be generated and returns it
         Text_Image_Line* generate_next_line() {
             Text_Image_Line* to_return = generate_next_line(a_current_line);
             a_current_line++;
             return to_return;
         };
+        // Regenerate the lines with a new text
+        void _regenerate_lines() {
+            std::vector<Text_Image_Line*>& lines = a_lines;
+            std::vector<Line_Datas>& cutted = a_lines_text;
+            reset_line_generation();
+            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+                generate_next_line(i);
+            }
+            delete_useless_generated_lines();
+        };
+        // Reset the generation of lines
+        inline void reset_line_generation() {
+            _check_modified_lines();
+            a_current_line = 0;
+            a_current_style = global_style();
+            a_datas.get()->max_width = 0;
+            a_datas.get()->total_height = 0;
+        };
+
+        // Add text to the block
+        void add_text(const std::string& first_text) {
+            // Modify the text
+            std::vector<std::string> cutted = cut_string(first_text, "</br>", false, false);
+            std::string text_to_modify = text();
+            unsigned int cursor_position = cursor_position_in_code_point_in_full_text();
+            if(cursor_position > text_to_modify.size()) cursor_position = text_to_modify.size();
+            std::string final_text = text_to_modify.substr(0, cursor_position) + first_text + text_to_modify.substr(cursor_position, text_to_modify.size() - cursor_position);
+            set_text(final_text);
+            // Move the cursor
+            std::string text_plain = defined_balises()->plain_text(first_text);
+            set_cursor_position_in_plain_text(cursor_position_in_plain_text() + text_plain.size());
+
+            // Modify the image
+            int line_number = line_number_at_position(cursor_position);
+            // Add the needed lines
+            if(line_number < a_lines.size()) {
+                if(a_lines[line_number] != 0) a_lines[line_number]->set_modified(true);
+                for(int i = 1;i<cutted.size();i++) {
+                    a_lines.insert(a_lines.begin() + line_number + i, 0);
+                }
+            }
+            /*unsigned int start_position = cursor_position;
+            int line_number = line_number_at_position(start_position);
+            std::string text = to_utf_8_code_point(first_text);
+            if(line_number != -1) {
+                // Modify the text
+                Line_Datas datas = a_lines_text[line_number];
+                print("Matt 1", start_position); print("Matt 2", datas.start_position);
+                print("Matt 2", a_lines_text[line_number + 1].start_position);
+                unsigned int inline_start_position = start_position - datas.start_position;
+                std::string end_of_first_line = "";
+                if(datas.content.size() - inline_start_position > 0) end_of_first_line = datas.content.substr(inline_start_position, datas.content.size() - inline_start_position);
+                datas.content = datas.content.substr(0, inline_start_position) + cutted.at(0);
+                datas.content_in_plain_text = a_defined_balises->plain_text(datas.content);
+                a_lines_text[line_number] = datas;
+
+                // Add the needed lines
+                if(line_number < a_lines.size()) {
+                    if(a_lines[line_number] != 0) a_lines[line_number]->set_modified(true);
+                    for(int i = 1;i<cutted.size();i++) {
+                        a_lines.insert(a_lines.begin() + line_number + i, 0);
+                    }
+                }
+                // Moves the start of the line
+                unsigned int offset = utf_8_code_point_size_offset(datas.content_in_plain_text);
+                unsigned int current_plain_text_position = (datas.start_position_in_plain_text + datas.content_in_plain_text.size() + 1) - offset;
+                offset = utf_8_code_point_size_offset(datas.content);
+                unsigned int current_position = (datas.start_position + datas.content.size() + 5) - offset;
+                // Update the new created lines
+                for(int i = 1;i<cutted.size();i++) {
+                    datas.content = cutted.at(i); datas.content_in_plain_text = a_defined_balises->plain_text(cutted.at(i));
+                    datas.line_number = line_number + i;
+                    datas.start_position = current_position; datas.start_position_in_plain_text = current_plain_text_position;
+                    offset = utf_8_code_point_size_offset(datas.content_in_plain_text);
+                    current_position += (datas.content.size() + 5) - offset;
+                    offset = utf_8_code_point_size_offset(datas.content);
+                    current_plain_text_position += (datas.content_in_plain_text.size() + 1) - offset;
+                    a_lines_text.insert(a_lines_text.begin() + line_number + 1, datas);
+                    line_number++;
+                }
+                datas.content += end_of_first_line;
+                datas.content_in_plain_text += defined_balises()->plain_text(end_of_first_line);
+                a_lines_text[line_number] = datas;
+
+                // Modify the next lines
+                unsigned int plain_text_size = a_defined_balises->plain_text_size(text);
+                for(int i = line_number + 1;i<static_cast<int>(a_lines_text.size());i++) {
+                    a_lines_text[i].line_number += cutted.size() - 1;
+                    a_lines_text[i].start_position += text.size();
+                    a_lines_text[i].start_position_in_plain_text += plain_text_size;
+                }
+            }
+            else set_text(final_text, false); //*/
+        };
+        // Free the memory of the line
+        inline void free_memory() {clear_lines();};
         // Generates and returns an image with the block on it
         Image* image() {
             if(a_last_image.get() != 0) return a_last_image.get();
@@ -1297,12 +1360,11 @@ namespace scls
         };
         // Returns the line number at the position given, or 0
         int line_number_at_position(unsigned int position) {
-            for(int i = 0;i<static_cast<int>(lines_datas().size());i++) {
-                if(lines_datas()[i].start_position + lines_datas()[i].content.size() >= position) {
-                    return i;
+            for(int i = 1;i<static_cast<int>(lines_datas().size());i++) {
+                if(lines_datas()[i].start_position > position) {
+                    return i - 1;
                 }
-            }
-            return -1;
+            } return lines_datas().size() - 1;
         };
         // Returns the line number at a plain text position given, or 0
         int line_number_at_position_in_plain_text(unsigned int position) {
@@ -1320,29 +1382,25 @@ namespace scls
         void __image_paste(Image* block, Image* image_2, unsigned int current_x, unsigned int current_y) {
             block->paste(image_2, current_x, current_y);
         };
-        // Regenerate the lines with a new text
-        void _regenerate_lines() {
-            std::vector<Text_Image_Line*>& lines = a_lines;
-            std::vector<Line_Datas>& cutted = a_lines_text;
-            reset_line_generation();
-            for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                generate_next_line(i);
-            }
-            delete_useless_generated_lines();
-        }
         // Removes a part of the text and returns the number of lines deleted
-        unsigned int remove_text(const std::string& final_text, unsigned int size_to_delete, unsigned int size_to_delete_in_plain_text, unsigned int start_position) {
+        unsigned int remove_text(unsigned int size_to_delete) {
+            unsigned int start_position = cursor_position_in_full_text();
             unsigned int line_deleted = 0;
             int position = line_number_at_position(start_position);
             if(position != -1) {
                 Line_Datas* current_datas = &lines_datas()[position];
                 const unsigned int first_size_to_delete = size_to_delete;
-                const unsigned int first_size_to_delete_in_plain_text = size_to_delete_in_plain_text;
+                const unsigned int first_size_to_delete_in_full_text = start_position - defined_balises()->first_plain_text_character_before_position_in_informatted_text(text(), start_position);
                 unsigned int local_position = start_position - current_datas->start_position;
                 std::string* text_to_remove = &(current_datas->content);
                 std::string* text_to_remove_in_plain_text = &(current_datas->content_in_plain_text);
 
+                // Modify the cursor
+                set_cursor_position_in_plain_text(cursor_position_in_plain_text() - size_to_delete);
+
                 // Remove the needed text
+                String& global_text = a_datas.get()->content;
+                global_text = global_text.substr(0, start_position - size_to_delete) + global_text.substr(start_position, global_text.size());
                 std::string content_to_keep = text_to_remove->substr(local_position, text_to_remove->size() - local_position);
                 (*text_to_remove) = text_to_remove->substr(0, local_position);
                 while(size_to_delete > 0 && position >= 0) {
@@ -1379,18 +1437,10 @@ namespace scls
                 // Modify the next lines
                 for(int i = position + 1;i<static_cast<int>(a_lines_text.size());i++) {
                     a_lines_text[i].start_position -= first_size_to_delete;
-                    a_lines_text[i].start_position_in_plain_text -= first_size_to_delete_in_plain_text;
+                    a_lines_text[i].start_position_in_plain_text -= first_size_to_delete_in_full_text;
                 }
             }
             return line_deleted;
-        };
-        // Reset the generation of lines
-        inline void reset_line_generation() {
-            _check_modified_lines();
-            a_current_line = 0;
-            a_current_style = global_style();
-            a_datas.get()->max_width = 0;
-            a_datas.get()->total_height = 0;
         };
         // Soft reset the block for a line renegeration
         inline void soft_reset() {
@@ -1398,7 +1448,7 @@ namespace scls
         };
         // Update the text in each lines, without others modification
         void update_line_text() {
-            std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
+            std::vector<std::string> cutted = cut_string(text_code_point(), "</br>", false, true);
             std::vector<Line_Datas>& lines_text = a_lines_text; a_lines_text.clear();
             unsigned int current_position = 0;
             unsigned int current_position_in_plain_text = 0;
@@ -1414,8 +1464,9 @@ namespace scls
                 lines_text.push_back(datas);
 
                 // Update the positions
-                current_position += datas.content.size() + 5;
-                current_position_in_plain_text += datas.content_in_plain_text.size() + 1;
+                unsigned int offset = utf_8_code_point_size_offset(datas.content);
+                current_position += (datas.content.size() + 5) - offset;
+                current_position_in_plain_text += (datas.content_in_plain_text.size() + 1) - offset;
             }
 
             // Handle empty lines
@@ -1432,6 +1483,7 @@ namespace scls
 
         // Getters and setter
         inline Block_Datas* datas() {return a_datas.get();};
+        inline _Balise_Style_Container* defined_balises() const {return a_defined_balises;};
         inline std::vector<Text_Image_Line*>& lines() { return a_lines; };
         inline std::vector<Line_Datas>& lines_datas() { return a_lines_text; };
     private:
@@ -1501,25 +1553,28 @@ namespace scls
         void free_memory() {__delete_blocks();};
         // Generate each blocks in the multiblocks
         void generate_blocks() {
-            // Generate the needed datas
-            update_blocks_datas();
-
             // Generate each blocks
             a_max_width = 0;
             a_total_height = 0;
             for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
-                std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(defined_balises(), a_blocks_datas[i]);
-                new_block.get()->image();
-                a_blocks.push_back(new_block);
+                if(a_blocks.size() < i) {
+                    a_blocks[i].get()->generate_lines();
+                } else {
+                    std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(defined_balises(), a_blocks_datas[i]);
+                    new_block.get()->image();
+                    a_blocks.push_back(new_block);
 
-                if(a_max_width < new_block.get()->datas()->max_width) a_max_width = new_block.get()->datas()->max_width;
-                a_total_height += new_block.get()->datas()->total_height;
+                    if(a_max_width < new_block.get()->datas()->max_width) a_max_width = new_block.get()->datas()->max_width;
+                    a_total_height += new_block.get()->datas()->total_height;
+                }
             }
         };
+        void generate_blocks(std::string text_to_analyse) {update_blocks_datas(text_to_analyse);generate_blocks();};
         // Return the entire text in an image
-        Image* image(const std::string& text) {
+        Image* image(const std::string& start_text) {
             // Generate each blocks
-            generate_blocks();
+            std::string text = to_utf_8_code_point(start_text);
+            generate_blocks(start_text);
             int max_width = a_max_width;
             int total_height = a_total_height;
 
@@ -1550,15 +1605,15 @@ namespace scls
             return final_image;
         };
         // Return the entire text in an image
-        Image* image() { return image(text()); };
+        Image* image() {return image(text());};
         // Returns a shared pointer of the image
         std::shared_ptr<Image> image_shared_pointer() { std::shared_ptr<Image> to_return;to_return.reset(image());return to_return;};
         // Save the image as an image
         inline void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;};
         // Update the datas of each blocks
-        void update_blocks_datas() {
+        void update_blocks_datas(String text_to_analyse) {
             a_blocks_datas.clear();
-            std::vector<std::string> cutted = a_defined_balises->_cut_multi_block(text());
+            std::vector<std::string> cutted = a_defined_balises->_cut_multi_block(text_to_analyse);
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
                 std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted[i]);
                 a_blocks_datas.push_back(current_block_data);
@@ -1583,8 +1638,13 @@ namespace scls
         inline Text_Style& global_style() {return a_global_style;};
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
-        inline void set_text(std::string new_text, bool move_cursor = true) {a_text = new_text;};
-        inline std::string text() const {return a_text;};
+        inline void set_text(String new_text) {update_blocks_datas(new_text);};
+        inline String text() const {
+            String to_return = "";
+            for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
+                to_return += a_blocks_datas.at(i).get()->content;
+            } return to_return;
+        };
     private:
         // Current style used for the formatting
         Text_Style a_current_style;
@@ -1593,8 +1653,6 @@ namespace scls
 
         // Containers of each defined balises
         _Balise_Style_Container* a_defined_balises = 0;
-        // HTML Text in the image
-        std::string a_text = "";
 
         //*********
         //
