@@ -28,8 +28,7 @@
 #endif
 
 // The namespace "scls" is used to simplify the all.
-namespace scls
-{
+namespace scls {
     //*********
 	//
 	// Font handling
@@ -1227,7 +1226,7 @@ namespace scls
             set_text(final_text);
             // Move the cursor
             std::string text_plain = defined_balises()->plain_text(first_text);
-            set_cursor_position_in_plain_text(cursor_position_in_plain_text() + text_plain.size());
+            set_cursor_position_in_plain_text(cursor_position_in_plain_text() + (text_plain.size() - utf_8_code_point_size_offset(text_plain, cursor_position_in_plain_text() + text_plain.size())));
 
             // Modify the image
             int line_number = line_number_at_position(cursor_position);
@@ -1238,58 +1237,6 @@ namespace scls
                     a_lines.insert(a_lines.begin() + line_number + i, 0);
                 }
             }
-            /*unsigned int start_position = cursor_position;
-            int line_number = line_number_at_position(start_position);
-            std::string text = to_utf_8_code_point(first_text);
-            if(line_number != -1) {
-                // Modify the text
-                Line_Datas datas = a_lines_text[line_number];
-                print("Matt 1", start_position); print("Matt 2", datas.start_position);
-                print("Matt 2", a_lines_text[line_number + 1].start_position);
-                unsigned int inline_start_position = start_position - datas.start_position;
-                std::string end_of_first_line = "";
-                if(datas.content.size() - inline_start_position > 0) end_of_first_line = datas.content.substr(inline_start_position, datas.content.size() - inline_start_position);
-                datas.content = datas.content.substr(0, inline_start_position) + cutted.at(0);
-                datas.content_in_plain_text = a_defined_balises->plain_text(datas.content);
-                a_lines_text[line_number] = datas;
-
-                // Add the needed lines
-                if(line_number < a_lines.size()) {
-                    if(a_lines[line_number] != 0) a_lines[line_number]->set_modified(true);
-                    for(int i = 1;i<cutted.size();i++) {
-                        a_lines.insert(a_lines.begin() + line_number + i, 0);
-                    }
-                }
-                // Moves the start of the line
-                unsigned int offset = utf_8_code_point_size_offset(datas.content_in_plain_text);
-                unsigned int current_plain_text_position = (datas.start_position_in_plain_text + datas.content_in_plain_text.size() + 1) - offset;
-                offset = utf_8_code_point_size_offset(datas.content);
-                unsigned int current_position = (datas.start_position + datas.content.size() + 5) - offset;
-                // Update the new created lines
-                for(int i = 1;i<cutted.size();i++) {
-                    datas.content = cutted.at(i); datas.content_in_plain_text = a_defined_balises->plain_text(cutted.at(i));
-                    datas.line_number = line_number + i;
-                    datas.start_position = current_position; datas.start_position_in_plain_text = current_plain_text_position;
-                    offset = utf_8_code_point_size_offset(datas.content_in_plain_text);
-                    current_position += (datas.content.size() + 5) - offset;
-                    offset = utf_8_code_point_size_offset(datas.content);
-                    current_plain_text_position += (datas.content_in_plain_text.size() + 1) - offset;
-                    a_lines_text.insert(a_lines_text.begin() + line_number + 1, datas);
-                    line_number++;
-                }
-                datas.content += end_of_first_line;
-                datas.content_in_plain_text += defined_balises()->plain_text(end_of_first_line);
-                a_lines_text[line_number] = datas;
-
-                // Modify the next lines
-                unsigned int plain_text_size = a_defined_balises->plain_text_size(text);
-                for(int i = line_number + 1;i<static_cast<int>(a_lines_text.size());i++) {
-                    a_lines_text[i].line_number += cutted.size() - 1;
-                    a_lines_text[i].start_position += text.size();
-                    a_lines_text[i].start_position_in_plain_text += plain_text_size;
-                }
-            }
-            else set_text(final_text, false); //*/
         };
         // Free the memory of the line
         inline void free_memory() {clear_lines();};
@@ -1399,9 +1346,21 @@ namespace scls
                 set_cursor_position_in_plain_text(cursor_position_in_plain_text() - size_to_delete);
 
                 // Remove the needed text
-                String& global_text = a_datas.get()->content;
+                String global_text = a_datas.get()->content;
+                String deleted_text = global_text.substr(start_position - size_to_delete, start_position);
                 global_text = global_text.substr(0, start_position - size_to_delete) + global_text.substr(start_position, global_text.size());
-                std::string content_to_keep = text_to_remove->substr(local_position, text_to_remove->size() - local_position);
+                set_text(global_text);
+                // Modify the image
+                int line_number = line_number_at_position(start_position);
+                // Remove the needed lines
+                unsigned int deleted_line = deleted_text.contains("</br>");
+                if(a_lines[line_number] != 0) a_lines[line_number]->set_modified(true); line_number ++;
+                while(deleted_line > 0) {
+                    if(a_lines.size() > line_number && a_lines[line_number] != 0) a_lines.erase(a_lines.begin() + line_number);
+                    deleted_line--;
+                }
+
+                /*std::string content_to_keep = text_to_remove->substr(local_position, text_to_remove->size() - local_position);
                 (*text_to_remove) = text_to_remove->substr(0, local_position);
                 while(size_to_delete > 0 && position >= 0) {
                     local_position = start_position - current_datas->start_position;
@@ -1438,7 +1397,7 @@ namespace scls
                 for(int i = position + 1;i<static_cast<int>(a_lines_text.size());i++) {
                     a_lines_text[i].start_position -= first_size_to_delete;
                     a_lines_text[i].start_position_in_plain_text -= first_size_to_delete_in_full_text;
-                }
+                }//*/
             }
             return line_deleted;
         };
@@ -1464,9 +1423,8 @@ namespace scls
                 lines_text.push_back(datas);
 
                 // Update the positions
-                unsigned int offset = utf_8_code_point_size_offset(datas.content);
-                current_position += (datas.content.size() + 5) - offset;
-                current_position_in_plain_text += (datas.content_in_plain_text.size() + 1) - offset;
+                current_position += (datas.content.size() + 5);
+                current_position_in_plain_text += (datas.content_in_plain_text.size() + 1);
             }
 
             // Handle empty lines
