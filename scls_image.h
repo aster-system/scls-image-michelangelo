@@ -160,17 +160,6 @@ namespace scls {
 
         return img_shared_ptr;
     }
-
-    // Make the text about the Leclerc
-    inline void save_leclerc_text(std::string path) {
-        scls::Text_Image_Generator* image_generator = new scls::Text_Image_Generator();
-        /* scls::Text_Image* leclerc = image_generator->new_text_image(scls::to_utf_8(scls::read_file("leclerc.html")));
-        leclerc->global_style().max_width = 500;
-        leclerc->set_use_cursor(true);
-        leclerc->save_image(path);
-        delete leclerc; leclerc = 0; //*/
-        delete image_generator; image_generator = 0;
-    }
 };
 
 #endif // SCLS_IMAGE

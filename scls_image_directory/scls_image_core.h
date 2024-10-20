@@ -375,8 +375,7 @@ namespace scls
 		// Basic image manipulation
 		// Delete the pixels in the memory
 		void free_memory() {
-			if (a_pixels != 0)
-			{
+			if (a_pixels != 0) {
 				delete a_pixels; a_pixels = 0;
 			}
 		};

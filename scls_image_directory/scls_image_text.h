@@ -1459,22 +1459,19 @@ namespace scls {
         void __delete_blocks(unsigned int max_size = 0) { a_blocks.clear(); };
         // Deletes the last blocks in a vector
         void free_memory() {__delete_blocks();};
-        // Generate each blocks in the multiblocks
+        // Generate each blocks in the multiblocks (and delete the previous ones)
         void generate_blocks() {
             // Generate each blocks
             a_max_width = 0;
             a_total_height = 0;
+            free_memory();
             for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
-                if(a_blocks.size() < i) {
-                    a_blocks[i].get()->generate_lines();
-                } else {
-                    std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(defined_balises(), a_blocks_datas[i]);
-                    new_block.get()->image();
-                    a_blocks.push_back(new_block);
+                std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(defined_balises(), a_blocks_datas[i]);
+                new_block.get()->image();
+                a_blocks.push_back(new_block);
 
-                    if(a_max_width < new_block.get()->datas()->max_width) a_max_width = new_block.get()->datas()->max_width;
-                    a_total_height += new_block.get()->datas()->total_height;
-                }
+                if(a_max_width < new_block.get()->datas()->max_width) a_max_width = new_block.get()->datas()->max_width;
+                a_total_height += new_block.get()->datas()->total_height;
             }
         };
         void generate_blocks(std::string text_to_analyse) {update_blocks_datas(text_to_analyse);generate_blocks();};
@@ -1550,7 +1547,7 @@ namespace scls {
         inline String text() const {
             String to_return = "";
             for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
-                to_return += a_blocks_datas.at(i).get()->content;
+                if(a_blocks_datas.at(i).get() != 0) to_return += a_blocks_datas.at(i).get()->content;
             } return to_return;
         };
     private:
