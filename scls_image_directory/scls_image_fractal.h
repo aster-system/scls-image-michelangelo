@@ -151,12 +151,12 @@ namespace scls
 		}
 
 		for(int i = 0;i<static_cast<int>(x_positions.size() - 1);i++) {
-            img->draw_line(x_positions[i], y_positions[i], x_positions[i + 1], y_positions[i + 1], black, 2);
+            img->draw_line(x_positions[i], y_positions[i], x_positions[i + 1], y_positions[i + 1], Color(0, 0, 0, 0), 2);
 		}
-		img->draw_line(x_positions[x_positions.size() - 1], y_positions[x_positions.size() - 1], x_positions[0], y_positions[0], black, 2);
+		img->draw_line(x_positions[x_positions.size() - 1], y_positions[x_positions.size() - 1], x_positions[0], y_positions[0], Color(0, 0, 0, 0), 2);
 
 		for(int i = 0;i<static_cast<int>(x_positions.size());i++) {
-            img->set_pixel(x_positions[i], y_positions[i], black, 5);
+            img->set_pixel(x_positions[i], y_positions[i], Color(0, 0, 0, 0), 5);
 		}
 
 		// Calculate the modulo
@@ -164,7 +164,7 @@ namespace scls
             unsigned int result = base * i;
             unsigned int pos = result % side;
 
-            img->draw_line(x_positions[i], y_positions[i], x_positions[pos], y_positions[pos], black, 1);
+            img->draw_line(x_positions[i], y_positions[i], x_positions[pos], y_positions[pos], Color(0, 0, 0, 0), 1);
 		}
 
 		return img;
@@ -176,7 +176,7 @@ namespace scls
         Image* img = new Image(width, height, 255, 255, 255);
 
         if(step == 0) {
-            img->draw_rect(0, 0, width, height, static_cast<double>(width) / 3.0, black);
+            img->draw_rect(0, 0, width, height, static_cast<double>(width) / 3.0, Color(0, 0, 0, 0));
         }
         else {
             Image *child = sierpinski_carpet(static_cast<unsigned short>(static_cast<double>(width) / 3.0), static_cast<unsigned short>(static_cast<double>(height) / 3.0), step - 1);
@@ -200,7 +200,7 @@ namespace scls
         Image* img = new Image(width, height, 255, 255, 255, 255);
 
         if(step == 0) {
-            img->fill_triangle(0, height, width / 2.0, 0, width, height, black);
+            img->fill_triangle(0, height, width / 2.0, 0, width, height, Color(0, 0, 0, 0));
             if(current_step != -1) return img;
         }
         else {

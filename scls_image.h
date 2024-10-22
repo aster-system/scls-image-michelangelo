@@ -43,122 +43,88 @@
 #include "scls_image_directory/scls_image_type.h"
 
 namespace scls {
-    // Make the logo of SCLS
-    inline scls::Image* scls_logo(unsigned short width, std::string name, std::string person, unsigned short name_font_size, unsigned short person_font_size, scls::Color person_color) {
-        double total_width = static_cast<double>(width);
-        scls::Image* img = new scls::Image(static_cast<short>(total_width), static_cast<short>(total_width), scls::white);
-
-        short l_width = static_cast<short>(total_width/40.0);
-        short l_base_length = static_cast<short>(total_width/5.0);
-        short l_height = static_cast<short>(total_width*(7.0/10.0));
-
-        short x_first_l = static_cast<short>(total_width/20.0);
-        short y_first_l = static_cast<short>(total_width/10.0);
-
-        short x_first_2 = x_first_l + static_cast<short>((75.0/1000.0) * total_width);
-        short y_first_2 = y_first_l + static_cast<short>((115.0/1000.0) * total_width);
-
-        scls::Color color_1(0, 51, 102);
-        scls::Color color_2(0, 51, 102);
-        scls::Color color_3 = person_color;
-
-        // First L
-        img->fill_rect(x_first_l, y_first_l, l_base_length, l_width, color_1);
-        img->fill_rect((x_first_l + l_base_length) - l_width, y_first_l + l_width, l_width, l_height, color_1);
-
-        // Second L
-        img->fill_rect(x_first_2, y_first_2, l_width, l_height, color_1);
-        img->fill_rect(x_first_2 + l_width, (y_first_2 + l_height) - l_width, l_base_length, l_width, color_1);
-
-        // Draw the SCLS logo
-        scls::Text_Image_Generator* generator = new scls::Text_Image_Generator();
-        short text_x = (x_first_2 + l_width + l_base_length) - static_cast<short>((75.0/1000.0) * total_width);
-        short text_y = y_first_2 + static_cast<short>((75.0/1000.0) * total_width);
-        short text_y_separation = static_cast<short>(total_width/20.0);
-        scls::Text_Image_Data datas; datas.font_size = static_cast<short>(total_width/5.0); datas.font.font_family = "Alte Haas Grotesk"; datas.font.font_path = LOGO_FONT_PATH;
-        datas.blue = color_1.blue(); datas.green = color_1.green(); datas.red = color_1.red();
-        scls::Image* scls_text = generator->image("SCLS");
-        img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
-        datas.blue = color_2.blue(); datas.green = color_2.green(); datas.red = color_2.red();
-        datas.font_size = name_font_size;
-        scls_text = generator->image(name);
-        img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
-        datas.blue = color_3.blue(); datas.green = color_3.green(); datas.red = color_3.red();
-        datas.font_size = person_font_size;
-        scls_text = generator->image(person);
-        img->paste(scls_text, text_x, text_y); text_y += scls_text->height() + text_y_separation; delete scls_text; scls_text = 0;
-        delete generator;
-
-        return img;
-    }
-
-    // Make the logo of SCLS easily
-    inline scls::Image* scls_logo(unsigned short total_width, unsigned int to_draw = 0) {
-        scls::Color color(255, 174, 0);
-        std::string name = "Foundation";
-        std::string person = "\"Leonhard\"";
-        unsigned short name_font_size = static_cast<unsigned short>((130.0/1000.0) * total_width);
-        unsigned short person_font_size = static_cast<unsigned short>((130.0/1000.0) * total_width);
-
-        if(to_draw == 1) {
-            name = "Documentalist";
-            person = "\"Agatha\"";
-
-            name_font_size = static_cast<unsigned short>((110.0/1000.0) * total_width);
-            person_font_size = static_cast<unsigned short>((130.0/1000.0) * total_width);
-
-            color = scls::Color(128, 0, 0);
-        }
-
-        return scls_logo(total_width, name, person, name_font_size, person_font_size, color);
-    }
 
     // Make the logo of Aster System
-    inline std::shared_ptr<scls::Image> aster_system_logo() {
-        double total_width = 500;
-        std::shared_ptr<scls::Image> img_shared_ptr = std::make_shared<scls::Image>(static_cast<short>(total_width), static_cast<short>(total_width), scls::white);
-        Image* img = img_shared_ptr.get();
+    inline std::shared_ptr<scls::Image> aster_system_logo(unsigned int width = 1000) {
+        double total_width = static_cast<double>(width);
+        scls::Image* img = new scls::Image(static_cast<short>(total_width * 2.3), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGB);
 
-        short l_width = static_cast<short>(total_width/40.0);
-        short l_base_length = static_cast<short>(total_width/5.0);
-        short l_height = static_cast<short>(total_width*(7.0/10.0));
+        // Datas about the branchs
+        double branch_height = (total_width*(8.0/10.0));
+        double branch_width = (total_width/14.0);
+        double branch_x = (total_width/10.0);
+        double branch_y = (total_width/10.0);
+        // Automatic values
+        double branch_separation_width = branch_width;
+        double branch_height_round = round(branch_height / 12.0);
+        double branch_height_slide =round( branch_width + branch_separation_width);
+        double branch_height_main = round(branch_height - (branch_height_round * 2.0 + branch_height_slide));
 
-        short x_first_l = static_cast<short>(total_width/20.0);
-        short y_first_l = static_cast<short>(total_width/10.0);
+        // Datas about the text
+        scls::Color color_text(0, 51, 102);
+        double font_size = branch_height / 2.0;
+        double text_x = branch_x + branch_width * 2 + branch_separation_width + branch_width / 2.0;
+        double text_y = total_width / 2.0 - font_size;
 
-        short x_first_2 = x_first_l + static_cast<short>((75.0/1000.0) * total_width);
-        short y_first_2 = y_first_l + static_cast<short>((115.0/1000.0) * total_width);
+        // Round values
+        branch_height = round(branch_height);
+        branch_separation_width = round(branch_separation_width);
+        branch_width = round(branch_width);
+        branch_x = round(branch_x);
+        branch_y = round(branch_y);
+        font_size = round(font_size);
 
+        // Create the branch 1
         scls::Color color_1(0, 51, 102);
-        scls::Color color_2(0, 51, 102);
-        scls::Color color_3(253,174,0);
+        // Create the first rectangle of the left branch
+        double ll1_height = branch_height_main;
+        double ll1_width = branch_width;
+        double ll1_x = branch_x;
+        double ll1_y = branch_y + branch_height_slide + branch_height_round;
+        // Create the second rectangle of the left branch
+        double ll2_height = (branch_height_round);
+        double ll2_width = (branch_height_slide);
+        double ll2_x = (ll1_x + ll1_width);
+        double ll2_y = (ll1_y + ll1_height);
+        // First branch
+        img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_1);
+        img->fill_rect(ll2_x, ll2_y, ll2_width, ll2_height, color_1);
+        img->fill_triangle(ll2_x, ll2_y, ll2_x, ll2_y - branch_height_slide, ll2_x + branch_height_slide, ll2_y, color_1);
+        img->fill_triangle(ll1_x, ll1_y - branch_width, ll1_x, ll1_y, ll1_x + ll1_width, ll1_y, color_1);
 
-        // First L
-        img->fill_rect(x_first_l, y_first_l, l_base_length, l_width, color_1);
-        img->fill_rect((x_first_l + l_base_length) - l_width, y_first_l + l_width, l_width, l_height, color_1);
+        // Create the branch 2
+        scls::Color color_2 = color_1;
+        // Create the third rectangle of the left branch
+        double ll3_height = branch_height_round;
+        double ll3_width = branch_height_slide;
+        double ll3_x = branch_x;
+        double ll3_y = branch_y;
+        // Create the first rectangle of the left branch
+        ll1_height = (branch_height_main);
+        ll1_width = (branch_width);
+        ll1_x = (ll3_x + ll3_width);
+        ll1_y = (ll3_y + ll3_height);
+        // First branch
+        img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_2);
+        img->fill_rect(ll3_x, ll3_y, ll3_width, ll3_height, color_2);
+        img->fill_triangle(ll3_x + ll3_width, ll3_y + ll3_height + branch_height_slide, ll3_x, ll3_y + ll3_height, ll3_x + ll3_width, ll3_y + ll3_height, color_2);
+        img->fill_triangle(ll1_x + ll1_width, ll1_y + ll1_height + branch_width, ll1_x, ll1_y + ll1_height, ll1_x + ll1_width, ll1_y + ll1_height, color_2);
 
-        // Second L
-        img->fill_rect(x_first_2, y_first_2, l_width, l_height, color_1);
-        img->fill_rect(x_first_2 + l_width, (y_first_2 + l_height) - l_width, l_base_length, l_width, color_1);
+        // Create the text
+        std::shared_ptr<scls::Text_Image_Generator> tig = std::make_shared<scls::Text_Image_Generator>();
+        // Paste the text "Aster"
+        scls::Text_Style style;
+        style.color = color_text; style.font.font_path = LOGO_FONT_PATH; style.font_size = font_size;
+        std::shared_ptr<scls::Image> current_text = tig.get()->image_shared_ptr("ASTER", style);
+        text_y = 0;
+        img->paste(current_text.get(), text_x, text_y);
+        // Paste the text "Système"
+        style.color = color_text; style.font_size = font_size;
+        current_text = tig.get()->image_shared_ptr("SYSTÈME", style);
+        text_y = branch_y + branch_height - current_text.get()->height();
+        img->paste(current_text.get(), text_x, text_y);
 
-        // Draw the Aster system logo
-        std::shared_ptr<scls::Text_Image_Generator> generator = std::make_shared<scls::Text_Image_Generator>();
-        short text_x = (x_first_2 + l_width + l_base_length) - static_cast<short>((75.0/1000.0) * total_width);
-        short text_y = y_first_2 + static_cast<short>((75.0/1000.0) * total_width);
-        short text_y_separation = static_cast<short>(total_width/20.0);
-        scls::Text_Style datas;
-        datas.font_size = static_cast<short>(total_width/5.0);
-        datas.font.font_family = "Alte Haas Grotesk";
-        datas.font.font_path = LOGO_FONT_PATH;
-        datas.color = color_1;
-        std::shared_ptr<scls::Image> scls_text = generator->image_shared_ptr("Aster", datas);
-        img->paste(scls_text.get(), text_x, text_y); text_y += scls_text.get()->height() + text_y_separation;
-        datas.color = color_2;
-        datas.font_size = static_cast<short>(total_width/5.0);
-        scls_text = generator->image_shared_ptr("System", datas);
-        img->paste(scls_text.get(), text_x, text_y); text_y += scls_text.get()->height() + text_y_separation;
-
-        return img_shared_ptr;
+        return std::shared_ptr<scls::Image>(img);
     }
 };
 

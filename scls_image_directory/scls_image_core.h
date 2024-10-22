@@ -70,6 +70,14 @@
 #define SCLS_IMAGE_ERROR_UNKNOW -2000000000
 #endif
 
+// Define each possibles image type
+#ifndef SCLS_IMAGE_RGB
+#define SCLS_IMAGE_RGB 2
+#endif
+#ifndef SCLS_IMAGE_RGBA
+#define SCLS_IMAGE_RGBA 6
+#endif
+
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
@@ -135,19 +143,6 @@ namespace scls
         double a_green = 0;
         double a_red = 0;
 	};
-
-	// Predefined colors
-	static Color black = Color(0, 0, 0);
-	static Color blue = Color(0, 0, 255);
-	static Color brown = Color(102, 51, 0);
-	static Color green = Color(0, 255, 0);
-	static Color grey = Color(128, 128, 128);
-	static Color orange = Color(255, 128, 0);
-	static Color pink = Color(255, 51, 255);
-	static Color purple = Color(77, 50, 146);
-	static Color red = Color(255, 0, 0);
-	static Color yellow = Color(255, 255, 0);
-	static Color white = Color(255, 255, 255);
 
 	//*********
 	//
@@ -351,18 +346,15 @@ namespace scls
 		    std::shared_ptr<__Image_Error> final_error = load_from_path(path);
 		    if(final_error.get()->has_error()) print("Warning", "SCLS Image \"Michelangelo\"", final_error.get()->to_std_string());
         };
-		// Image constructor from scratch, easier to use
-		Image(unsigned short width, unsigned short height, Color color, unsigned int color_type = 6) : Image(width, height, color.red(), color.green(), color.blue(), color.alpha(), color_type) {
-
-		}
 		// Image constructor from scratch
-		Image(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned int color_type = 6) {
+		Image(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned int color_type = SCLS_IMAGE_RGBA) {
 			a_color_type = color_type;
 			a_height = height;
 			a_width = width;
 
 			fill(red, green, blue, alpha);
 		};
+		Image(unsigned short width, unsigned short height, Color color, unsigned int color_type = SCLS_IMAGE_RGBA) : Image(width, height, color.red(), color.green(), color.blue(), color.alpha(), color_type) {}
 		// Image copy constructor
 		Image(Image& image_copy) : Image(image_copy.width(), image_copy.height(), Color(0, 0, 0, 0)) {paste(&image_copy, 0, 0);}
 		Image(Image* image_copy) : Image(image_copy->width(), image_copy->height(), Color(0, 0, 0, 0)) {paste(image_copy, 0, 0);}
@@ -370,22 +362,16 @@ namespace scls
 		~Image() { free_memory(); };
 
 		// Returns if the image use alpha or not
-		inline bool use_alpha() const {return color_type() == 6;};
+		inline bool use_alpha() const {return color_type() == SCLS_IMAGE_RGBA;};
 
 		// Basic image manipulation
 		// Delete the pixels in the memory
-		void free_memory() {
-			if (a_pixels != 0) {
-				delete a_pixels; a_pixels = 0;
-			}
-		};
-		// Fill the image with one color
-		void fill(Color color) { fill(color.red(), color.green(), color.blue(), color.alpha()); };
+		void free_memory() {a_pixels.reset();};
 		// Fill the image with one color
 		void fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			free_memory();
 			unsigned int position = 0;
-			a_pixels = new Bytes_Set(buffer_size());
+			a_pixels.reset(new Bytes_Set(buffer_size()));
 			unsigned int current_thread_position = 0;
 			unsigned int pixel_by_thread = floor(static_cast<double>((width() * height()) / static_cast<double>(a_thread_number_for_filling)));
 
@@ -410,20 +396,19 @@ namespace scls
                 __fill_pixel_part(0, width() * height(), red, green, blue, alpha);
 			}
 		};
+		void fill(Color color) { fill(color.red(), color.green(), color.blue(), color.alpha()); };
 		// Fill a part of pixel
 		void __fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
-		    if(color_type() == 6) {
-                for (unsigned int i = 0; i < length; i++)
-                {
+		    if(color_type() == SCLS_IMAGE_RGBA) {
+                for (unsigned int i = 0; i < length; i++) {
                     a_pixels->set_data_at((start_position + i) * 4, red);
                     a_pixels->set_data_at((start_position + i) * 4 + 1, green);
                     a_pixels->set_data_at((start_position + i) * 4 + 2, blue);
                     a_pixels->set_data_at((start_position + i) * 4 + 3, alpha);
                 }
             }
-            else {
-               for (unsigned int i = 0; i < length; i++)
-                {
+            else if(color_type() == SCLS_IMAGE_RGB) {
+               for (unsigned int i = 0; i < length; i++) {
                     a_pixels->set_data_at((start_position + i) * 3, red);
                     a_pixels->set_data_at((start_position + i) * 3 + 1, green);
                     a_pixels->set_data_at((start_position + i) * 3 + 2, blue);
@@ -431,11 +416,7 @@ namespace scls
             }
 		};
         // Force a pixel to change its value
-        inline void force_pixel(unsigned short x, unsigned short y, Color color) {
-            force_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha());
-        };
-        // Force a pixel to change its value
-		inline void force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+        inline void force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
             if (x < 0 || y < 0 || x >= width() || y >= height()) {
                 print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to force is out of the image.");
                 return;
@@ -448,6 +429,7 @@ namespace scls
             a_pixels->set_data_at(position + 2 * multiplier, normalize_value(blue, 0, 255));
             if(color_type() == 6) a_pixels->set_data_at(position + 3 * multiplier, normalize_value(alpha, 0, 255));
 		};
+        inline void force_pixel(unsigned short x, unsigned short y, Color color) {force_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha());};
         // Load the image from a path
 		std::shared_ptr<__Image_Error> load_from_path(std::string path) {
 		    std::shared_ptr<__Image_Error> to_return = std::make_shared<__Image_Error>();
@@ -475,27 +457,21 @@ namespace scls
 		};
 
 		// Getters and setters (ONLY WITHOUT ATTRIBUTES)
-		inline unsigned int buffer_size() {return height() * width() * components() * static_cast<unsigned int>(static_cast<double>(bit_depht()) / 8.0);};
-		inline unsigned char components() { if (color_type() == 6) return 4; return 3; };
-		inline Bytes_Set* datas_filtered() {
-		    Bytes_Set* to_return = new Bytes_Set(datas()->datas_size() + height());
+		// For the methods taking position : If the position is out of the image, prints an error.
+		inline unsigned int buffer_size() const {return height() * width() * components() * static_cast<unsigned int>(static_cast<double>(bit_depht()) / 8.0);};
+		inline unsigned char components() const { if (color_type() == 6) return 4; return 3; };
+		inline std::shared_ptr<Bytes_Set> datas_filtered() {
+		    std::shared_ptr<Bytes_Set> to_return = std::make_shared<Bytes_Set>(datas()->datas_size() + height());
+		    unsigned char components_size = components();
+		    unsigned int height_used = height();
 		    unsigned int position = 0;
-			for (unsigned int i = 0; i < height(); i++)
-			{
-			    to_return->set_data_at(position, 0); position++;
-			    if((bit_depht() / 8.0) == 1) {
-                    for (unsigned int j = 0; j < width() * components(); j++) {
-                        to_return->set_data_at(position, datas()->data_at(i * width() * components() + j)); position++;
-                    }
+		    unsigned int width_used = width();
+			for (unsigned int i = 0; i < height_used; i++) {
+			    to_return.get()->set_data_at(position, 0); position++;
+			    for (unsigned int j = 0; j < width_used * components_size; j++) {
+                    to_return.get()->set_data_at(position, datas()->data_at(i * width_used * components_size + j)); position++;
                 }
-                else {
-                    for (unsigned int j = 0; j < width() * components(); j++) {
-                        to_return->set_data_at(position, datas()->data_at(i * width() * components() + j)); position++;
-                        // to_return->add_ushort(datas()->data_at((i * width() * components() + j) * 2), true);
-                    }
-                }
-			}
-			return to_return;
+			} return to_return;
 		};
 		Color pixel(unsigned short x, unsigned short y) {
 			Color to_return(0, 0, 0);
@@ -503,14 +479,16 @@ namespace scls
 			    unsigned char multiplier = (bit_depht() / 8.0);
 				unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
 
-				if(color_type() == 6) {
+				if(color_type() == SCLS_IMAGE_RGBA) {
                     to_return.set_rgba(a_pixels->data_at(position),
                                        a_pixels->data_at(position + multiplier),
                                        a_pixels->data_at(position + 2 * multiplier),
                                        a_pixels->data_at(position + 3 * multiplier));
                 }
-                else {
-                    to_return.set_rgb(a_pixels->data_at(position), a_pixels->data_at(position + multiplier), a_pixels->data_at(position + 2 * multiplier));
+                else if(color_type() == SCLS_IMAGE_RGB) {
+                    to_return.set_rgb(a_pixels->data_at(position),
+                                      a_pixels->data_at(position + multiplier),
+                                      a_pixels->data_at(position + 2 * multiplier));
                 }
 			}
 			else {
@@ -521,7 +499,7 @@ namespace scls
 		Color pixel_by_number(unsigned int position) {
 		    unsigned char multiplier = (bit_depht() / 8.0);
 		    position *= components() * (bit_depht() / 8.0);
-		    Color to_return = white;
+		    Color to_return = Color(255, 255, 255);
 
             if(color_type() == 6)
             {
@@ -546,26 +524,26 @@ namespace scls
 
 			    unsigned char multiplier = (bit_depht() / 8.0);
 			    unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
-			    if(color_type() == 6) {
-                    Color color = pixel(x, y);
 
-                    float alpha_f = normalize_value(alpha, 0, 255) / 255.0;
-                    float blue_f = normalize_value(blue, 0, 255);
-                    float green_f = normalize_value(green, 0, 255);
-                    float red_f = normalize_value(red, 0, 255);
+			    // Process the color
+			    Color color = pixel(x, y);
+                double alpha_f = normalize_value(alpha, 0, 255) / 255.0;
+                double blue_f = normalize_value(blue, 0, 255);
+                double green_f = normalize_value(green, 0, 255);
+                double red_f = normalize_value(red, 0, 255);
+                // Calculate alpha
+                alpha = normalize_value(alpha, 0, 255); if(color.alpha() > alpha) alpha = color.alpha();
+                blue = alpha_f * blue_f + (1.0 - alpha_f) * static_cast<double>(color.blue());
+                red = alpha_f * red_f + (1.0 - alpha_f) * static_cast<double>(color.red());
+                green = alpha_f * green_f + (1.0 - alpha_f) * static_cast<double>(color.green());
 
-                    // Calculate alpha
-                    alpha = normalize_value(alpha, 0, 255); if(color.alpha() > alpha) alpha = color.alpha();
-                    blue = alpha_f * blue_f + (1.0 - alpha_f) * static_cast<float>(color.blue());
-                    red = alpha_f * red_f + (1.0 - alpha_f) * static_cast<float>(color.red());
-                    green = alpha_f * green_f + (1.0 - alpha_f) * static_cast<float>(color.green());
-
+			    if(color_type() == SCLS_IMAGE_RGBA) {
                     a_pixels->set_data_at(position, red);
                     a_pixels->set_data_at(position + multiplier, green);
                     a_pixels->set_data_at(position + 2 * multiplier, blue);
                     a_pixels->set_data_at(position + 3 * multiplier,  alpha);
                 }
-                else {
+                else if(color_type() == SCLS_IMAGE_RGB) {
                     a_pixels->set_data_at(position, red);
                     a_pixels->set_data_at(position + multiplier, green);
                     a_pixels->set_data_at(position + 2 * multiplier, blue);
@@ -704,7 +682,7 @@ namespace scls
 		// Getters and setters (ONLY WITH ATTRIBUTES)
 		inline unsigned int bit_depht() const { return a_bit_depth; };
 		inline unsigned int color_type() const { return a_color_type; };
-		inline Bytes_Set* datas() { return a_pixels; }
+		inline Bytes_Set* datas() const { return a_pixels.get(); }
 		inline unsigned int flip_x_number() const {return a_flip_x_number;};
 		inline int height() const { return a_height; };
 		inline void set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
@@ -743,7 +721,7 @@ namespace scls
 			datas->add_uint(crc_32b(datas->extract_datas(idhr_total_size - 8, total_size + 4), idhr_total_size - 8, "png"), true);
 			total_size += idhr_total_size;
 
-			// Creathe the pHYS chunk
+			// Create the pHYS chunk
 			name = "pHYS";
 			unsigned int phys_size = 9;
 			unsigned int phys_total_size = 21;
@@ -758,9 +736,9 @@ namespace scls
 			// Create the IDAT chunk
 			name = "IDAT";
 			unsigned int idat_size = 0;
-			Bytes_Set* idat_uncompressed = datas_filtered();
+			std::shared_ptr<Bytes_Set> idat_uncompressed = datas_filtered();
 			char* idat_compressed = compress_binary(idat_uncompressed->datas(), idat_uncompressed->datas_size(), idat_size, 9);
-			delete idat_uncompressed;
+			idat_uncompressed.reset();
 			unsigned int idat_total_size = idat_size + 12;
 			datas->add_uint(idat_size, true);
 			datas->add_string(name);
@@ -818,7 +796,7 @@ namespace scls
 				fill(background_color);
 
 				// Not implemented yet
-				if(!(color_type() == 4 || color_type() == 6)) { error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_UNKNOW_COLOR_TYPE); return; }
+				if(!(color_type() == SCLS_IMAGE_RGB || color_type() == SCLS_IMAGE_RGBA)) { error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_UNKNOW_COLOR_TYPE); return; }
 
 				// Load IDAT chunks
 				if (a_idat_chunk.size() > 0) { _load_png_IDAT_from_file(file, error_handler); }
@@ -932,8 +910,8 @@ namespace scls
 							    // Apply average filtering
 								if (a_processed_data > width()) {
 									for (unsigned int j = 0; j < width(); j++) {
-										Color final_pixel = black;
-										Color pixel1 = black;
+										Color final_pixel = Color(0, 0, 0);
+										Color pixel1 = Color(0, 0, 0);
 										if (j == 0) {
 											pixel1.set_red(0);
 											pixel1.set_green(0);
@@ -1013,8 +991,8 @@ namespace scls
 						{
 							for (unsigned int i = 0; i < width(); i++)
 							{
-								Color final_pixel = black;
-								Color pixel1 = black;
+								Color final_pixel = Color(0, 0, 0);
+								Color pixel1 = Color(0, 0, 0);
 								if (i == 0)
 								{
 									pixel1.set_red(0);
@@ -1244,22 +1222,17 @@ namespace scls
 		};
 		void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};
         // Fill a rectangle on the image
-		void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
+		void fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			// 3 should be the point with the largest X value
-			if (x_1 > x_3)
-			{
-				unsigned short temp = x_1;
+			if (x_1 > x_3) {
+                short temp = x_1;
 				x_1 = x_3;
 				x_3 = temp;
 				temp = y_1;
 				y_1 = y_3;
 				y_3 = temp;
-			}
-
-			// 3 should be the point with the largest X value
-			if (x_2 > x_3)
-			{
-				unsigned short temp = x_2;
+			} if (x_2 > x_3) {
+                short temp = x_2;
 				x_2 = x_3;
 				x_3 = temp;
 				temp = y_2;
@@ -1267,10 +1240,9 @@ namespace scls
 				y_3 = temp;
 			}
 
-			// 2 should be the point with the largest Y value of 1 and 2
-			if (y_1 > y_2)
-			{
-				unsigned short temp = x_2;
+			// 2 should be the point with the largest X value of 1 and 2
+			if (x_1 > x_2) {
+                short temp = x_2;
 				x_2 = x_1;
 				x_1 = temp;
 				temp = y_2;
@@ -1278,28 +1250,52 @@ namespace scls
 				y_1 = temp;
 			}
 
-			float distance_x_1_2 = static_cast<float>(x_2 - x_1);
-			float distance_y_1_2 = static_cast<float>(y_2 - y_1);
+			// Calculate the datas for the X1 to X2 line
+			double distance_x_1_2 = static_cast<double>(x_2 - x_1);
+			double distance_y_1_2 = static_cast<double>(y_2 - y_1);
+			std::vector<long long> all_x_1_2 = partition_number(distance_y_1_2, distance_x_1_2);
 
-			float actual_x = x_1;
-			float actual_y = y_1;
-			float ratio_x_y = distance_x_1_2 / distance_y_1_2;
-			float ratio_y_x = abs(distance_y_1_2 / distance_x_1_2);
+			// Calculate the datas for the X2 to X3 line
+			double distance_x_2_3 = static_cast<double>(x_3 - x_2);
+			double distance_y_2_3 = static_cast<double>(y_3 - y_2);
+			std::vector<long long> all_x_2_3 = partition_number(distance_y_2_3, distance_x_2_3);
 
-			unsigned short iter = 0;
+			// Calculate the datas for the X1 to X3 line
+			double distance_x_1_3 = static_cast<double>(x_3 - x_1);
+			double distance_y_1_3 = static_cast<double>(y_3 - y_1);
+			std::vector<long long> all_x_1_3 = partition_number(distance_y_1_3, distance_x_1_3);
+
+			double actual_x = x_1;
+			double actual_y = y_1;
+			double actual_y_added = 0;
+			double ratio_x_y = distance_x_1_2 / distance_y_1_2;
+			double ratio_y_x = abs(distance_y_1_2 / distance_x_1_2);
 
 			authorized_sender().push_back("");
-			draw_line(static_cast<unsigned short>(actual_x), static_cast<unsigned short>(actual_y), x_3, y_3, red, green, blue, alpha, 2);
 
-			while (actual_y < y_2)
-			{
-				if (abs(ratio_x_y) < 1)
-				{
+			// Create the first line
+			unsigned short iter = 0; unsigned short iter_total = 0;
+			while(actual_x < x_2) {
+                draw_line(actual_x, actual_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
+                actual_x++; actual_y += all_x_1_3[iter_total];
+                iter++; iter_total++; actual_y_added += all_x_1_2[iter];
+			}
+			// Create the second line
+			iter = 0; if(distance_x_1_2 <= 0) actual_y_added = distance_y_1_2;
+			while(actual_x < x_3) {
+                draw_line(actual_x, actual_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
+                actual_x++; actual_y += all_x_1_3[iter_total];
+                iter++; iter_total++; actual_y_added += all_x_2_3[iter];
+			}
+
+			/*draw_line(static_cast<short>(actual_x), static_cast<short>(actual_y), x_3, y_3, red, green, blue, alpha, 2);
+
+			while (actual_y < y_2) {
+				if (abs(ratio_x_y) < 1) {
 					actual_y++;
 					actual_x += ratio_x_y;
 				}
-				else
-				{
+				else {
 					actual_y += ratio_y_x;
 					if (distance_x_1_2 > 0) actual_x++;
 					else actual_x--;
@@ -1313,12 +1309,10 @@ namespace scls
 				draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
 				draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
 				iter++;
-			}
+			} //*/
 			authorized_sender().pop_back();
 		};
-        void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, Color color) {
-            fill_triangle(x_1, y_1, x_2, y_2, x_3, y_3, color.red(), color.green(), color.blue(), color.alpha());
-        };
+        inline void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, Color color) {fill_triangle(x_1, y_1, x_2, y_2, x_3, y_3, color.red(), color.green(), color.blue(), color.alpha());};
 
         // Flip the image on the X axis
 		inline void flip_x() {
@@ -1639,7 +1633,7 @@ namespace scls
 		};
 		// Load a part of image with a FreeType text in it
 		inline bool __load_part_from_text_binary(char* datas, unsigned int offset, unsigned short start_x, unsigned short start_y, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
-		    if(color_type() == 6) {
+		    if(color_type() == SCLS_IMAGE_RGBA) {
                 for(int i = 0;i<length;i++) {
                     float glyph_alpha = (datas[offset + i] / 255.0);
                     set_pixel(start_x, start_y, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<float>(alpha)));
@@ -1651,9 +1645,9 @@ namespace scls
                     }
                 }
             }
-            else {
+            else if(color_type() == SCLS_IMAGE_RGB) {
                 for(int i = 0;i<length;i++) {
-                    set_pixel(start_x, start_y, red, green, blue);
+                    set_pixel(start_x, start_y, red, green, blue, alpha);
 
                     start_x++;
                     if(start_x >= width()) {
@@ -1675,7 +1669,7 @@ namespace scls
 		// Height of the image
 		unsigned int a_height = 0;
 		// Pixel of the image
-		Bytes_Set* a_pixels = 0;
+		std::shared_ptr<Bytes_Set> a_pixels;
 		// Width of the image
 		unsigned int a_width = 0;
 

@@ -206,9 +206,9 @@ namespace scls {
         // Horizontal alignment of the text
         Alignment_Horizontal alignment_horizontal = Alignment_Horizontal::H_Left;
         // Color of the background color
-        Color background_color = white;
+        Color background_color = Color(255, 255, 255);
         // Color of the text
-        Color color = black;
+        Color color = Color(0, 0, 0);
         // Font of the style
         Font font;
         // Font size of the style
@@ -366,13 +366,13 @@ namespace scls {
             current_balise = std::make_shared<Balise_Style_Datas>();
             current_balise.get()->is_paragraph = true;
             current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Center;
-            current_balise.get()->style.color = red; current_balise.get()->style.font_size = 50; current_balise.get()->style.font = get_system_font("arialbd");
+            current_balise.get()->style.color = Color(255, 0, 0); current_balise.get()->style.font_size = 50; current_balise.get()->style.font = get_system_font("arialbd");
             set_defined_balise<Balise_Style_Datas>("h1", current_balise);
             // Create the <h2> style
             current_balise = std::make_shared<Balise_Style_Datas>();
             current_balise.get()->is_paragraph = true;
             current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Left;
-            current_balise.get()->style.color = black; current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font("arialbd");
+            current_balise.get()->style.color = Color(0, 0, 0); current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font("arialbd");
             set_defined_balise<Balise_Style_Datas>("h2", current_balise);
         }
 
@@ -1025,7 +1025,7 @@ namespace scls {
         // Most simple Text_Image_Block constructor
         Text_Image_Block(_Balise_Style_Container* defined_balises, String text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
         // Text_Image_Block constructor with an user defined type
-        Text_Image_Block(_Balise_Style_Container* defined_balises, String text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(to_utf_8_code_point(text)), type) {};
+        Text_Image_Block(_Balise_Style_Container* defined_balises, String text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(text), type) {};
         // Text_Image_Block destructor
         ~Text_Image_Block() { free_memory(); };
 
@@ -1616,7 +1616,7 @@ namespace scls {
         inline void set_global_out_offset_width_top(unsigned short new_global_out_offset_width_top) {a_global_out_offset_width_top = new_global_out_offset_width_top;};
     private:
         // Global color in the text
-        Color a_global_color = black;
+        Color a_global_color = Color(0, 0, 0);
         // Global font in the text
         Font a_global_font;
         // Global font size in the text
@@ -1634,8 +1634,8 @@ namespace scls {
 
         // Currently used attributes
         Alignment_Horizontal current_text_alignment_horizontal = Alignment_Horizontal::H_Center;
-        Color current_background_color = white;
-        Color current_color = black;
+        Color current_background_color = Color(255, 255, 255);
+        Color current_color = Color(0, 0, 0);
         Font current_font;
         unsigned short current_font_size = 20;
     };
