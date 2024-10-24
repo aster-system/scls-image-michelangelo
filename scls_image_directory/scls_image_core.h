@@ -1190,8 +1190,8 @@ namespace scls
 				}
 			}
 		};
-        void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);};
-        // Draw a rectangle on the image
+        inline void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);};
+        // Draw a rectangle on the imageE
         void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
             fill_rect(x, y, width, rect_width, red, green, blue, alpha);
             fill_rect(x, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
@@ -1220,7 +1220,7 @@ namespace scls
 				}
 			}
 		};
-		void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};
+		inline void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};
         // Fill a rectangle on the image
 		void fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			// 3 should be the point with the largest X value
@@ -1312,7 +1312,7 @@ namespace scls
 			} //*/
 			authorized_sender().pop_back();
 		};
-        inline void fill_triangle(unsigned short x_1, unsigned short y_1, unsigned short x_2, unsigned short y_2, unsigned short x_3, unsigned short y_3, Color color) {fill_triangle(x_1, y_1, x_2, y_2, x_3, y_3, color.red(), color.green(), color.blue(), color.alpha());};
+        inline void fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, Color color) {fill_triangle(x_1, y_1, x_2, y_2, x_3, y_3, color.red(), color.green(), color.blue(), color.alpha());};
 
         // Flip the image on the X axis
 		inline void flip_x() {
@@ -1380,7 +1380,7 @@ namespace scls
 		};
 
 		// Paste an Image on this Image
-		inline void paste(Image* to_paste, short x, short y, double opacity = 1.0, bool force_pasting = false) {
+		inline void paste(Image* to_paste, short x, short y, double opacity = 1.0) {
             unsigned int current_thread_position = 0;
 			unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
@@ -1391,13 +1391,13 @@ namespace scls
                     unsigned int start_x = floor(current_thread_position % to_paste->width());
                     unsigned int start_y = floor(current_thread_position / to_paste->width());
 
-                    std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity, force_pasting);
+                    std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity);
                     threads.push_back(current_thread);
                     current_thread_position += pixel_by_thread;
                 }
                 unsigned int start_x = floor(current_thread_position % to_paste->width());
                 unsigned int start_y = floor(current_thread_position / to_paste->width());
-                std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity, force_pasting);
+                std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity);
                 threads.push_back(current_thread);
 
                 // Wait for each threads
@@ -1407,17 +1407,12 @@ namespace scls
                 } threads.clear();
 			}
 			else {
-                __paste_part_of_image(to_paste, x, y, 0, 0, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity, force_pasting);
+                __paste_part_of_image(to_paste, x, y, 0, 0, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity);
 			}
 		};
-		// Paste an Image from a path to this Image
-		inline void paste(std::string path, unsigned short x, unsigned short y, float opacity = 1.0, bool force_pasting = false) {
-		    Image* img = new Image(path);
-		    paste(img, x, y, opacity, force_pasting);
-		    delete img; img = 0;
-		};
+		inline void paste(std::string path, unsigned short x, unsigned short y, float opacity = 1.0) {Image* img = new Image(path);paste(img, x, y, opacity);delete img; img = 0;};
         // Paste a part of an image on this image
-        void __paste_part_of_image(Image* to_paste, unsigned int x_offset, unsigned int y_offset, unsigned int start_x, unsigned int start_y, unsigned int length, double opacity, bool force_pasting) {
+        void __paste_part_of_image(Image* to_paste, unsigned int x_offset, unsigned int y_offset, unsigned int start_x, unsigned int start_y, unsigned int length, double opacity) {
             for(unsigned int i = 0;i<length;i++) {
                 if(x_offset + start_x >= 0 && y_offset + start_y >= 0 && x_offset + start_x < width() && y_offset + start_y < height()) {
                     Color pixel = to_paste->pixel(start_x, start_y);
