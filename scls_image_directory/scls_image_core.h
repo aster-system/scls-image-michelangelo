@@ -16,19 +16,52 @@
 // The CRC functions are copied from the W3 Consortium website.
 // See : https://www.w3.org/TR/2003/REC-PNG-20031110/#D-CRCAppendix.
 //
+//******************
+//
+// License (LGPL V3.0) :
+//
+// Copyright (C) 2024 by Aster System, Inc. <https://aster-system.github.io/aster-system/>
+// This file is part of SCLS.
+// SCLS is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+// SCLS is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with SCLS. If not, see <https://www.gnu.org/licenses/>.
+//
+//******************
+//
+// License (LGPL V3.0) :
+//
+// Copyright (C) 2024 by Aster System, Inc. <https://aster-system.github.io/aster-system/>
+// This file is part of SCLS.
+// SCLS is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+// SCLS is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with SCLS. If not, see <https://www.gnu.org/licenses/>.
+//
 
 #ifndef SCLS_IMAGE_CORE
 #define SCLS_IMAGE_CORE
 
-#include <ft2build.h>
+// Avoid some errors with libraries path
+// ZLib
+#ifndef SCLS_ZLIB_PATH
+#define SCLS_ZLIB_PATH <zlib/zlib.h>
+#endif // SCLS_ZLIB_PATH
+// Freetype
+#ifndef SCLS_FREETYPE_PATH
+#define SCLS_FREETYPE_PATH <ft2build.h>
+#endif // SCLS_FREETYPE_PATH
+
+// Include ZLib
+#include SCLS_ZLIB_PATH
+// Include Freetype
+#include SCLS_FREETYPE_PATH
 #include FT_FREETYPE_H
 
+// Include basics C++ libraries
 #include <map>
 #include <math.h>
 #include <memory>
 #include <stack>
 #include <thread>
-#include <zlib/zlib.h>
 
 // ZLib mandatory stuff
 #if defined(WIN32) || defined(__CYGWIN__)
@@ -370,7 +403,6 @@ namespace scls
 		// Fill the image with one color
 		void fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			free_memory();
-			unsigned int position = 0;
 			a_pixels.reset(new Bytes_Set(buffer_size()));
 			unsigned int current_thread_position = 0;
 			unsigned int pixel_by_thread = floor(static_cast<double>((width() * height()) / static_cast<double>(a_thread_number_for_filling)));
@@ -387,7 +419,7 @@ namespace scls
                 threads.push_back(current_thread);
 
                 // Wait for each threads
-                for(int i = 0;i<threads.size();i++) {
+                for(int i = 0;i<static_cast<int>(threads.size());i++) {
                     threads[i]->join();
                     delete threads[i]; threads[i] = 0;
                 } threads.clear();
@@ -697,7 +729,7 @@ namespace scls
         //*********
 
         // Returns the data of the image under the PNG format
-		inline Bytes_Set* data_png() {
+		inline Bytes_Set* datas_png() {
 			Bytes_Set* datas = new Bytes_Set();
 			unsigned int total_size = 8;
 
@@ -824,7 +856,7 @@ namespace scls
 				if (a_pixels == 0) { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); return; }
 
 				// Get the size of the chunks
-				unsigned int current_size = 0;
+                int current_size = 0;
 				for (int i = 0; i < static_cast<int>(chunk.size()); i++) {
 					current_size += chunk[i].size;
 				}
@@ -843,7 +875,7 @@ namespace scls
 
 				// Define compression variables
 				int ret = 0;
-				unsigned int out_size = (width() * height() * components()) + height();
+                int out_size = (width() * height() * components()) + height();
 				unsigned char* out = new unsigned char[out_size];
 				ret = uncompress_binary(all_data->datas(), current_size, (char*)out, out_size);
 				delete all_data; all_data = 0;
@@ -851,15 +883,14 @@ namespace scls
 				if (ret != 1) { delete[] out; return; }
 
 				// Process data
-				unsigned int a_processed_data = 0;
-				unsigned char component_size = components();
-				unsigned int current_collumn = -1;
-				unsigned int current_line = -1;
+                int a_processed_data = 0;
+				int component_size = components();
+                int current_collumn = -1;
+                int current_line = -1;
 				Color last_pixel(0, 0, 0);
-				unsigned int part = -1;
-				for (unsigned int i = 0; i < out_size; i++) {
-					if (part >= 0 && part < width() * component_size)
-					{
+                int part = -1;
+				for (int i = 0; i < out_size; i++) {
+					if (part >= 0 && part < width() * component_size) {
 						unsigned char component = part % component_size;
 						if (component == 0) {
                             // Apply red component
@@ -886,7 +917,7 @@ namespace scls
 						if (a_processed_data > 0) {
 							if (a_filter_type == 1) {
 							    // Apply sub filtering
-								for (unsigned int j = 1; j < width(); j++) {
+								for (int j = 1; j < width(); j++) {
 									Color color = pixel(j - 1, current_line);
 									Color current_color = pixel(j, current_line);
 									force_pixel(j, current_line, current_color.red() + color.red(),
@@ -897,7 +928,7 @@ namespace scls
 							}
 							else if (a_filter_type == 2 && a_processed_data > width()) {
                                 // Apply up filtering
-								for (unsigned int j = 0; j < width(); j++) {
+								for (int j = 0; j < width(); j++) {
 									Color color = pixel(j, current_line - 1);
 									Color current_color = pixel(j, current_line);
 									force_pixel(j, current_line, current_color.red() + color.red(),
@@ -909,8 +940,7 @@ namespace scls
 							else if (a_filter_type == 3) {
 							    // Apply average filtering
 								if (a_processed_data > width()) {
-									for (unsigned int j = 0; j < width(); j++) {
-										Color final_pixel = Color(0, 0, 0);
+									for (int j = 0; j < width(); j++) {
 										Color pixel1 = Color(0, 0, 0);
 										if (j == 0) {
 											pixel1.set_red(0);
@@ -932,7 +962,7 @@ namespace scls
 							}
 							else if (a_filter_type == 4 && current_line > 0) {
 							    // Apply paeth filtering
-								for (unsigned int j = 0; j < width(); j++) {
+								for (int j = 0; j < width(); j++) {
 									if (j == 0) {
 										Color color = pixel(j, current_line - 1);
 										Color current_color = pixel(j, current_line);
@@ -965,8 +995,7 @@ namespace scls
 				if (a_processed_data > 0) {
 					if (a_filter_type == 1) // Apply sub filtering
 					{
-						for (unsigned int i = 1; i < width(); i++)
-						{
+						for (int i = 1; i < width(); i++){
 							Color color = pixel(i - 1, current_line);
 							set_pixel_red(i, current_line, pixel(i, current_line).red() + color.red());
 							set_pixel_green(i, current_line, pixel(i, current_line).green() + color.green());
@@ -976,8 +1005,7 @@ namespace scls
 					}
 					else if (a_filter_type == 2 && a_processed_data > width()) // Apply up filtering
 					{
-						for (unsigned int i = 0; i < width(); i++)
-						{
+						for (int i = 0; i < width(); i++){
 							Color color = pixel(i, current_line - 1);
 							set_pixel_red(i, current_line, pixel(i, current_line).red() + color.red());
 							set_pixel_green(i, current_line, pixel(i, current_line).green() + color.green());
@@ -985,23 +1013,18 @@ namespace scls
 							set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + color.alpha());
 						}
 					}
-					else if (a_filter_type == 3) // Apply average filtering
-					{
-						if (a_processed_data > width())
-						{
-							for (unsigned int i = 0; i < width(); i++)
-							{
-								Color final_pixel = Color(0, 0, 0);
+					else if (a_filter_type == 3) {
+                        // Apply average filtering
+						if (a_processed_data > width()){
+							for (int i = 0; i < width(); i++){
 								Color pixel1 = Color(0, 0, 0);
-								if (i == 0)
-								{
+								if (i == 0) {
 									pixel1.set_red(0);
 									pixel1.set_green(0);
 									pixel1.set_blue(0);
 									pixel1.set_alpha(0);
 								}
-								else
-								{
+								else {
 									pixel1 = pixel(i - 1, current_line);
 								}
 								Color pixel2 = pixel(i, current_line - 1);
@@ -1012,20 +1035,17 @@ namespace scls
 							}
 						}
 					}
-					else if (a_filter_type == 4 && a_processed_data > width()) // Apply paeth filtering
-					{
-						for (unsigned int i = 0; i < width(); i++)
-						{
-							if (i == 0)
-							{
+					else if (a_filter_type == 4 && a_processed_data > width()) {
+					    // Apply paeth filtering
+						for (int i = 0; i < width(); i++) {
+							if (i == 0) {
 								Color color = pixel(i, current_line - 1);
 								set_pixel_red(i, current_line, pixel(i, current_line).red() + color.red());
 								set_pixel_green(i, current_line, pixel(i, current_line).green() + color.green());
 								set_pixel_blue(i, current_line, pixel(i, current_line).blue() + color.blue());
 								set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + color.alpha());
 							}
-							else
-							{
+							else {
 								Color pixel2 = pixel(i - 1, current_line);
 								Color pixel3 = pixel(i - 1, current_line - 1);
 								Color pixel1 = pixel(i, current_line - 1);
@@ -1040,8 +1060,7 @@ namespace scls
 
 				// Free memory
 				delete[] out;
-			}
-			else { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); }
+			} else { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); }
 		};
         // Load the pHYS chunk from a path
 		void _load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
@@ -1078,7 +1097,7 @@ namespace scls
 		}
         // Save the image into the PNG format
 		inline void save_png(std::string path) {
-			Bytes_Set* datas = data_png();
+			Bytes_Set* datas = datas_png();
 			datas->save(path);
 			delete datas; datas = 0;
 		}
@@ -1268,8 +1287,6 @@ namespace scls
 			double actual_x = x_1;
 			double actual_y = y_1;
 			double actual_y_added = 0;
-			double ratio_x_y = distance_x_1_2 / distance_y_1_2;
-			double ratio_y_x = abs(distance_y_1_2 / distance_x_1_2);
 
 			authorized_sender().push_back("");
 
@@ -1317,62 +1334,61 @@ namespace scls
         // Flip the image on the X axis
 		inline void flip_x() {
 		    unsigned char* line1 = new unsigned char[width()];
-			unsigned int max = height();
+            int max = height();
 
 			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
 			{
 				// Red
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components());
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components(), a_pixels->data_at(((max - (i + 1)) * width() + j) * components()));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components(), line1[j]);
+				for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components());
+				for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components(), a_pixels->data_at(((max - (i + 1)) * width() + j) * components()));
+				for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components(), line1[j]);
 
 				// Green
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 1);
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 1, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 1));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 1, line1[j]);
+				for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 1);
+				for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 1, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 1));
+				for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 1, line1[j]);
 
 				// Blue
-				for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 2);
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 2, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 2));
-				for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 2, line1[j]);
+				for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 2);
+				for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 2, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 2));
+				for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 2, line1[j]);
 
 				if(color_type() == 6) {
                     // Alpha
-                    for (unsigned int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 3);
-                    for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 3, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 3));
-                    for (unsigned int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 3, line1[j]);
+                    for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 3);
+                    for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 3, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 3));
+                    for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 3, line1[j]);
 				}
-			}
-			a_flip_x_number++;
+			} a_flip_x_number++;
 
 			delete[] line1;
 		};
 		// Flip the image on the Y axis
 		inline void flip_y() {
 			unsigned char* line1 = new unsigned char[height()];
-			unsigned int max = width();
+            int max = width();
 
 			for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++) {
 				// Red
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components());
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components(), a_pixels->data_at(((max - (i + 1)) + j * width()) * components()));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components(), line1[j]);
+				for (int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components());
+				for (int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components(), a_pixels->data_at(((max - (i + 1)) + j * width()) * components()));
+				for (int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components(), line1[j]);
 
 				// Green
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 1);
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 1, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 1));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 1, line1[j]);
+				for (int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 1);
+				for (int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 1, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 1));
+				for (int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 1, line1[j]);
 
 				// Blue
-				for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 2);
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 2, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 2));
-				for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 2, line1[j]);
+				for (int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 2);
+				for (int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 2, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 2));
+				for (int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 2, line1[j]);
 
 				if(color_type() == 6) {
                     // Alpha
-                    for (unsigned int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 3);
-                    for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 3, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 3));
-                    for (unsigned int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 3, line1[j]);
+                    for (int j = 0; j < height(); j++) line1[j] = a_pixels->data_at((i + j * width()) * components() + 3);
+                    for (int j = 0; j < height(); j++) a_pixels->set_data_at((i + j * width()) * components() + 3, a_pixels->data_at(((max - (i + 1)) + j * width()) * components() + 3));
+                    for (int j = 0; j < height(); j++) a_pixels->set_data_at(((max - (i + 1)) + j * width()) * components() + 3, line1[j]);
 				}
 			}
 
@@ -1380,7 +1396,7 @@ namespace scls
 		};
 
 		// Paste an Image on this Image
-		inline void paste(Image* to_paste, short x, short y, double opacity = 1.0) {
+		inline void paste(Image* to_paste, int x, int y, double opacity = 1.0) {
             unsigned int current_thread_position = 0;
 			unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
@@ -1401,7 +1417,7 @@ namespace scls
                 threads.push_back(current_thread);
 
                 // Wait for each threads
-                for(int i = 0;i<threads.size();i++) {
+                for(int i = 0;i<static_cast<int>(threads.size());i++) {
                     threads[i]->join();
                     delete threads[i]; threads[i] = 0;
                 } threads.clear();
@@ -1410,10 +1426,10 @@ namespace scls
                 __paste_part_of_image(to_paste, x, y, 0, 0, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity);
 			}
 		};
-		inline void paste(std::string path, unsigned short x, unsigned short y, float opacity = 1.0) {Image* img = new Image(path);paste(img, x, y, opacity);delete img; img = 0;};
+		inline void paste(std::string path, int x, int y, double opacity = 1.0) {Image* img = new Image(path);paste(img, x, y, opacity);delete img; img = 0;};
         // Paste a part of an image on this image
-        void __paste_part_of_image(Image* to_paste, unsigned int x_offset, unsigned int y_offset, unsigned int start_x, unsigned int start_y, unsigned int length, double opacity) {
-            for(unsigned int i = 0;i<length;i++) {
+        void __paste_part_of_image(Image* to_paste, int x_offset, int y_offset, int start_x, int start_y, int length, double opacity) {
+            for(int i = 0;i<length;i++) {
                 if(x_offset + start_x >= 0 && y_offset + start_y >= 0 && x_offset + start_x < width() && y_offset + start_y < height()) {
                     Color pixel = to_paste->pixel(start_x, start_y);
                     set_pixel(x_offset + start_x, y_offset + start_y, pixel);
@@ -1433,7 +1449,7 @@ namespace scls
         //*********
 
         // Apply a simple circle gradient in the image
-        inline void apply_gradient_circle(Color in, Color out, unsigned int x, unsigned int y, unsigned short radius) {
+        inline void apply_gradient_circle(Color in, Color out, int x, int y, unsigned short radius) {
             for(unsigned short i = 0;i<width();i++) {
                 for(unsigned short j = 0;j<height();j++) {
                     double distance = std::sqrt((i - x) * (i - x) + (j - y) * (j - y));
@@ -1591,7 +1607,7 @@ namespace scls
 
 
 		// Load the image from a set of binary datas coming from a FreeType text
-		inline bool _load_from_text_binary(char* datas, unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+		inline bool _load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
 		    a_height = height; a_width = width;
 		    fill(0, 0, 0, 0);
 
@@ -1615,7 +1631,7 @@ namespace scls
                 threads.push_back(current_thread);
 
                 // Wait for each threads
-                for(int i = 0;i<threads.size();i++) {
+                for(int i = 0;i<static_cast<int>(threads.size());i++) {
                     threads[i]->join();
                     delete threads[i]; threads[i] = 0;
                 } threads.clear();
@@ -1627,11 +1643,11 @@ namespace scls
             return true;
 		};
 		// Load a part of image with a FreeType text in it
-		inline bool __load_part_from_text_binary(char* datas, unsigned int offset, unsigned short start_x, unsigned short start_y, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+		inline bool __load_part_from_text_binary(char* datas, int offset, int start_x, int start_y, int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
 		    if(color_type() == SCLS_IMAGE_RGBA) {
                 for(int i = 0;i<length;i++) {
-                    float glyph_alpha = (datas[offset + i] / 255.0);
-                    set_pixel(start_x, start_y, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<float>(alpha)));
+                    double glyph_alpha = (datas[offset + i] / 255.0);
+                    set_pixel(start_x, start_y, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<double>(alpha)));
 
                     start_x++;
                     if(start_x >= width()) {
