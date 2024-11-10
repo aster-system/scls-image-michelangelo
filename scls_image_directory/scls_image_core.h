@@ -1068,7 +1068,7 @@ namespace scls
 				// Read into the chunk
 				a_physical_height_ratio = file->extract_uint(chunk.position + 4, true);
 				a_physical_width_ratio = file->extract_uint(chunk.position, true);
-				a_physical_unit = file->extract_data(chunk.position + 8);
+				a_physical_unit = file->data_at(chunk.position + 8);
 			}
 			else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_PHYS_CHUNK);
 		};
@@ -1077,11 +1077,11 @@ namespace scls
             // Check the first chunk of the file
             a_width = file->extract_uint(16, true);
             a_height = file->extract_uint(20, true);
-            a_bit_depth = file->extract_data(24);
-            a_color_type = file->extract_data(25);
-            a_compression_method = file->extract_data(26);
-            a_filter_method = file->extract_data(27);
-            a_interlace_method = file->extract_data(28);
+            a_bit_depth = file->data_at(24);
+            a_color_type = file->data_at(25);
+            a_compression_method = file->data_at(26);
+            a_filter_method = file->data_at(27);
+            a_interlace_method = file->data_at(28);
 
             // Not implemented yet
             if(bit_depht() != 8) { error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_BIT_DEPHT);; }
@@ -1091,7 +1091,7 @@ namespace scls
 		void _load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
 		    if (file != 0 && chunk.name == "sRGB" && chunk.size == 1) {
 				// Read into the chunk
-				a_srgb_value = file->extract_data(chunk.position);
+				a_srgb_value = file->data_at(chunk.position);
 			}
 			else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK);
 		}
