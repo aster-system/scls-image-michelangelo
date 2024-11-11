@@ -111,6 +111,11 @@
 #define SCLS_IMAGE_RGBA 6
 #endif
 
+// Define quick pieces of code
+#ifndef SCLS_IMAGE_SET_PIXEL
+#define SCLS_IMAGE_SET_PIXEL(red, green, blue)
+#endif // SCLS_IMAGE_SET_PIXEL
+
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
@@ -130,6 +135,9 @@ namespace scls
             a_green = static_cast<double>(green) / 255.0;
             a_red = static_cast<double>(red) / 255.0;
         };
+        Color():Color(0,0,0,255){}
+        // Color copy constructor
+        Color(const Color& color_copy):a_alpha(color_copy.a_alpha),a_blue(color_copy.a_blue),a_green(color_copy.a_green),a_red(color_copy.a_red){};
 
         // Return a color loaded from a text
         static Color from_std_string(std::string source) {
@@ -431,14 +439,7 @@ namespace scls
 		void fill(Color color) { fill(color.red(), color.green(), color.blue(), color.alpha()); };
 		// Fill a part of pixel
 		void __fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
-		    if(color_type() == SCLS_IMAGE_RGBA) {
-                for (unsigned int i = 0; i < length; i++) {
-                    a_pixels->set_data_at((start_position + i) * 4, red);
-                    a_pixels->set_data_at((start_position + i) * 4 + 1, green);
-                    a_pixels->set_data_at((start_position + i) * 4 + 2, blue);
-                    a_pixels->set_data_at((start_position + i) * 4 + 3, alpha);
-                }
-            }
+		    if(color_type() == SCLS_IMAGE_RGBA) {for (unsigned int i = 0; i < length; i++) {set_pixel_rgba_directly(i * 4, red, green, blue, alpha, 1);}}
             else if(color_type() == SCLS_IMAGE_RGB) {
                for (unsigned int i = 0; i < length; i++) {
                     a_pixels->set_data_at((start_position + i) * 3, red);
@@ -544,6 +545,12 @@ namespace scls
 
 			return to_return;
 		};
+		inline void set_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
+            a_pixels->set_data_at_directly(position, red);
+            a_pixels->set_data_at_directly(position + multiplier, green);
+            a_pixels->set_data_at_directly(position + 2 * multiplier, blue);
+            a_pixels->set_data_at_directly(position + 3 * multiplier,  alpha);
+		};
 		inline void set_pixel(int x, int y, Color color, unsigned short width = 1) { set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width); }
 		inline void set_pixel(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1) {
 			if (width_point == 0) return;
@@ -569,16 +576,11 @@ namespace scls
                 red = alpha_f * red_f + (1.0 - alpha_f) * static_cast<double>(color.red());
                 green = alpha_f * green_f + (1.0 - alpha_f) * static_cast<double>(color.green());
 
-			    if(color_type() == SCLS_IMAGE_RGBA) {
-                    a_pixels->set_data_at(position, red);
-                    a_pixels->set_data_at(position + multiplier, green);
-                    a_pixels->set_data_at(position + 2 * multiplier, blue);
-                    a_pixels->set_data_at(position + 3 * multiplier,  alpha);
-                }
+			    if(color_type() == SCLS_IMAGE_RGBA) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                 else if(color_type() == SCLS_IMAGE_RGB) {
-                    a_pixels->set_data_at(position, red);
-                    a_pixels->set_data_at(position + multiplier, green);
-                    a_pixels->set_data_at(position + 2 * multiplier, blue);
+                    a_pixels->set_data_at_directly(position, red);
+                    a_pixels->set_data_at_directly(position + multiplier, green);
+                    a_pixels->set_data_at_directly(position + 2 * multiplier, blue);
                 }
 			}
 			else {
@@ -1232,14 +1234,25 @@ namespace scls
 			if(x + rect_width >= width()) rect_width = width() - x;
 			if(y < 0) {y=-y;rect_height -= static_cast<unsigned short>(y);y = 0;}
 			if(y + rect_height >= height()) rect_height = height() - y;
+			// Normalise the values
+			unsigned char needed_alpha = (normalize_value(alpha, 0, 255));
+			unsigned char needed_blue = (normalize_value(blue, 0, 255));
+			unsigned char needed_green = (normalize_value(green, 0, 255));
+			unsigned char needed_red = (normalize_value(red, 0, 255));
 			// Fill the rect
-			for (int i = 0; i < rect_width; i++) {
-				for (int j = 0; j < rect_height; j++) {
-					set_pixel(x + i, y + j, red, green, blue, alpha);
-				}
+			unsigned int needed_components = components();
+			unsigned int current_position = (y * width() + x) * needed_components;
+			unsigned int to_add_line = (width() - rect_width) * needed_components;
+			for (int i = 0; i < rect_height; i++) {
+				for (int j = 0; j < rect_width; j++) {
+                    set_pixel_rgba_directly(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
+					current_position+=needed_components;
+
+					//set_pixel(x + i, y + j, red, green, blue, alpha);
+				} current_position += to_add_line;
 			}
 		};
-		inline void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color, unsigned char alpha = 255) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};
+		inline void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};
         // Fill a rectangle on the image
 		void fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) {
 			// 3 should be the point with the largest X value
