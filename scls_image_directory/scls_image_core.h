@@ -1163,10 +1163,10 @@ namespace scls
 			}
             else {
                 x_2++; y_2++;
-				float distance_x = static_cast<float>(x_2 - x_1);
-				float distance_y = static_cast<float>(y_2 - y_1);
+				double distance_x = static_cast<double>(x_2 - x_1);
+				double distance_y = static_cast<double>(y_2 - y_1);
 
-				float x_y_ratio = distance_x / distance_y;
+				double x_y_ratio = distance_x / distance_y;
 
 				if (abs(x_y_ratio) < 1) {
 					// Normalize positions
@@ -1182,6 +1182,10 @@ namespace scls
 					double actual_x = x_1;
 					double actual_y = y_1;
 
+					// Check the positions
+					while(actual_y < 0) {actual_y++;actual_x += x_y_ratio;}
+					if(y_2 >= height()) y_2 = height() - 1;
+					// Draw the line
 					while (actual_y < y_2) {
 						actual_y++;
 						actual_x += x_y_ratio;
@@ -1199,10 +1203,14 @@ namespace scls
 						y_2 = temp;
 					}
 
-					float actual_x = x_1;
-					float actual_y = y_1;
+					double actual_x = x_1;
+					double actual_y = y_1;
 
-					float y_x_ratio = distance_y / distance_x;
+					// Check the positions
+					double y_x_ratio = distance_y / distance_x;
+					while(actual_x < 0) {actual_x++;actual_y += y_x_ratio;}
+					if(x_2 >= width()) x_2 = width() - 1;
+					// Draw the line
 					while (actual_x < x_2) {
 						actual_y += y_x_ratio;
 						actual_x++;

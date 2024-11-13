@@ -801,7 +801,7 @@ namespace scls {
             // Create each words
             a_words_datas.clear();
             unsigned int current_position_in_plain_text = 0;
-            unsigned int& current_width = a_current_width; current_width = 0;
+            int& current_width = a_current_width; current_width = 0;
             std::vector<_Text_Balise_Part> cutted = a_defined_balises->_cut_block(text());
             std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
             short& y_offset = a_y_offset; a_line_number = 1;
@@ -977,11 +977,11 @@ namespace scls {
         void place_words() {
             a_line_number = 1;
             Text_Style current_style = a_global_style;
-            unsigned int& current_width = a_current_width; current_width = 0;
+            int& current_width = a_current_width; current_width = 0;
             for(int i = 0;i<static_cast<int>(a_words.size());i++) {
                 // Check the max width
                 int image_width = a_words[i].get()->image()->width();
-                if(current_width + image_width > current_style.max_width) {
+                if(current_style.max_width > 0 && current_width + image_width > current_style.max_width) {
                     current_width = 0;
                     a_line_number++;
                 } current_width += image_width;
@@ -1003,7 +1003,7 @@ namespace scls {
         //*********
 
         // Current width of the line
-        unsigned int a_current_width = 0;
+        int a_current_width = 0;
         // Datas about the line
         Line_Datas a_datas;
         // Containers of each defined balises
