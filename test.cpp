@@ -23,27 +23,12 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    //std::shared_ptr<scls::Image> img = scls::aster_system_logo();
-    //img.get()->save_png("test/logo.png");
-
-    // Define the needed datas
-    Color black_color(0, 0, 0);
-    int image_width = 1000;
-    Color white_color(255, 204, 153);
-
-    // Create the image
-    Image img(image_width, image_width, white_color);
-
-    // Draw each black cases
-    int case_width = image_width / 8;
-    for(int i = 0;i < 8;i++) {
-        for(int j = 0;j < 4;j++) {
-            img.fill_rect(case_width * (j * 2 + i % 2), case_width * i, case_width, case_width, black_color);
-        }
-    }
+    std::shared_ptr<scls::Image> img = std::make_shared<scls::Image>("/home/matto/Images/joueur.png");
 
     // Save the image
-    img.save_png("test/chess.png");
+    //img.get()->save_png("test/test1.png");
+    img.get()->load_from_path("/home/matto/Images/mur.png");
+    //img.get()->save_png("test/test2.png");
 
     return 0;
 }

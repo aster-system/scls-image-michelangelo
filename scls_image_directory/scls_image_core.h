@@ -111,11 +111,6 @@
 #define SCLS_IMAGE_RGBA 6
 #endif
 
-// Define quick pieces of code
-#ifndef SCLS_IMAGE_SET_PIXEL
-#define SCLS_IMAGE_SET_PIXEL(red, green, blue)
-#endif // SCLS_IMAGE_SET_PIXEL
-
 // The namespace "scls" is used to simplify the all.
 namespace scls
 {
@@ -475,8 +470,7 @@ namespace scls
 				// Check if the signature is correct (137 80 78 71 13 10 26 10 for png files)
 				std::string file_signature = file.extract_string(8);
 				std::vector<unsigned char> signature = png_signature();
-				for (int i = 0; i < static_cast<int>(signature.size()); i++)
-				{
+				for (int i = 0; i < static_cast<int>(signature.size()); i++) {
 				    if (signature[i] != static_cast<unsigned char>(file_signature[i])) {
                         to_return.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW_FILE);
                         return to_return;
@@ -534,17 +528,19 @@ namespace scls
 		    position *= components() * (bit_depht() / 8.0);
 		    Color to_return = Color(255, 255, 255);
 
-            if(color_type() == 6)
-            {
-                to_return.set_rgba(a_pixels->data_at(position), a_pixels->data_at(position + multiplier), a_pixels->data_at(position + 2 * multiplier), a_pixels->data_at(position + 3 * multiplier));
-            }
-            else
-            {
+            if(color_type() == 6) {to_return = pixel_rgba_directly(position, multiplier);}
+            else {
                 to_return.set_rgb(a_pixels->data_at(position), a_pixels->data_at(position + multiplier), a_pixels->data_at(position + 2 * multiplier));
             }
 
 			return to_return;
 		};
+		Color pixel_rgba_directly(unsigned int position, unsigned int multiplier) {
+            Color to_return = Color(255, 255, 255);
+            to_return.set_rgba(a_pixels->data_at_directly(position), a_pixels->data_at_directly(position + multiplier), a_pixels->data_at_directly(position + 2 * multiplier), a_pixels->data_at_directly(position + 3 * multiplier));
+            return to_return;
+		};
+		inline void set_pixel_directly(unsigned int position, unsigned char value){a_pixels->set_data_at_directly(position, value);};
 		inline void set_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
             a_pixels->set_data_at_directly(position, red);
             a_pixels->set_data_at_directly(position + multiplier, green);
@@ -887,56 +883,46 @@ namespace scls
 				// Process data
                 int a_processed_data = 0;
 				int component_size = components();
-                int current_collumn = -1;
                 int current_line = -1;
+                int current_line_start_position = 0;
+                int current_position = 0;
+                int last_line_start_position = 0;
 				Color last_pixel(0, 0, 0);
+				int multiplier = 1;
                 int part = -1;
 				for (int i = 0; i < out_size; i++) {
 					if (part >= 0 && part < width() * component_size) {
 						unsigned char component = part % component_size;
 						if (component == 0) {
-                            // Apply red component
+                            // Apply current component
 							a_processed_data++;
-							current_collumn++;
-							set_pixel_red(current_collumn, current_line, (unsigned char)(out[i]));
 						}
-						else if (component == 1) {
-						    // Apply green component
-							set_pixel_green(current_collumn, current_line, (unsigned char)(out[i]));
-						}
-						else if (component == 2) {
-						    // Apply blue component
-							set_pixel_blue(current_collumn, current_line, (unsigned char)(out[i]));
-						}
-						else if (component == 3) {
-						    // Apply alpha component
-						    set_pixel_alpha(current_collumn, current_line, (unsigned char)(out[i]));
-						}
+						set_pixel_directly(current_position, static_cast<unsigned char>(out[i]));
+						current_position++;
 						part++;
 					}
-					else
-					{
+					else {
 						if (a_processed_data > 0) {
 							if (a_filter_type == 1) {
 							    // Apply sub filtering
 								for (int j = 1; j < width(); j++) {
-									Color color = pixel(j - 1, current_line);
-									Color current_color = pixel(j, current_line);
-									force_pixel(j, current_line, current_color.red() + color.red(),
+									Color color = pixel_rgba_directly(current_line_start_position + (j - 1) * component_size, multiplier);
+									Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
+									set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + color.red(),
                                                                  current_color.green() + color.green(),
                                                                  current_color.blue() + color.blue(),
-                                                                 current_color.alpha() + color.alpha());
+                                                                 current_color.alpha() + color.alpha(), multiplier);
 								}
 							}
 							else if (a_filter_type == 2 && a_processed_data > width()) {
                                 // Apply up filtering
 								for (int j = 0; j < width(); j++) {
-									Color color = pixel(j, current_line - 1);
-									Color current_color = pixel(j, current_line);
-									force_pixel(j, current_line, current_color.red() + color.red(),
+									Color color = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
+									Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
+									set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + color.red(),
                                                                  current_color.green() + color.green(),
                                                                  current_color.blue() + color.blue(),
-                                                                 current_color.alpha() + color.alpha());
+                                                                 current_color.alpha() + color.alpha(), multiplier);
 								}
 							}
 							else if (a_filter_type == 3) {
@@ -951,14 +937,14 @@ namespace scls
 											pixel1.set_alpha(0);
 										}
 										else {
-											pixel1 = pixel(j - 1, current_line);
+											pixel1 = pixel_rgba_directly(current_line_start_position + (j - 1) * component_size, multiplier);
 										}
-										Color pixel2 = pixel(j, current_line - 1);
-										Color current_color = pixel(j, current_line);
-                                        force_pixel(j, current_line, current_color.red() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.red()) + static_cast<double>(pixel2.red())) / 2.0)),
+										Color pixel2 = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
+										Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
+                                        set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.red()) + static_cast<double>(pixel2.red())) / 2.0)),
                                                                  current_color.green() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.green()) + static_cast<double>(pixel2.green())) / 2.0)),
                                                                  current_color.blue() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.blue()) + static_cast<double>(pixel2.blue())) / 2.0)),
-                                                                 current_color.alpha() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.alpha()) + static_cast<double>(pixel2.alpha())) / 2.0)));
+                                                                 current_color.alpha() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.alpha()) + static_cast<double>(pixel2.alpha())) / 2.0)), multiplier);
 									}
 								}
 							}
@@ -966,43 +952,44 @@ namespace scls
 							    // Apply paeth filtering
 								for (int j = 0; j < width(); j++) {
 									if (j == 0) {
-										Color color = pixel(j, current_line - 1);
-										Color current_color = pixel(j, current_line);
-                                        force_pixel(j, current_line, current_color.red() + color.red(),
+										Color color = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
+										Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
+                                        set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + color.red(),
                                                                      current_color.green() + color.green(),
                                                                      current_color.blue() + color.blue(),
-                                                                     current_color.alpha() + color.alpha());
+                                                                     current_color.alpha() + color.alpha(), multiplier);
 									}
 									else {
-										Color pixel2 = pixel(j - 1, current_line);
-										Color pixel3 = pixel(j - 1, current_line - 1);
-										Color pixel1 = pixel(j, current_line - 1);
-										Color current_color = pixel(j, current_line);
-										force_pixel(j, current_line, current_color.red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())),
+										Color pixel2 = pixel_rgba_directly(current_line_start_position + (j - 1) * component_size, multiplier);
+										Color pixel3 = pixel_rgba_directly(last_line_start_position + (j - 1) * component_size, multiplier);
+										Color pixel1 = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
+										Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
+										set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())),
                                                                      current_color.green() + static_cast<unsigned char>(paeth_function(pixel1.green(), pixel2.green(), pixel3.green())),
                                                                      current_color.blue() + static_cast<unsigned char>(paeth_function(pixel1.blue(), pixel2.blue(), pixel3.blue())),
-                                                                     current_color.alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel3.alpha())));
+                                                                     current_color.alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel3.alpha())), multiplier);
 									}
 								}
 							}
 						}
 
 						a_filter_type = out[i];
-						current_collumn = -1;
 						current_line++;
+						last_line_start_position = current_line_start_position;
+						current_line_start_position = current_position;
 						part = 0;
 					}
 				}
 
 				if (a_processed_data > 0) {
-					if (a_filter_type == 1) // Apply sub filtering
-					{
-						for (int i = 1; i < width(); i++){
-							Color color = pixel(i - 1, current_line);
-							set_pixel_red(i, current_line, pixel(i, current_line).red() + color.red());
-							set_pixel_green(i, current_line, pixel(i, current_line).green() + color.green());
-							set_pixel_blue(i, current_line, pixel(i, current_line).blue() + color.blue());
-							set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + color.alpha());
+					if (a_filter_type == 1) { // Apply sub filtering
+                        for (int i = 1; i < width(); i++){
+							Color color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
+							Color current_color = pixel_rgba_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+							set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                                    current_color.green() + color.green(),
+                                                    current_color.blue() + color.blue(),
+                                                    current_color.alpha() + color.alpha(), multiplier);
 						}
 					}
 					else if (a_filter_type == 2 && a_processed_data > width()) // Apply up filtering
