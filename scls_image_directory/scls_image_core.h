@@ -848,6 +848,74 @@ namespace scls
 			return Color(0, 0, 0);
 		};
         // Load a IDAT chunk grom a path
+        void _load_png_IDAT_from_file_rgba(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data){
+            if (a_filter_type == 1) { // Apply sub filtering
+                for (int i = 1; i < width(); i++){
+                    Color color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
+                    Color current_color = pixel_rgba_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+                    set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                            current_color.green() + color.green(),
+                                            current_color.blue() + color.blue(),
+                                            current_color.alpha() + color.alpha(), multiplier);
+                }
+            }
+            else if (a_filter_type == 2 && processed_data > width()) { // Apply up filtering
+                for (int i = 0; i < width(); i++){
+                    Color color = pixel_rgba_directly(last_line_start_position + i * component_size, multiplier);
+                    Color current_color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
+                    set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                                 current_color.green() + color.green(),
+                                                 current_color.blue() + color.blue(),
+                                                 current_color.alpha() + color.alpha(), multiplier);
+                }
+            }
+            else if (a_filter_type == 3) {
+                // Apply average filtering
+                if (processed_data > width()){
+                    for (int i = 0; i < width(); i++){
+                        Color pixel1 = Color(0, 0, 0);
+                        if (i == 0) {
+                            pixel1.set_red(0);
+                            pixel1.set_green(0);
+                            pixel1.set_blue(0);
+                            pixel1.set_alpha(0);
+                        }
+                        else {
+                            pixel1 = pixel_rgba_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+                        }
+                        Color pixel2 = pixel_rgba_directly(last_line_start_position + i * component_size, multiplier);
+                        Color current_color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
+                        set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.red()) + static_cast<double>(pixel2.red())) / 2.0)),
+                                                         current_color.green() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.green()) + static_cast<double>(pixel2.green())) / 2.0)),
+                                                         current_color.blue() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.blue()) + static_cast<double>(pixel2.blue())) / 2.0)),
+                                                         current_color.alpha() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.alpha()) + static_cast<double>(pixel2.alpha())) / 2.0)), multiplier);
+                    }
+                }
+            }
+            else if (a_filter_type == 4 && processed_data > width()) {
+                // Apply paeth filtering
+                for (int i = 0; i < width(); i++) {
+                    if (i == 0) {
+                        Color color = pixel_rgba_directly(last_line_start_position + i * component_size, multiplier);
+                        Color current_color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
+                        set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                                     current_color.green() + color.green(),
+                                                     current_color.blue() + color.blue(),
+                                                     current_color.alpha() + color.alpha(), multiplier);
+                    }
+                    else {
+                        Color pixel2 = pixel_rgba_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+                        Color pixel3 = pixel_rgba_directly(last_line_start_position + (i - 1) * component_size, multiplier);
+                        Color pixel1 = pixel_rgba_directly(last_line_start_position + i * component_size, multiplier);
+                        Color current_color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
+                        set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())),
+                                                     current_color.green() + static_cast<unsigned char>(paeth_function(pixel1.green(), pixel2.green(), pixel3.green())),
+                                                     current_color.blue() + static_cast<unsigned char>(paeth_function(pixel1.blue(), pixel2.blue(), pixel3.blue())),
+                                                     current_color.alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel3.alpha())), multiplier);
+                    }
+                }
+            }
+        };
 		void _load_png_IDAT_from_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
 			std::vector<_PNG_Chunk>& chunk = a_idat_chunk;
 			if (file != 0) {
@@ -881,7 +949,6 @@ namespace scls
 				if (ret != 1) { delete[] out; return; }
 
 				// Process data
-                int a_processed_data = 0;
 				int component_size = components();
                 int current_line = -1;
                 int current_line_start_position = 0;
@@ -890,89 +957,23 @@ namespace scls
 				Color last_pixel(0, 0, 0);
 				int multiplier = 1;
                 int part = -1;
+                int processed_data = 0;
 				for (int i = 0; i < out_size; i++) {
 					if (part >= 0 && part < width() * component_size) {
 						unsigned char component = part % component_size;
 						if (component == 0) {
                             // Apply current component
-							a_processed_data++;
+							processed_data++;
 						}
 						set_pixel_directly(current_position, static_cast<unsigned char>(out[i]));
 						current_position++;
 						part++;
 					}
 					else {
-						if (a_processed_data > 0) {
-							if (a_filter_type == 1) {
-							    // Apply sub filtering
-								for (int j = 1; j < width(); j++) {
-									Color color = pixel_rgba_directly(current_line_start_position + (j - 1) * component_size, multiplier);
-									Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
-									set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + color.red(),
-                                                                 current_color.green() + color.green(),
-                                                                 current_color.blue() + color.blue(),
-                                                                 current_color.alpha() + color.alpha(), multiplier);
-								}
-							}
-							else if (a_filter_type == 2 && a_processed_data > width()) {
-                                // Apply up filtering
-								for (int j = 0; j < width(); j++) {
-									Color color = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
-									Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
-									set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + color.red(),
-                                                                 current_color.green() + color.green(),
-                                                                 current_color.blue() + color.blue(),
-                                                                 current_color.alpha() + color.alpha(), multiplier);
-								}
-							}
-							else if (a_filter_type == 3) {
-							    // Apply average filtering
-								if (a_processed_data > width()) {
-									for (int j = 0; j < width(); j++) {
-										Color pixel1 = Color(0, 0, 0);
-										if (j == 0) {
-											pixel1.set_red(0);
-											pixel1.set_green(0);
-											pixel1.set_blue(0);
-											pixel1.set_alpha(0);
-										}
-										else {
-											pixel1 = pixel_rgba_directly(current_line_start_position + (j - 1) * component_size, multiplier);
-										}
-										Color pixel2 = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
-										Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
-                                        set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.red()) + static_cast<double>(pixel2.red())) / 2.0)),
-                                                                 current_color.green() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.green()) + static_cast<double>(pixel2.green())) / 2.0)),
-                                                                 current_color.blue() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.blue()) + static_cast<double>(pixel2.blue())) / 2.0)),
-                                                                 current_color.alpha() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.alpha()) + static_cast<double>(pixel2.alpha())) / 2.0)), multiplier);
-									}
-								}
-							}
-							else if (a_filter_type == 4 && current_line > 0) {
-							    // Apply paeth filtering
-								for (int j = 0; j < width(); j++) {
-									if (j == 0) {
-										Color color = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
-										Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
-                                        set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + color.red(),
-                                                                     current_color.green() + color.green(),
-                                                                     current_color.blue() + color.blue(),
-                                                                     current_color.alpha() + color.alpha(), multiplier);
-									}
-									else {
-										Color pixel2 = pixel_rgba_directly(current_line_start_position + (j - 1) * component_size, multiplier);
-										Color pixel3 = pixel_rgba_directly(last_line_start_position + (j - 1) * component_size, multiplier);
-										Color pixel1 = pixel_rgba_directly(last_line_start_position + j * component_size, multiplier);
-										Color current_color = pixel_rgba_directly(current_line_start_position + j * component_size, multiplier);
-										set_pixel_rgba_directly(current_line_start_position + j * component_size, current_color.red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())),
-                                                                     current_color.green() + static_cast<unsigned char>(paeth_function(pixel1.green(), pixel2.green(), pixel3.green())),
-                                                                     current_color.blue() + static_cast<unsigned char>(paeth_function(pixel1.blue(), pixel2.blue(), pixel3.blue())),
-                                                                     current_color.alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel3.alpha())), multiplier);
-									}
-								}
-							}
-						}
+                        // Handle the untreated datas
+                        _load_png_IDAT_from_file_rgba(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);
 
+						// Update the needed datas
 						a_filter_type = out[i];
 						current_line++;
 						last_line_start_position = current_line_start_position;
@@ -981,71 +982,8 @@ namespace scls
 					}
 				}
 
-				if (a_processed_data > 0) {
-					if (a_filter_type == 1) { // Apply sub filtering
-                        for (int i = 1; i < width(); i++){
-							Color color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
-							Color current_color = pixel_rgba_directly(current_line_start_position + (i - 1) * component_size, multiplier);
-							set_pixel_rgba_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
-                                                    current_color.green() + color.green(),
-                                                    current_color.blue() + color.blue(),
-                                                    current_color.alpha() + color.alpha(), multiplier);
-						}
-					}
-					else if (a_filter_type == 2 && a_processed_data > width()) // Apply up filtering
-					{
-						for (int i = 0; i < width(); i++){
-							Color color = pixel(i, current_line - 1);
-							set_pixel_red(i, current_line, pixel(i, current_line).red() + color.red());
-							set_pixel_green(i, current_line, pixel(i, current_line).green() + color.green());
-							set_pixel_blue(i, current_line, pixel(i, current_line).blue() + color.blue());
-							set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + color.alpha());
-						}
-					}
-					else if (a_filter_type == 3) {
-                        // Apply average filtering
-						if (a_processed_data > width()){
-							for (int i = 0; i < width(); i++){
-								Color pixel1 = Color(0, 0, 0);
-								if (i == 0) {
-									pixel1.set_red(0);
-									pixel1.set_green(0);
-									pixel1.set_blue(0);
-									pixel1.set_alpha(0);
-								}
-								else {
-									pixel1 = pixel(i - 1, current_line);
-								}
-								Color pixel2 = pixel(i, current_line - 1);
-								set_pixel_red(i, current_line, pixel(i, current_line).red() + static_cast<unsigned char>(floor((static_cast<float>(pixel1.red()) + static_cast<float>(pixel2.red())) / 2.0)));
-								set_pixel_green(i, current_line, pixel(i, current_line).green() + static_cast<unsigned char>(floor((static_cast<float>(pixel1.green()) + static_cast<float>(pixel2.green())) / 2.0)));
-								set_pixel_blue(i, current_line, pixel(i, current_line).blue() + static_cast<unsigned char>(floor((static_cast<float>(pixel1.blue()) + static_cast<float>(pixel2.blue())) / 2.0)));
-								set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + static_cast<unsigned char>(floor((static_cast<float>(pixel1.alpha()) + static_cast<float>(pixel2.alpha())) / 2.0)));
-							}
-						}
-					}
-					else if (a_filter_type == 4 && a_processed_data > width()) {
-					    // Apply paeth filtering
-						for (int i = 0; i < width(); i++) {
-							if (i == 0) {
-								Color color = pixel(i, current_line - 1);
-								set_pixel_red(i, current_line, pixel(i, current_line).red() + color.red());
-								set_pixel_green(i, current_line, pixel(i, current_line).green() + color.green());
-								set_pixel_blue(i, current_line, pixel(i, current_line).blue() + color.blue());
-								set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + color.alpha());
-							}
-							else {
-								Color pixel2 = pixel(i - 1, current_line);
-								Color pixel3 = pixel(i - 1, current_line - 1);
-								Color pixel1 = pixel(i, current_line - 1);
-								set_pixel_red(i, current_line, pixel(i, current_line).red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())));
-								set_pixel_green(i, current_line, pixel(i, current_line).green() + static_cast<unsigned char>(paeth_function(pixel1.green(), pixel2.green(), pixel3.green())));
-								set_pixel_blue(i, current_line, pixel(i, current_line).blue() + static_cast<unsigned char>(paeth_function(pixel1.blue(), pixel2.blue(), pixel3.blue())));
-								set_pixel_alpha(i, current_line, pixel(i, current_line).alpha() + static_cast<unsigned char>(paeth_function(pixel1.alpha(), pixel2.alpha(), pixel2.alpha())));
-							}
-						}
-					}
-				}
+				// Handle last untreated datas
+				if (processed_data > 0) {_load_png_IDAT_from_file_rgba(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);}
 
 				// Free memory
 				delete[] out;

@@ -26,9 +26,9 @@ int main() {
     std::shared_ptr<scls::Image> img = std::make_shared<scls::Image>("/home/matto/Images/joueur.png");
 
     // Save the image
-    //img.get()->save_png("test/test1.png");
+    img.get()->save_png("test/test1.png");
     img.get()->load_from_path("/home/matto/Images/mur.png");
-    //img.get()->save_png("test/test2.png");
+    img.get()->save_png("test/test2.png");
 
     return 0;
 }
