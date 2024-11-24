@@ -347,12 +347,9 @@ namespace scls {
 	//*********
 
 	// Balise in a text
-    struct Balise_Style_Datas : public Balise_Datas {
-        // Style of the balis
-        Text_Style style;
-    };
+    struct Balise_Style_Datas : public Balise_Datas {Text_Style style;};
 
-    class _Balise_Style_Container : public _Balise_Container {
+    class _Balise_Style_Container : public __Balise_Container {
         // Class faciliting the handle of balises, with style
     public:
 
@@ -685,9 +682,7 @@ namespace scls {
         // Getters and setters
         inline Word_Datas datas() const {return a_datas;};
         inline Image* image() { return a_last_image.get(); };
-        std::shared_ptr<Image>& image_shared_pointer() {
-            if(a_last_image.get() == 0) return a_last_image;
-        };
+        std::shared_ptr<Image>& image_shared_pointer() {if(a_last_image.get() == 0) return a_last_image;};
         inline void set_image_shared_ptr(const std::shared_ptr<Image>& img) {a_last_image=img;};
 
     private:
@@ -802,7 +797,7 @@ namespace scls {
             a_words_datas.clear();
             unsigned int current_position_in_plain_text = 0;
             int& current_width = a_current_width; current_width = 0;
-            std::vector<_Text_Balise_Part> cutted = a_defined_balises->_cut_block(text());
+            std::vector<_Text_Balise_Part> cutted = a_defined_balises->__cut_block(text());
             std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
             short& y_offset = a_y_offset; a_line_number = 1;
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
@@ -1575,7 +1570,7 @@ namespace scls {
         // Update the datas of each blocks
         void update_blocks_datas(String text_to_analyse) {
             a_blocks_datas.clear();
-            std::vector<std::string> cutted = a_defined_balises->_cut_multi_block(text_to_analyse);
+            std::vector<std::string> cutted = a_defined_balises->__cut_multi_block(text_to_analyse);
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
                 std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted[i]);
                 a_blocks_datas.push_back(current_block_data);
