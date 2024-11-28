@@ -216,18 +216,9 @@ namespace scls
 		// Image most basic constructor
 		Image() {};
 		// Image constructor with a path
-		Image(std::string path) : Image() {
-		    std::shared_ptr<__Image_Error> final_error = load_from_path(path);
-		    if(final_error.get()->has_error()) print("Warning", "SCLS Image \"Michelangelo\"", final_error.get()->to_std_string());
-        };
+		Image(std::string path) : Image() {std::shared_ptr<__Image_Error> final_error = load_from_path(path);if(final_error.get()->has_error()) print("Warning", "SCLS Image \"Michelangelo\"", final_error.get()->to_std_string());};
 		// Image constructor from scratch
-		Image(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned int color_type = SCLS_IMAGE_RGBA) {
-			a_color_type = color_type;
-			a_height = height;
-			a_width = width;
-
-			fill(red, green, blue, alpha);
-		};
+		Image(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned int color_type = SCLS_IMAGE_RGBA) {a_color_type = color_type;a_height = height;a_width = width;fill(red, green, blue, alpha);};
 		Image(unsigned short width, unsigned short height, Color color, unsigned int color_type = SCLS_IMAGE_RGBA) : Image(width, height, color.red(), color.green(), color.blue(), color.alpha(), color_type) {}
 		// Image copy constructor
 		Image(Image& image_copy) : Image(image_copy.width(), image_copy.height(), Color(0, 0, 0, 0)) {paste(&image_copy, 0, 0);}
@@ -333,6 +324,9 @@ namespace scls
         //*********
 
         // Drawing methods
+        // Draw a circle on the image
+        void draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
+
         // Draw a line on the image
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
         inline void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);};

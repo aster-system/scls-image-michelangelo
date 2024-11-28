@@ -31,8 +31,7 @@
 #include "../scls_image.h"
 
 // The namespace "scls" is used to simplify the all.
-namespace scls
-{
+namespace scls {
     //*********
 	//
 	// Color handling
@@ -835,6 +834,66 @@ namespace scls
     // The Image class - Editing
     //
     //*********
+
+    // Draw a circle on the image
+    void Image::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
+        const int start_x = round(x_center - radius);
+        const int start_x_inner = start_x + line_width;
+        int current_x = 0;
+        // Check the inner part
+        double radius_inner = radius - line_width;
+
+        // Upgrade in the drawing
+        int multiplier = 1;
+        int needed_components = components();
+        int needed_height = height();
+        int needed_width = width();
+        while(current_x < radius) {
+            // Update the coordinate
+            current_x++;
+
+            // Get the needed x/y
+            int needed_x = start_x + current_x;
+            double current_ratio = static_cast<double>(current_x) / radius;
+            int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
+
+            // If the coordonate his out of the image
+            if(needed_x >= 0 && needed_x < needed_width) {
+                // Draw each needed pixels
+                // Set the last y
+                int last_y = 0;
+                if(needed_x >= start_x_inner) {
+                    double current_ratio = static_cast<double>(needed_x - start_x_inner) / radius_inner;
+                    last_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius_inner);
+                }
+                // Draw the circle
+                for(int i = 0;i < (needed_y - last_y);i++) {
+                    // Left of the circle
+                    needed_x = (x_center - radius) + current_x;
+                    int current_y = (y_center + (last_y + i));
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    } current_y = (y_center - (last_y + i));
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    }
+                    // Right of the circle
+                    needed_x = (x_center + radius) - current_x;
+                    current_y = (y_center + (last_y + i));
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    } current_y = (y_center - (last_y + i));
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    }
+                }
+            }
+        }
+    }
 
     // Draw a line on the image
     void Image::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
