@@ -202,6 +202,9 @@ namespace scls
         int a_value = 0;
     };
 
+    // Linear gradient color for the Image class
+    Color fill_circle_gradient_linear(double distance, int radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+
 	class Image {
 		// Class representing a PNG image handler
 	public:
@@ -255,7 +258,7 @@ namespace scls
 		// Set datas about a specific pixel*
 		inline void set_pixel_directly(unsigned int position, unsigned char value){a_pixels->set_data_at_directly(position, value);};
 		inline void set_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){a_pixels->set_data_at_directly(position, red);a_pixels->set_data_at_directly(position + multiplier, green);a_pixels->set_data_at_directly(position + 2 * multiplier, blue);a_pixels->set_data_at_directly(position + 3 * multiplier,  alpha);};
-		inline void set_pixel(int x, int y, Color color, unsigned short width = 1) { set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width); }
+        inline void set_pixel(int x, int y, Color color, unsigned short width = 1) { set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width); }
         void set_pixel(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1);
         void set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha);
         void set_pixel_blue(unsigned short x, unsigned short y, unsigned char blue, unsigned char alpha = 255);
@@ -263,6 +266,7 @@ namespace scls
         inline void set_pixel_by_number(unsigned int position, Color color) { set_pixel_by_number(position, color.red(), color.green(), color.blue());};
         void set_pixel_green(unsigned short x, unsigned short y, unsigned char green, unsigned char alpha = 255);
         void set_pixel_red(unsigned short x, unsigned short y, unsigned char red, unsigned char alpha = 255);
+        void set_pixel_rgba_directly_with_alpha(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
 
 		// Getters and setters
 		// For the methods taking position : If the position is out of the image, prints an error.
@@ -326,6 +330,13 @@ namespace scls
         // Drawing methods
         // Draw a circle on the image
         void draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
+        inline void draw_circle(int x_center, int y_center, double radius, Color color, unsigned short line_width = 1){draw_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),line_width);};
+        // Fill a circle on the image
+        void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
+        inline void fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
+        // Fill a circle with a gradient on the image
+        void fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, Color (*needed_function)(double, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
+        inline void fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear){fill_circle_gradient(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),needed_function);};
 
         // Draw a line on the image
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
@@ -335,7 +346,6 @@ namespace scls
         void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         inline void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, Color color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());};
         inline void draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, Color color, Color fill_color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());fill_rect(x + rect_width, y + rect_width, width - rect_width * 2, height - rect_width * 2, fill_color.red(), fill_color.green(), fill_color.blue(), fill_color.alpha());};
-
         // Fill a rectangle on the image
 		void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
 		inline void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());};

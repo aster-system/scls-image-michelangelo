@@ -200,6 +200,11 @@ namespace scls {
 	//
 	//*********
 
+	// Linear gradient color for the Image class circle
+    Color fill_circle_gradient_linear(double distance, int radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+        return scls::Color(static_cast<double>(red) * std::abs(1.0 - distance / static_cast<double>(radius)), static_cast<double>(green) * std::abs(1.0 - distance / static_cast<double>(radius)), static_cast<double>(blue) * std::abs(1.0 - distance / static_cast<double>(radius)), static_cast<double>(alpha) * std::abs(1.0 - distance / static_cast<double>(radius)));
+    }
+
     std::string __Image_Error::to_std_string() const {
         // Normal behavior
         if(!has_error()) return std::string("This image has no errors.");
@@ -507,6 +512,21 @@ namespace scls {
             a_pixels->set_data_at(position, red);
         }
     };
+    void Image::set_pixel_rgba_directly_with_alpha(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier) {
+        // Process the color
+        Color color = pixel_rgba_directly(position, multiplier);
+        double alpha_f = normalize_value(alpha, 0, 255) / 255.0;
+        double blue_f = normalize_value(blue, 0, 255);
+        double green_f = normalize_value(green, 0, 255);
+        double red_f = normalize_value(red, 0, 255);
+        // Calculate alpha
+        alpha = normalize_value(alpha, 0, 255); if(color.alpha() > alpha) alpha = color.alpha();
+        blue = alpha_f * blue_f + (1.0 - alpha_f) * static_cast<double>(color.blue());
+        red = alpha_f * red_f + (1.0 - alpha_f) * static_cast<double>(color.red());
+        green = alpha_f * green_f + (1.0 - alpha_f) * static_cast<double>(color.green());
+        // Set the color
+        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+    }
 
     //*********
     //
@@ -889,6 +909,108 @@ namespace scls {
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x) * needed_components;
                         set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    }
+                }
+            }
+        }
+    }
+    // Fills a circle on the image
+    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+        const int start_x = round(x_center - radius);
+        int current_x = 0;
+
+        // Upgrade in the drawing
+        int multiplier = 1;
+        int needed_components = components();
+        int needed_height = height();
+        int needed_width = width();
+        while(current_x < radius) {
+            // Update the coordinate
+            current_x++;
+
+            // Get the needed x/y
+            int needed_x = start_x + current_x;
+            double current_ratio = static_cast<double>(current_x) / radius;
+            int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
+
+            // If the coordonate his out of the image
+            if(needed_x >= 0 && needed_x < needed_width) {
+                // Draw the circle
+                for(int i = 0;i < needed_y;i++) {
+                    // Left of the circle
+                    needed_x = (x_center - radius) + current_x;
+                    int current_y = (y_center + i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    } current_y = (y_center - i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    }
+                    // Right of the circle
+                    needed_x = (x_center + radius) - current_x;
+                    current_y = (y_center + i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    } current_y = (y_center - i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                    }
+                }
+            }
+        }
+    }
+    // Fill a circle with a gradient on the image
+    void Image::fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, Color (*needed_function)(double, int, unsigned char, unsigned char, unsigned char, unsigned char)) {
+        const int start_x = round(x_center - radius);
+        int current_x = 0;
+
+        // Upgrade in the drawing
+        int multiplier = 1;
+        int needed_components = components();
+        int needed_height = height();
+        int needed_width = width();
+        while(current_x < radius) {
+            // Update the coordinate
+            current_x++;
+
+            // Get the needed x/y
+            int needed_x = start_x + current_x;
+            double current_ratio = static_cast<double>(current_x) / radius;
+            int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
+
+            // If the coordonate his out of the image
+            if(needed_x >= 0 && needed_x < needed_width) {
+                // Draw the circle
+                for(int i = 0;i < needed_y;i++) {
+                    // Left of the circle
+                    needed_x = (x_center - radius) + current_x;
+                    int current_y = (y_center + i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        Color needed_color = needed_function(std::sqrt(std::pow(x_center - needed_x, 2) + std::pow(y_center - current_y, 2)), radius, red, green, blue, alpha);
+                        set_pixel_rgba_directly_with_alpha(position, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha(), multiplier);
+                    } current_y = (y_center - i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        Color needed_color = needed_function(std::sqrt(std::pow(x_center - needed_x, 2) + std::pow(y_center - current_y, 2)), radius, red, green, blue, alpha);
+                        set_pixel_rgba_directly_with_alpha(position, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha(), multiplier);
+                    }
+                    // Right of the circle
+                    needed_x = (x_center + radius) - current_x;
+                    current_y = (y_center + i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        Color needed_color = needed_function(std::sqrt(std::pow(x_center - needed_x, 2) + std::pow(y_center - current_y, 2)), radius, red, green, blue, alpha);
+                        set_pixel_rgba_directly_with_alpha(position, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha(), multiplier);
+                    } current_y = (y_center - i);
+                    if(current_y >= 0 && current_y < needed_height) {
+                        int position = (current_y * needed_width + needed_x) * needed_components;
+                        Color needed_color = needed_function(std::sqrt(std::pow(x_center - needed_x, 2) + std::pow(y_center - current_y, 2)), radius, red, green, blue, alpha);
+                        set_pixel_rgba_directly_with_alpha(position, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha(), multiplier);
                     }
                 }
             }
