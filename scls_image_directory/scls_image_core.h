@@ -203,7 +203,7 @@ namespace scls
     };
 
     // Linear gradient color for the Image class
-    Color fill_circle_gradient_linear(double distance, int radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+    Color fill_circle_gradient_linear(double distance, int radius, int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
 
 	class Image {
 		// Class representing a PNG image handler
@@ -335,8 +335,8 @@ namespace scls
         void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         inline void fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
         // Fill a circle with a gradient on the image
-        void fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, Color (*needed_function)(double, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
-        inline void fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear){fill_circle_gradient(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),needed_function);};
+        void fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
+        inline void fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear){fill_circle_gradient(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),needed_function);};
 
         // Draw a line on the image
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
