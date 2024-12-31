@@ -221,8 +221,7 @@ namespace scls {
 
     // Fill the image with one color
     void Image::fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
-        free_memory();
-        a_pixels.reset(new Bytes_Set(buffer_size()));
+        create_memory();
         unsigned int current_thread_position = 0;
         unsigned int pixel_by_thread = floor(static_cast<double>((width() * height()) / static_cast<double>(a_thread_number_for_filling)));
 
@@ -345,9 +344,7 @@ namespace scls {
         Color to_return = Color(255, 255, 255);
 
         if(color_type() == 6) {to_return = pixel_rgba_directly(position, multiplier);}
-        else {
-            to_return.set_rgb(a_pixels->data_at(position), a_pixels->data_at(position + multiplier), a_pixels->data_at(position + 2 * multiplier));
-        }
+        else {to_return = pixel_directly(position, multiplier);}
 
         return to_return;
     };
@@ -384,9 +381,7 @@ namespace scls {
                 a_pixels->set_data_at_directly(position + 2 * multiplier, blue);
             }
         }
-        else {
-            fill_rect(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);
-        }
+        else {fill_rect(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);}
     }
     void Image::set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
@@ -893,22 +888,26 @@ namespace scls {
                     int current_y = (y_center + (last_y + i));
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     } current_y = (y_center - (last_y + i));
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     }
                     // Right of the circle
                     needed_x = (x_center + radius) - current_x;
                     current_y = (y_center + (last_y + i));
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     } current_y = (y_center - (last_y + i));
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     }
                 }
             }
@@ -916,7 +915,8 @@ namespace scls {
     }
     // Fills a circle on the image
     void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
-        const int start_x = round(x_center - radius);
+        radius = round(radius);
+        const int start_x = x_center - radius;
         int current_x = 0;
 
         // Upgrade in the drawing
@@ -924,44 +924,47 @@ namespace scls {
         int needed_components = components();
         int needed_height = height();
         int needed_width = width();
-        while(current_x < radius) {
-            // Update the coordinate
-            current_x++;
-
+        while(current_x <= radius) {
             // Get the needed x/y
-            int needed_x = start_x + current_x;
-            double current_ratio = static_cast<double>(current_x) / radius;
+            int needed_x_left = start_x + current_x;
+            int needed_x_right = (start_x + radius * 2) - (current_x + 1);
+            double current_ratio = (static_cast<double>(current_x) + 0.5) / radius;
             int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
 
             // Draw the circle
             for(int i = 0;i < needed_y;i++) {
                 // Left of the circle
-                if(needed_x >= 0 && needed_x < needed_width) {
-                    needed_x = (x_center - radius) + current_x;
+                if(needed_x_left >= 0 && needed_x_left < needed_width) {
                     int current_y = (y_center + i);
                     if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        int position = (current_y * needed_width + needed_x_left) * needed_components;
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     } current_y = (y_center - i);
                     if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        int position = (current_y * needed_width + needed_x_left) * needed_components;
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     }
                 }
                 // Right of the circle
-                needed_x = (x_center + radius) - current_x;
-                if(needed_x >= 0 && needed_x < needed_width) {
+                if(needed_x_right >= 0 && needed_x_right < needed_width) {
                     int current_y = (y_center + i);
                     if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        int position = (current_y * needed_width + needed_x_right) * needed_components;
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     } current_y = (y_center - i);
                     if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
+                        int position = (current_y * needed_width + needed_x_right) * needed_components;
+                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        else{set_pixel_directly(position, red, green, blue, multiplier);}
                     }
                 }
             }
+
+            // Update the coordinate
+            current_x++;
         }
     }
     // Fill a circle with a gradient on the image
@@ -1019,32 +1022,50 @@ namespace scls {
         }
     }
 
+    // Draw an arrow on the image
+    void Image::draw_arrow(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double hat_position_in_percentage, double hat_size_in_percentage, unsigned short line_width) {
+        draw_line(x_1, y_1, x_2, y_2, red, green, blue, alpha, line_width);
+        // Draw the hat of the arrow
+        int x_diff = -(x_2 - x_1); int y_diff = -(y_2 - y_1);
+        scls::Vector_3D base_vector = scls::Vector_3D(x_diff, 0, y_diff);
+        // First part
+        scls::Vector_3D needed_vector = base_vector.rotated(scls::Vector_3D(0, 45, 0));
+        int needed_x = static_cast<double>(needed_vector.x()) * hat_size_in_percentage; int needed_y = static_cast<double>(needed_vector.z()) * hat_size_in_percentage;
+        int current_x = x_1 + (x_2 - x_1) * hat_position_in_percentage; int current_y = y_1 + (y_2 - y_1) * hat_position_in_percentage;
+        draw_line(current_x + needed_x, current_y + needed_y, current_x, current_y, red, green, blue, alpha, line_width);
+        // Second part
+        needed_vector = base_vector.rotated(scls::Vector_3D(0, -45, 0));
+        needed_x = static_cast<double>(needed_vector.x()) * hat_size_in_percentage; needed_y = static_cast<double>(needed_vector.z()) * hat_size_in_percentage;
+        current_x = x_1 + (x_2 - x_1) * hat_position_in_percentage; current_y = y_1 + (y_2 - y_1) * hat_position_in_percentage;
+        draw_line(current_x + needed_x, current_y + needed_y, current_x, current_y, red, green, blue, alpha, line_width);
+    }
+
     // Draw a line on the image
     void Image::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
             // Check the X position
             if(x_1 + static_cast<int>(line_width) < 0 || x_1 >= width()) return;
-            y_2++;
             if(y_2 < y_1) {
                 y_2 += y_1;
                 y_1 = y_2 - y_1;
                 y_2 = y_2 - y_1;
-            }
-            // Check the Y position
-            for(int i = 0;i<y_2 - y_1;i++) set_pixel(x_1, y_1 + i, red, green, blue, alpha, line_width);
+            } y_2++;
+            // Draw the line
+            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
+            fill_rect(x_1, y_1, line_width, y_2 - y_1, red, green, blue, alpha);
         }
-        else if(y_1 + static_cast<int>(line_width) == y_2) {
+        else if(y_1 == y_2) {
             // Check the Y position
             if(y_1 < 0 || y_1 >= height()) return;
-            x_2++;
             if(x_2 < x_1) {
                 x_2 += x_1;
                 x_1 = x_2 - x_1;
                 x_2 = x_2 - x_1;
-            }
-            // Check the X position
-            for(int i = 0;i<x_2 - x_1;i++) set_pixel(x_1 + i, y_1, red, green, blue, alpha, line_width);
+            } x_2++;
+            // Draw the line
+            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
+            fill_rect(x_1, y_1, x_2 - x_1, line_width, red, green, blue, alpha);
         }
         else {
             x_2++; y_2++;
@@ -1185,47 +1206,24 @@ namespace scls {
         double actual_x = x_1;
         double actual_y = y_1;
         double actual_y_added = 0;
+        double total_added_y = 0;
 
         authorized_sender().push_back("");
 
         // Create the first line
-        unsigned short iter = 0; unsigned short iter_total = 0;
+        int iter = 0; int iter_total = 0;
         while(actual_x < x_2) {
-            draw_line(actual_x, actual_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
-            actual_x++; actual_y += all_x_1_3[iter_total];
-            iter++; iter_total++; actual_y_added += all_x_1_2[iter];
+            draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
+            actual_x++; total_added_y += all_x_1_3[iter_total];
+            iter++; iter_total++; if(iter < all_x_1_2.size()){actual_y_added += all_x_1_2[iter];}
         }
         // Create the second line
-        iter = 0; if(distance_x_1_2 <= 0) actual_y_added = distance_y_1_2;
+        iter = 0; if(distance_x_1_2 <= 0){actual_y_added = distance_y_1_2;}
         while(actual_x < x_3) {
-            draw_line(actual_x, actual_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
-            actual_x++; actual_y += all_x_1_3[iter_total];
+            draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
+            actual_x++; total_added_y += all_x_1_3[iter_total];
             iter++; iter_total++; actual_y_added += all_x_2_3[iter];
         }
-
-        /*draw_line(static_cast<short>(actual_x), static_cast<short>(actual_y), x_3, y_3, red, green, blue, alpha, 2);
-
-        while (actual_y < y_2) {
-            if (abs(ratio_x_y) < 1) {
-                actual_y++;
-                actual_x += ratio_x_y;
-            }
-            else {
-                actual_y += ratio_y_x;
-                if (distance_x_1_2 > 0) actual_x++;
-                else actual_x--;
-            }
-
-            if(actual_x < 0) actual_x = 0;
-            if(actual_y < 0) actual_y = 0;
-
-            draw_line(static_cast<unsigned short>(floor(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-            draw_line(static_cast<unsigned short>(floor(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-            draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(floor(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-            draw_line(static_cast<unsigned short>(ceil(actual_x)), static_cast<unsigned short>(ceil(actual_y)), x_3, y_3, red, green, blue, alpha, 2);
-            iter++;
-        } //*/
-        authorized_sender().pop_back();
     }
 
     // Flip the image on the X axis
@@ -1297,6 +1295,9 @@ namespace scls {
         unsigned int current_thread_position = 0;
         unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
+        // Asserts
+        if(x >= width() || y >= height()){return;}
+
         // Create each threads
         if(a_thread_number_for_pasting > 1) {
             std::vector<std::thread*> threads = std::vector<std::thread*>();
@@ -1320,40 +1321,50 @@ namespace scls {
             } threads.clear();
         }
         else {
-            __paste_part_of_image(to_paste, x, y, 0, 0, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity);
+            // Precisely adjust the image to paste
+            int start_x = 0;int start_y = 0;
+            if(x < 0){start_x=-x;x=0;}
+            if(y < 0){start_y=-y;y=0;}
+            if(start_x < width() && start_y < height()) {
+                __paste_part_of_image(to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity);
+            }
         }
     }
     // Paste a part of an image on this image
     void Image::__paste_part_of_image(Image* to_paste, int x_offset, int y_offset, int start_x, int start_y, int length, double opacity) {
-        for(int i = 0;i<length;i++) {
-            if(x_offset + start_x >= 0 && y_offset + start_y >= 0 && x_offset + start_x < width() && y_offset + start_y < height()) {
-                Color pixel = to_paste->pixel(start_x, start_y);
-                set_pixel(x_offset + start_x, y_offset + start_y, pixel);
-            }
+        // Paste image datas
+        int needed_component_paste = to_paste->components();
+        int needed_height_paste = to_paste->height(); int needed_width_paste = to_paste->width();
+        int current_position_paste = ((start_y) * needed_width_paste + (start_x)) * needed_component_paste;
 
-            start_x++; if(start_x >= to_paste->width()) {
-                start_x = 0;
-                start_y++;
-            }
-        }
-    }
+        // Current image datas
+        int current_x = x_offset + start_x; int current_y = y_offset + start_y;
+        int needed_component = components();
+        int needed_height = height(); int needed_width = width();
+        int current_position = ((current_y) * needed_width + (current_x)) * needed_component;
+        if(color_type() == SCLS_IMAGE_RGBA) {
+            for(int i = 0;i<length;i++) {
+                // Sets the pixel
+                Color pixel = to_paste->pixel_rgba_directly(current_position_paste, 1);
+                set_pixel_rgba_directly_with_alpha(current_position, pixel.red(), pixel.green(), pixel.blue(), pixel.alpha() * opacity, 1);
 
-    // Apply a simple circle gradient in the image
-    void Image::apply_gradient_circle(Color in, Color out, int x, int y, unsigned short radius) {
-        for(unsigned short i = 0;i<width();i++) {
-            for(unsigned short j = 0;j<height();j++) {
-                double distance = std::sqrt((i - x) * (i - x) + (j - y) * (j - y));
-                double pourcentage = distance / static_cast<double>(radius);
-                if(pourcentage <= 1) {
-                    double current_alpha = static_cast<double>(in.alpha()) + (static_cast<double>(out.alpha()) - static_cast<double>(in.alpha())) * pourcentage;
-                    double current_blue = static_cast<double>(in.blue()) + (static_cast<double>(out.blue()) - static_cast<double>(in.blue())) * pourcentage;
-                    double current_green = static_cast<double>(in.green()) + (static_cast<double>(out.green()) - static_cast<double>(in.green())) * pourcentage;
-                    double current_red = static_cast<double>(in.red()) + (static_cast<double>(out.red()) - static_cast<double>(in.red())) * pourcentage;
-                    set_pixel(i, j, current_red, current_green, current_blue, current_alpha);
+                // Check the size
+                current_position += needed_component;
+                current_position_paste += needed_component_paste;
+                current_x++;
+                if(current_x - x_offset >= needed_width_paste || current_x >= needed_width) {
+                    current_x = x_offset;
+                    current_y++;
+                    if(current_y - y_offset >= needed_height_paste || current_y >= needed_height){break;}
+                    current_position = ((current_y) * needed_width + (current_x)) * needed_component;
+                    current_position_paste = ((current_y - y_offset) * needed_width_paste + (current_x - x_offset)) * needed_component_paste;
                 }
             }
         }
-    };
+        else if(color_type() == SCLS_IMAGE_RGB) {
+
+        }
+    }
 
     // Apply a more complex horizontal gradient from the left to the right in the image
     void Image::apply_gradient_horizontal(Color left, Color right, int start_x, int end_x) {
@@ -1486,7 +1497,7 @@ namespace scls {
     // Load the image from a set of binary datas coming from a FreeType text
     bool Image::_load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         a_height = height; a_width = width;
-        fill(0, 0, 0, 0);
+        create_memory();
 
         // Create each threads
         if(a_thread_number_for_pasting_text > 0) {
@@ -1522,27 +1533,19 @@ namespace scls {
 
     // Load a part of image with a FreeType text in it
     bool Image::__load_part_from_text_binary(char* datas, int offset, int start_x, int start_y, int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+        int needed_component = components();
+        unsigned int current_position = (start_y * width() + start_x) * needed_component;
         if(color_type() == SCLS_IMAGE_RGBA) {
             for(int i = 0;i<length;i++) {
                 double glyph_alpha = (datas[offset + i] / 255.0);
-                set_pixel(start_x, start_y, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<double>(alpha)));
-
-                start_x++;
-                if(start_x >= width()) {
-                    start_x = 0;
-                    start_y++;
-                }
+                set_pixel_rgba_directly(current_position, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<double>(alpha)), 1);
+                current_position+=needed_component;
             }
         }
         else if(color_type() == SCLS_IMAGE_RGB) {
             for(int i = 0;i<length;i++) {
-                set_pixel(start_x, start_y, red, green, blue, alpha);
-
-                start_x++;
-                if(start_x >= width()) {
-                    start_x = 0;
-                    start_y++;
-                }
+                set_pixel_directly(current_position, red, green, blue, 1);
+                current_position+=needed_component;
             }
         }
         return true;

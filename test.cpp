@@ -23,12 +23,10 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    std::shared_ptr<scls::Image> img = std::make_shared<scls::Image>("/home/matto/Images/joueur.png");
-
-    // Save the image
-    img.get()->save_png("test/test1.png");
-    img.get()->load_from_path("/home/matto/Images/mur.png");
-    img.get()->save_png("test/test2.png");
+    scls::Text_Image_Generator gen;
+    scls::Text_Style style; style.font_size = 50;
+    gen.image_shared_ptr("<math><mi>p</mi><mi>S</mi><vec><mi>p</mi></vec></math>", style).get()->save_png("test/math.png");
+    gen.image_shared_ptr("<math><vec><mi>p</mi></vec></math>", style).get()->save_png("test/math_1.png");
 
     return 0;
 }

@@ -69,9 +69,8 @@
 namespace scls {
 
     // Make the logo of Aster System
-    inline std::shared_ptr<scls::Image> aster_system_logo(unsigned int width = 1000) {
-        double total_width = static_cast<double>(width);
-        scls::Image* img = new scls::Image(static_cast<short>(total_width * 2.3), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGB);
+    inline std::shared_ptr<scls::Image> aster_system_logo(Color branch_1_color, Color branch_2_color, unsigned int image_width, std::string text_top, std::string text_bottom) {
+        double total_width = static_cast<double>(image_width);
 
         // Datas about the branchs
         double branch_height = (total_width*(8.0/10.0));
@@ -79,9 +78,9 @@ namespace scls {
         double branch_x = (total_width/10.0);
         double branch_y = (total_width/10.0);
         // Automatic values
-        double branch_separation_width = branch_width;
-        double branch_height_round = round(branch_height / 12.0);
-        double branch_height_slide =round( branch_width + branch_separation_width);
+        double branch_separation_width = round(branch_width);
+        double branch_height_round = round(branch_width);
+        double branch_height_slide = round(branch_width + branch_separation_width);
         double branch_height_main = round(branch_height - (branch_height_round * 2.0 + branch_height_slide));
 
         // Datas about the text
@@ -99,7 +98,7 @@ namespace scls {
         font_size = round(font_size);
 
         // Create the branch 1
-        scls::Color color_1(0, 51, 102);
+        scls::Color color_1 = branch_1_color;
         // Create the first rectangle of the left branch
         double ll1_height = branch_height_main;
         double ll1_width = branch_width;
@@ -110,46 +109,73 @@ namespace scls {
         double ll2_width = (branch_height_slide);
         double ll2_x = (ll1_x + ll1_width);
         double ll2_y = (ll1_y + ll1_height);
-        // First branch
-        img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_1);
-        img->fill_rect(ll2_x, ll2_y, ll2_width, ll2_height, color_1);
-        img->fill_triangle(ll2_x, ll2_y, ll2_x, ll2_y - branch_height_slide, ll2_x + branch_height_slide, ll2_y, color_1);
-        img->fill_triangle(ll1_x, ll1_y - branch_width, ll1_x, ll1_y, ll1_x + ll1_width, ll1_y, color_1);
 
         // Create the branch 2
-        scls::Color color_2 = color_1;
+        scls::Color color_2 = branch_2_color;
         // Create the third rectangle of the left branch
         double ll3_height = branch_height_round;
         double ll3_width = branch_height_slide;
         double ll3_x = branch_x;
         double ll3_y = branch_y;
         // Create the first rectangle of the left branch
-        ll1_height = (branch_height_main);
-        ll1_width = (branch_width);
-        ll1_x = (ll3_x + ll3_width);
-        ll1_y = (ll3_y + ll3_height);
-        // First branch
-        img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_2);
-        img->fill_rect(ll3_x, ll3_y, ll3_width, ll3_height, color_2);
-        img->fill_triangle(ll3_x + ll3_width, ll3_y + ll3_height + branch_height_slide, ll3_x, ll3_y + ll3_height, ll3_x + ll3_width, ll3_y + ll3_height, color_2);
-        img->fill_triangle(ll1_x + ll1_width, ll1_y + ll1_height + branch_width, ll1_x, ll1_y + ll1_height, ll1_x + ll1_width, ll1_y + ll1_height, color_2);
+        double ll4_height = (branch_height_main);
+        double ll4_width = (branch_width);
+        double ll4_x = (ll3_x + ll3_width);
+        double ll4_y = (ll3_y + ll3_height);
+
+        // Configure the text
+        int text_number = 0;
+        if(text_bottom != ""){text_number++;}
+        if(text_top != ""){text_number++;}
 
         // Create the text
         std::shared_ptr<scls::Text_Image_Generator> tig = std::make_shared<scls::Text_Image_Generator>();
-        // Paste the text "Aster"
-        scls::Text_Style style;
-        style.color = color_text; style.font.font_path = LOGO_FONT_PATH; style.font_size = font_size;
-        std::shared_ptr<scls::Image> current_text = tig.get()->image_shared_ptr("ASTER", style);
-        text_y = 0;
-        img->paste(current_text.get(), text_x, text_y);
-        // Paste the text "Système"
-        style.color = color_text; style.font_size = font_size;
-        current_text = tig.get()->image_shared_ptr("SYSTÈME", style);
-        text_y = branch_y + branch_height - current_text.get()->height();
-        img->paste(current_text.get(), text_x, text_y);
+        std::shared_ptr<scls::Image> text_bottom_image;
+        std::shared_ptr<scls::Image> text_top_image;
+        if(text_number > 0) {
+            // Paste the text at the top
+            scls::Text_Style style;
+            style.color = color_text; style.font.font_path = LOGO_FONT_PATH; style.font_size = font_size;
+            text_top_image = tig.get()->image_shared_ptr(text_top, style);
+            if(text_number > 1) {
+                // Paste the text at the bottom
+                style.color = color_text; style.font_size = font_size;
+                text_bottom_image = tig.get()->image_shared_ptr(text_bottom, style);
+            }
+        }
+
+        // Create the image
+        int final_width = 0;
+        if(text_bottom_image.get() != 0){final_width = text_bottom_image.get()->width();}
+        if(text_top_image.get() != 0 && text_top_image.get()->width() > final_width) {final_width = text_top_image.get()->width();}
+        final_width += text_x + branch_width;
+        scls::Image* img = new scls::Image(static_cast<short>(final_width), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGB);
+
+        // First branch
+        img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_1);
+        img->fill_rect(ll2_x, ll2_y, ll2_width, ll2_height, color_1);
+        img->fill_triangle(ll2_x, ll2_y, ll2_x, ll2_y - branch_height_slide, ll2_x + branch_height_slide, ll2_y, color_1);
+        img->fill_triangle(ll1_x, ll1_y - branch_width, ll1_x, ll1_y, ll1_x + ll1_width, ll1_y, color_1);
+        img->fill_circle(ll2_x, ll2_y, branch_height_round, color_1);
+
+        // Second branch
+        img->fill_rect(ll4_x, ll4_y, ll4_width, ll4_height, color_2);
+        img->fill_rect(ll3_x, ll3_y, ll3_width, ll3_height, color_2);
+        img->fill_triangle(ll3_x + ll3_width, ll3_y + ll3_height + branch_height_slide, ll3_x, ll3_y + ll3_height, ll3_x + ll3_width, ll3_y + ll3_height, color_2);
+        img->fill_triangle(ll4_x + ll4_width, ll4_y + ll4_height + branch_width, ll4_x, ll4_y + ll4_height, ll4_x + ll4_width, ll4_y + ll4_height, color_2);
+        img->fill_circle(ll4_x, ll3_y + ll3_height, ll4_width, color_2);
+
+        // Text
+        if(text_number == 1) {text_y = img->height() / 2.0 - text_top_image.get()->height() / 2.0;}
+        else if(text_number == 2){text_y = 0;}
+        if(text_top_image.get() != 0){img->paste(text_top_image.get(), text_x, text_y);}
+        if(text_number == 2){text_y = branch_y + branch_height - text_top_image.get()->height();}
+        if(text_bottom_image.get() != 0){img->paste(text_bottom_image.get(), text_x, text_y);}
 
         return std::shared_ptr<scls::Image>(img);
     }
+    inline std::shared_ptr<scls::Image> aster_system_logo(unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, "ASTER", "SYSTÈME");};
+    inline std::shared_ptr<scls::Image> aster_system_logo(std::string single_text, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, single_text, "");};
 };
 
 #endif // SCLS_IMAGE
