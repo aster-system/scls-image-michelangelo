@@ -1089,7 +1089,7 @@ namespace scls {
                 double actual_y = y_1;
 
                 // Check the positions
-                while(actual_y < 0) {actual_y++;actual_x += x_y_ratio;}
+                if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
                 if(y_2 >= height()) y_2 = height() - 1;
                 // Draw the line
                 while (actual_y < y_2) {
@@ -1114,7 +1114,7 @@ namespace scls {
 
                 // Check the positions
                 double y_x_ratio = distance_y / distance_x;
-                while(actual_x < 0) {actual_x++;actual_y += y_x_ratio;}
+                if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
                 if(x_2 >= width()) x_2 = width() - 1;
                 // Draw the line
                 while (actual_x < x_2) {
@@ -1126,7 +1126,7 @@ namespace scls {
         }
     }
 
-    // Draw a rectangle on the imageE
+    // Draw a rectangle on the image
     void Image::draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         fill_rect(x, y, width, rect_width, red, green, blue, alpha);
         fill_rect(x, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
@@ -1191,12 +1191,14 @@ namespace scls {
         // Calculate the datas for the X1 to X2 line
         double distance_x_1_2 = static_cast<double>(x_2 - x_1);
         double distance_y_1_2 = static_cast<double>(y_2 - y_1);
-        std::vector<long long> all_x_1_2 = partition_number(distance_y_1_2, distance_x_1_2);
+        std::vector<long long> all_x_1_2;
+        if(distance_x_1_2 > 0){all_x_1_2 = partition_number(distance_y_1_2, distance_x_1_2);}
 
         // Calculate the datas for the X2 to X3 line
         double distance_x_2_3 = static_cast<double>(x_3 - x_2);
         double distance_y_2_3 = static_cast<double>(y_3 - y_2);
-        std::vector<long long> all_x_2_3 = partition_number(distance_y_2_3, distance_x_2_3);
+        std::vector<long long> all_x_2_3;
+        if(distance_x_2_3 > 0){all_x_2_3 = partition_number(distance_y_2_3, distance_x_2_3);}
 
         // Calculate the datas for the X1 to X3 line
         double distance_x_1_3 = static_cast<double>(x_3 - x_1);
@@ -1208,8 +1210,7 @@ namespace scls {
         double actual_y_added = 0;
         double total_added_y = 0;
 
-        authorized_sender().push_back("");
-
+        // X drawing
         // Create the first line
         int iter = 0; int iter_total = 0;
         while(actual_x < x_2) {
@@ -1218,7 +1219,7 @@ namespace scls {
             iter++; iter_total++; if(iter < all_x_1_2.size()){actual_y_added += all_x_1_2[iter];}
         }
         // Create the second line
-        iter = 0; if(distance_x_1_2 <= 0){actual_y_added = distance_y_1_2;}
+        actual_y_added = distance_y_1_2; iter = 0;
         while(actual_x < x_3) {
             draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
             actual_x++; total_added_y += all_x_1_3[iter_total];
@@ -1338,7 +1339,7 @@ namespace scls {
         int current_position_paste = ((start_y) * needed_width_paste + (start_x)) * needed_component_paste;
 
         // Current image datas
-        int current_x = x_offset + start_x; int current_y = y_offset + start_y;
+        int current_x = x_offset; int current_y = y_offset;
         int needed_component = components();
         int needed_height = height(); int needed_width = width();
         int current_position = ((current_y) * needed_width + (current_x)) * needed_component;
@@ -1352,12 +1353,12 @@ namespace scls {
                 current_position += needed_component;
                 current_position_paste += needed_component_paste;
                 current_x++;
-                if(current_x - x_offset >= needed_width_paste || current_x >= needed_width) {
+                if((start_x + (current_x - x_offset)) >= needed_width_paste || current_x >= needed_width) {
                     current_x = x_offset;
                     current_y++;
                     if(current_y - y_offset >= needed_height_paste || current_y >= needed_height){break;}
                     current_position = ((current_y) * needed_width + (current_x)) * needed_component;
-                    current_position_paste = ((current_y - y_offset) * needed_width_paste + (current_x - x_offset)) * needed_component_paste;
+                    current_position_paste = ((start_y + (current_y - y_offset)) * needed_width_paste + (start_x + (current_x - x_offset))) * needed_component_paste;
                 }
             }
         }

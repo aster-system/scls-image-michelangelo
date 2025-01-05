@@ -24,9 +24,8 @@ using namespace scls;
 
 int main() {
     scls::Text_Image_Generator gen;
-    scls::Text_Style style; style.font_size = 50;
-    gen.image_shared_ptr("<math><mi>p</mi><mi>S</mi><vec><mi>p</mi></vec></math>", style).get()->save_png("test/math.png");
-    gen.image_shared_ptr("<math><vec><mi>p</mi></vec></math>", style).get()->save_png("test/math_1.png");
+    scls::Text_Style style; style.font_size = 300;
+    gen.image_shared_ptr("<math><mi>E</mi><esh><esh><sub>S</sub><mi>dS</mi><mo>=</mo><esh><esh><esh><sub>V</sub><vec><nabla></vec><vec>E</vec><mi>dV</mi></math>", style).get()->save_png("test/math.png");
 
     return 0;
 }

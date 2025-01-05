@@ -276,9 +276,11 @@ namespace scls {
         //*********
 
         // Getters and setters
+        inline String balise_content()const{return a_balise_content;};
         inline short bottom_offset() const {return a_bottom_offset;};
         inline std::vector<int>& characters_position() {return a_characters_position;};
         inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
+        inline void set_balise_content(std::string new_balise_content){a_balise_content=new_balise_content;};
         inline void set_bottom_offset(short new_bottom_offset) {a_bottom_offset = new_bottom_offset;};
         inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
         inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
@@ -289,6 +291,8 @@ namespace scls {
         inline unsigned int width() const {return a_width;};
         inline int x_position() const {return a_x_position;};
     private:
+        // Content of the balise
+        String a_balise_content;
         // Content of the line
         String a_content;
         // Style of the text
@@ -367,8 +371,9 @@ namespace scls {
 
         // Getters and setters
         inline short bottom_offset() const {return a_datas.bottom_offset();};
-        inline void set_bottom_offset(short new_bottom_offset) { a_datas.set_bottom_offset(new_bottom_offset); };
-        inline void set_top_offset(short new_top_offset) { a_datas.set_top_offset(new_top_offset); };
+        inline void set_balise_content(std::string new_balise_content){a_datas.set_balise_content(new_balise_content);};
+        inline void set_bottom_offset(short new_bottom_offset) {a_datas.set_bottom_offset(new_bottom_offset); };
+        inline void set_top_offset(short new_top_offset) {a_datas.set_top_offset(new_top_offset); };
         inline void set_width(unsigned int new_width) {a_datas.set_width(new_width);};
         inline void set_x_position(int new_x_position) {a_datas.set_x_position(new_x_position);}
         inline Text_Style style() const {return a_datas.style();};

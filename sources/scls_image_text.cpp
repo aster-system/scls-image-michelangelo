@@ -523,6 +523,10 @@ namespace scls {
         } else if(needed_balise_name == "msup") {
             // Generate a sub text
             needed_part = __generate_sup(content, current_style, line);
+        } else if(needed_balise_name == "mu") {
+            // Generate a mu sign
+            std::string text = std::string(""); add_utf_8(text, 956);
+            needed_part = __generate_text_for_maths(text, current_style, line);
         } else if(needed_balise_name == "nabla") {
             // Generate a nabla sign
             needed_part = __generate_nabla(current_style);
@@ -698,6 +702,7 @@ namespace scls {
                     std::shared_ptr<Image> src_img = generate_maths(cutted[i].content, current_style).get()->image;
                     current_style.font_size = temp_font_size;
                     __generate_image(word_to_add, src_img, current_position_in_plain_text, current_width, src_img.get()->height(), src_img.get()->width());
+                    word_to_add.get()->set_balise_content(balise_content);
                 }
             }
             else {
@@ -710,7 +715,7 @@ namespace scls {
                 }
                 current_position_in_plain_text += word_content.size();
             }
-            if(word_to_add.get() != 0) data_to_add = word_to_add.get()->datas();;
+            if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
 
             // Add the part
             words.push_back(word_to_add);
@@ -788,8 +793,11 @@ namespace scls {
                         if(current_word->text() == std::string(" ")){continue;}
                     }
 
-                    // Paste the word
+                    // Check the Y of the image
                     int y = current_y - (static_cast<int>(current_image->height()) + static_cast<int>(current_word->bottom_offset()));
+                    if(balise_name(current_word->datas().balise_content()) == "math"){y = final_image->height() / 2.0 - static_cast<double>(current_image->height()) / 2.0;};
+
+                    // Paste the word
                     final_image->paste(current_image, current_x, y);
                     current_word->set_x_position(current_x); a_words_datas[i].set_x_position(current_x);
                     current_x += current_image->width();
