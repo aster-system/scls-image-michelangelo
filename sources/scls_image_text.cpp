@@ -520,6 +520,10 @@ namespace scls {
         } else if(needed_balise_name == "frac") {
             // Generate a fraction
             needed_part = __generate_frac(content, current_style, line);
+        } else if(needed_balise_name == "mdelta") {
+            // Generate a delta text
+            std::string text = std::string(""); add_utf_8(text, 916);
+            needed_part = __generate_text_for_maths(text, current_style, line);
         } else if(needed_balise_name == "msup") {
             // Generate a sub text
             needed_part = __generate_sup(content, current_style, line);
