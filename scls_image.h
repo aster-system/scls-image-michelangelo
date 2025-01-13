@@ -56,6 +56,17 @@
 #define LOGO_FONT_PATH "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
 #endif // LOGO_FONT_PATH
 
+// Define SCLS_INIT
+#ifndef SCLS_IMAGE_INIT
+    #define SCLS_IMAGE_INIT std::string scls::__base_font_path = std::string(BASE_FONT_PATH); std::string scls::__default_font = std::string(DEFAULT_FONT);
+#endif // SCLS_IMAGE
+#ifdef SCLS_INIT
+#undef SCLS_INIT
+#endif // SCLS_INIT
+#ifndef SCLS_INIT
+#define SCLS_INIT SCLS_IMAGE_INIT SCLS_MATH_INIT SCLS_FOUNDATION_INIT
+#endif // SCLS_INIT
+
 // Include the needed SCLS Image files
 #include "scls_image_directory/scls_image_core.h"
 #include "scls_image_directory/scls_image_text.h"

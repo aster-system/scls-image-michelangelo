@@ -33,8 +33,12 @@
 #define DEFAULT_FONT std::string("arial")
 #endif
 #ifdef __linux__ // With Linux
+#ifndef BASE_FONT_PATH
 #define BASE_FONT_PATH std::string("/usr/share/fonts/truetype/")
+#endif // BASE_FONT_PATH
+#ifndef DEFAULT_FONT
 #define DEFAULT_FONT std::string("FreeMono")
+#endif // DEFAULT_FONT
 #endif
 
 // The namespace "scls" is used to simplify the all.
@@ -44,6 +48,10 @@ namespace scls {
 	// Font handling
 	//
 	//*********
+
+	//Basic font datas
+	extern std::string __base_font_path;
+	extern std::string __default_font;
 
     // Fonts datas
 	struct Font {
@@ -810,6 +818,7 @@ namespace scls {
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(a_balises, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
         // Create an image from a text and return it
         inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<Text_Image_Block> img = std::make_shared<Text_Image_Block>(a_balises, text);img.get()->global_style() = style;return img.get()->image_shared_pointer();};
+        inline std::shared_ptr<Image> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
         // Returns a newly created text image
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(a_balises, text, type);return img;};
         // Returns a newly created text image multi block

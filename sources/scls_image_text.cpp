@@ -98,7 +98,7 @@ namespace scls {
 
 	    if(!contains_system_font(font + last_name)) {
             print("Error", "SCLS Image Michelangelo", "The \"" + font + last_name + "\" system font you want to get does not exist.");
-            return __system_fonts[DEFAULT_FONT];
+            return __system_fonts[__default_font];
 	    }
 
         return __system_fonts[font + last_name];
@@ -200,13 +200,13 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Center;
-        current_balise.get()->style.color = Color(255, 0, 0); current_balise.get()->style.font_size = 50; current_balise.get()->style.font = get_system_font("arialbd");
+        current_balise.get()->style.color = Color(255, 0, 0); current_balise.get()->style.font_size = 50; current_balise.get()->style.font = get_system_font(__default_font);
         set_defined_balise<Balise_Style_Datas>("h1", current_balise);
         // Create the <h2> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Left;
-        current_balise.get()->style.color = Color(0, 0, 0); current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font("arialbd");
+        current_balise.get()->style.color = Color(0, 0, 0); current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font(__default_font);
         set_defined_balise<Balise_Style_Datas>("h2", current_balise);
 
         // Mathematicals styles
@@ -220,6 +220,7 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         current_balise.get()->style.color = Color(0, 0, 0); current_balise.get()->style.font_size = 40;
+        current_balise.get()->style.font = get_system_font("DejaVuMathTeXGyre");
         set_defined_balise<Balise_Style_Datas>("math", current_balise);
         // Create the <mi> style
         current_balise = std::make_shared<Balise_Style_Datas>();
@@ -274,7 +275,7 @@ namespace scls {
     void Text_Image_Word::generate_word() {
         // Base variables for the creation
         std::string path = style().font.font_path;
-        if(path == ""){path = get_system_font(DEFAULT_FONT).font_path;}
+        if(path == ""){path = get_system_font(__default_font).font_path;}
 
         // Load the FreeType base system
         if(!_free_type_library_inited) {
@@ -574,6 +575,9 @@ namespace scls {
         int bottom_offset = 0; int needed_height = 0; int needed_width = 0; int top_offset = 0;
         int middle_bottom_offset = 0; int middle_top_offset = 0;
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
+
+        // EXPERIMENTAL
+        current_style.font = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises->defined_balise("math"))->style.font;
 
         if(content.get()->only_text()) {
             // If the content is only a text
