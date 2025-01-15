@@ -1229,35 +1229,48 @@ namespace scls {
 
     // Flip the image on the X axis
     void Image::flip_x() {
-        unsigned char* line1 = new unsigned char[width()];
-        int max = height();
+        int total_height = height();
+        int total_height_needed = total_height / 2.0;
 
-        for (int i = 0; i < floor(static_cast<float>(max) / 2.0); i++)
-        {
-            // Red
-            for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components());
-            for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components(), a_pixels->data_at(((max - (i + 1)) * width() + j) * components()));
-            for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components(), line1[j]);
+        for (int i = 0; i < total_height_needed; i++) {
+            // Needed datas
+            int base_current_pos = (i * width()) * components();
+            int base_next_pos = ((total_height - (i + 1)) * width()) * components();
 
-            // Green
-            for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 1);
-            for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 1, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 1));
-            for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 1, line1[j]);
+            for (int j = 0; j < width(); j++) {
+                int current_pos = base_current_pos + j * components(); int next_pos = base_next_pos + j * components();
 
-            // Blue
-            for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 2);
-            for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 2, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 2));
-            for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 2, line1[j]);
+                // Red
+                char temp = a_pixels.get()->data_at_directly(current_pos);
+                a_pixels->set_data_at_directly(current_pos, a_pixels.get()->data_at_directly(next_pos));
+                a_pixels->set_data_at_directly(next_pos, temp);
 
-            if(color_type() == 6) {
-                // Alpha
-                for (int j = 0; j < width(); j++) line1[j] = a_pixels->data_at((i * width() + j) * components() + 3);
-                for (int j = 0; j < width(); j++) a_pixels->set_data_at((i * width() + j) * components() + 3, a_pixels->data_at(((max - (i + 1)) * width() + j) * components() + 3));
-                for (int j = 0; j < width(); j++) a_pixels->set_data_at(((max - (i + 1)) * width() + j) * components() + 3, line1[j]);
+                // Green
+                temp = a_pixels.get()->data_at_directly(current_pos + 1);
+                a_pixels->set_data_at_directly(current_pos + 1, a_pixels.get()->data_at_directly(next_pos + 1));
+                a_pixels->set_data_at_directly(next_pos + 1, temp);
+
+                // Blue
+                temp = a_pixels.get()->data_at_directly(current_pos + 2);
+                a_pixels->set_data_at_directly(current_pos + 2, a_pixels.get()->data_at_directly(next_pos + 2));
+                a_pixels->set_data_at_directly(next_pos + 2, temp);
+            }
+        }
+
+        // Alpha
+        if(color_type() == 6) {
+            for (int i = 0; i < total_height_needed; i++) {
+                int base_current_pos = (i * width()) * components();
+                int base_next_pos = ((total_height - (i + 1)) * width()) * components();
+
+                for (int j = 0; j < width(); j++){
+                    int current_pos = base_current_pos + j * components(); int next_pos = base_next_pos + j * components();
+                    char temp = a_pixels.get()->data_at_directly(current_pos + 3);
+                    a_pixels->set_data_at_directly(current_pos + 3, a_pixels.get()->data_at_directly(next_pos + 3));
+                    a_pixels->set_data_at_directly(next_pos + 3, temp);
+                }
             }
         } a_flip_x_number++;
-
-        delete[] line1;
     }
     // Flip the image on the Y axis
     void Image::flip_y() {
