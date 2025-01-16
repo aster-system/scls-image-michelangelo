@@ -349,6 +349,8 @@ namespace scls {
         // Struct containing the datas necessary for a block
         // Block_Datas constructor
         Block_Datas(std::string block_content) : content(block_content) {}
+        // Content of the balise
+        String balise_content;
         // Content of the block
         String content;
         // Global style in the block
@@ -749,13 +751,13 @@ namespace scls {
         // Deletes the last blocks in a vector
         void free_memory() {__delete_blocks();};
         // Generate each blocks in the multiblocks (and delete the previous ones)
-        inline void generate_blocks() {free_memory();for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(a_defined_balises, a_blocks_datas[i]);new_block.get()->image();a_blocks.push_back(new_block);}};
+        void generate_blocks();
         inline void generate_blocks(std::string text_to_analyse) {update_blocks_datas(text_to_analyse);generate_blocks();};
         // Return the entire text in an image
         Image* image(Image_Generation_Type generation_type, const std::string& start_text);
         Image* image() {return image(Image_Generation_Type::IGT_Full, text());};
         // Returns a shared pointer of the image
-        std::shared_ptr<Image> image_shared_pointer() { std::shared_ptr<Image> to_return;to_return.reset(image());return to_return;};
+        std::shared_ptr<Image> image_shared_pointer() { return image_shared_pointer(Image_Generation_Type::IGT_Full);};
         std::shared_ptr<Image> image_shared_pointer(Image_Generation_Type generation_type) { std::shared_ptr<Image> to_return;to_return.reset(image(generation_type, text()));return to_return;};
         // Place the blocks in the multi-block
         void place_blocks();
@@ -778,7 +780,7 @@ namespace scls {
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
         inline void set_text(String new_text) {update_blocks_datas(new_text);};
-        inline String text() const {String to_return;for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {if(a_blocks_datas.at(i).get() != 0) to_return += a_blocks_datas.at(i).get()->content;} return to_return;};
+        String text() const;
     private:
         // Current style used for the formatting
         Text_Style a_current_style;
@@ -817,7 +819,8 @@ namespace scls {
         // Create an image from a text and return it
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(a_balises, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
         // Create an image from a text and return it
-        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<Text_Image_Block> img = std::make_shared<Text_Image_Block>(a_balises, text);img.get()->global_style() = style;return img.get()->image_shared_pointer();};
+        template <typename T = Text_Image_Block>
+        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<T> img = std::make_shared<T>(a_balises, text);img.get()->global_style() = style;return img.get()->image_shared_pointer();};
         inline std::shared_ptr<Image> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
         // Returns a newly created text image
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(a_balises, text, type);return img;};

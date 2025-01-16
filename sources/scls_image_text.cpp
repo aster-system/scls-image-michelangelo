@@ -525,6 +525,10 @@ namespace scls {
             // Generate a delta text
             std::string text = std::string(""); add_utf_8(text, 916);
             needed_part = __generate_text_for_maths(text, current_style, line);
+        } else if(needed_balise_name == "mpartial") {
+            // Generate a partial text
+            std::string text = std::string(""); add_utf_8(text, 948);
+            needed_part = __generate_text_for_maths(text, current_style, line);
         } else if(needed_balise_name == "msup") {
             // Generate a sub text
             needed_part = __generate_sup(content, current_style, line);
@@ -1124,6 +1128,20 @@ namespace scls {
         }
     };
 
+    // Generate each blocks in the multiblocks (and delete the previous ones)
+    void Text_Image_Multi_Block::generate_blocks() {
+        free_memory();
+        for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
+            std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(a_defined_balises, a_blocks_datas[i]);
+            std::string needed_balise_name = a_blocks_datas[i].get()->balise_content;
+            Balise_Style_Datas* needed_style = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(needed_balise_name));
+            if(needed_style != 0){new_block.get()->global_style() = needed_style->style;}
+            new_block.get()->global_style().max_width = (global_style().max_width);
+            new_block.get()->image();
+            a_blocks.push_back(new_block);
+        }
+    }
+
     // Return the entire text in an image
     Image* Text_Image_Multi_Block::image(Image_Generation_Type generation_type, const std::string& start_text) {
         if(generation_type == Image_Generation_Type::IGT_Full) {
@@ -1174,12 +1192,26 @@ namespace scls {
         }
     };
 
+    // Returns the text in the multi-block
+    String Text_Image_Multi_Block::text() const {
+        String to_return;
+        for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
+            if(a_blocks_datas.at(i).get() != 0){
+                if(a_blocks_datas.at(i).get()->balise_content != ""){to_return += std::string("<") + a_blocks_datas.at(i).get()->balise_content.to_std_string() + std::string(">"); }
+                to_return += a_blocks_datas.at(i).get()->content;
+                if(a_blocks_datas.at(i).get()->balise_content != ""){to_return += std::string("</") + a_blocks_datas.at(i).get()->balise_content.to_std_string() + std::string(">"); }
+            }
+        }
+        return to_return;
+    }
+
     // Update the datas of each blocks
     void Text_Image_Multi_Block::update_blocks_datas(String text_to_analyse) {
         a_blocks_datas.clear();
-        std::vector<std::string> cutted = a_defined_balises->__cut_multi_block(text_to_analyse);
-        for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-            std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted[i]);
+        std::shared_ptr<XML_Text> cutted = xml(a_defined_balises, text_to_analyse);
+        for(int i = 0;i<static_cast<int>(cutted.get()->sub_texts().size());i++) {
+            std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i].get()->text());
+            current_block_data.get()->balise_content = cutted.get()->sub_texts()[i].get()->xml_balise_name();
             a_blocks_datas.push_back(current_block_data);
         }
 
