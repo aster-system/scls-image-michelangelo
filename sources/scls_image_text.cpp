@@ -1197,9 +1197,10 @@ namespace scls {
         String to_return;
         for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
             if(a_blocks_datas.at(i).get() != 0){
-                if(a_blocks_datas.at(i).get()->balise_content != ""){to_return += std::string("<") + a_blocks_datas.at(i).get()->balise_content.to_std_string() + std::string(">"); }
+                std::string balise_content = a_blocks_datas.at(i).get()->balise_content;
+                if(balise_content != ""){to_return += std::string("<") + balise_content + std::string(">"); }
                 to_return += a_blocks_datas.at(i).get()->content;
-                if(a_blocks_datas.at(i).get()->balise_content != ""){to_return += std::string("</") + a_blocks_datas.at(i).get()->balise_content.to_std_string() + std::string(">"); }
+                if(balise_content != ""){to_return += std::string("</") + balise_content + std::string(">"); }
             }
         }
         return to_return;
@@ -1208,11 +1209,30 @@ namespace scls {
     // Update the datas of each blocks
     void Text_Image_Multi_Block::update_blocks_datas(String text_to_analyse) {
         a_blocks_datas.clear();
+        std::string current_balise = "";
         std::shared_ptr<XML_Text> cutted = xml(a_defined_balises, text_to_analyse);
         for(int i = 0;i<static_cast<int>(cutted.get()->sub_texts().size());i++) {
-            std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i].get()->text());
-            current_block_data.get()->balise_content = cutted.get()->sub_texts()[i].get()->xml_balise_name();
-            a_blocks_datas.push_back(current_block_data);
+            std::string current_balise_name = cutted.get()->sub_texts()[i].get()->xml_balise_name();
+            Balise_Style_Datas* needed_balise = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(current_balise_name));
+            if(needed_balise == 0 || needed_balise->is_paragraph) {
+                // Create a new paragraph
+                std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i].get()->text());
+                current_block_data.get()->balise_content = current_balise_name;
+                current_balise = current_block_data.get()->balise_content;
+                a_blocks_datas.push_back(current_block_data);
+            }
+            else if(a_blocks_datas.size() <= 0) {
+                // Create a new paragraph for a non-paragraphed balise
+                std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i].get()->text());
+                current_block_data.get()->content = std::string("<") + current_balise_name + std::string(">") + current_block_data.get()->content.to_std_string();
+                current_block_data.get()->content = std::string("</") + current_balise_name + std::string(">");
+                a_blocks_datas.push_back(current_block_data);
+            }
+            else {
+                // Add the paragraph to the last paragraph
+                a_blocks_datas[a_blocks_datas.size() - 1].get()->content += std::string("<") + current_balise_name + std::string(">");
+                a_blocks_datas[a_blocks_datas.size() - 1].get()->content += cutted.get()->sub_texts()[i].get()->text() + std::string("</") + current_balise_name + std::string(">");
+            }
         }
 
         // Apply the style of each blocks
