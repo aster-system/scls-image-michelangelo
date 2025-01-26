@@ -683,6 +683,7 @@ namespace scls {
         // Getters and setter
         inline Block_Datas* datas() {return a_datas.get();};
         inline _Balise_Style_Container* defined_balises() const {return a_defined_balises.get();};
+        inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
         inline std::vector<Text_Image_Line*>& lines() { return a_lines; };
         inline std::vector<Line_Datas>& lines_datas() { return a_lines_text; };
     private:
@@ -775,6 +776,7 @@ namespace scls {
         // Getters and setters
         inline std::vector<std::shared_ptr<Text_Image_Block>>& blocks() {return a_blocks;};
         inline _Balise_Style_Container* defined_balises() {return a_defined_balises.get();};
+        inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
         inline Balise_Style_Datas* defined_balises(std::string balise) {return defined_balises()->defined_balise_style(balise);};
         inline Text_Style& global_style() {return a_global_style;};
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
@@ -833,6 +835,7 @@ namespace scls {
 
         // Getters and setters
         inline _Balise_Style_Container* balises() const {return a_balises.get();};
+        inline std::shared_ptr<_Balise_Style_Container> balises_shared_ptr() {return a_balises;};
         inline Color global_color() const {return a_global_color;};
         inline Font global_font() {if(a_global_font.font_path == "") set_global_font(get_system_font("arial"));return a_global_font;};
         inline unsigned short global_font_size() const {return a_global_font_size;};
