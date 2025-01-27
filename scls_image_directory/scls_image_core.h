@@ -309,7 +309,9 @@ namespace scls
 
         // Drawing methods
         // Fill a circle on the image
-        void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
+        void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
+        void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+        inline void fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
         inline void fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
         // Fill a circle with a gradient on the image
         void fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
