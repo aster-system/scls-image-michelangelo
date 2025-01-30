@@ -585,6 +585,7 @@ namespace scls {
 
         if(content.get()->only_text()) {
             // If the content is only a text
+            __generate_maths_one_balise(std::string(""), bottom_offset, content, current_style, needed_height, middle_bottom_offset, middle_top_offset, needed_parts, needed_width, top_offset, this);
         } else {
             // Analyse each blocks
             for(int i = 0;i<static_cast<int>(content.get()->sub_texts().size());i++) {
