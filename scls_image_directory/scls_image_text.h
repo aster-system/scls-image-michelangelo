@@ -37,7 +37,7 @@
 #define BASE_FONT_PATH std::string("/usr/share/fonts/truetype/")
 #endif // BASE_FONT_PATH
 #ifndef DEFAULT_FONT
-#define DEFAULT_FONT std::string("FreeMono")
+#define DEFAULT_FONT std::string("FreeSans")
 #endif // DEFAULT_FONT
 #endif
 
@@ -445,6 +445,7 @@ namespace scls {
         std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<XML_Text> content, Text_Style current_style);
         inline std::shared_ptr<__Math_Part_Image> generate_maths(std::string content, Text_Style current_style){return generate_maths(xml(a_defined_balises, content), current_style);};
         // Generates the needed words (and balises)
+        void __generate_words_without_balise(std::string text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text);
         void generate_words();
         // Generates a word
         std::shared_ptr<Text_Image_Word> _generate_word(const std::string& word, const Text_Style& style, unsigned int start_position_in_plain_text);
@@ -814,6 +815,10 @@ namespace scls {
         Font current_font;
         unsigned short current_font_size = 20;
     };
+
+    // Converts some well-known types into image
+    inline std::shared_ptr<Image> to_image(std::string* value, scls::Text_Style style){Text_Image_Generator gen;return gen.image_shared_ptr(*value, style);};
+    inline std::shared_ptr<Image> to_image(std::string* value){Text_Style style;return to_image(value, style);};
 }
 
 #endif // SCLS_IMAGE_TEXT

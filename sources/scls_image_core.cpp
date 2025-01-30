@@ -949,29 +949,33 @@ namespace scls {
                 for(;i < (needed_y - last_y);i++) {
                     // Left of the circle
                     needed_x = (x_center - radius) + current_x;
-                    int current_y = (y_center + (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                        else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                    } current_y = (y_center - (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                        else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                    if(needed_x >= 0 && needed_x < needed_width) {
+                        int current_y = (y_center + (last_y + i));
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        } current_y = (y_center - (last_y + i));
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        }
                     }
                     // Right of the circle
                     needed_x = (x_center + radius) - current_x;
-                    current_y = (y_center + (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                        else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                    } current_y = (y_center - (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                        else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                    if(needed_x >= 0 && needed_x < needed_width) {
+                        int current_y = (y_center + (last_y + i));
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        } current_y = (y_center - (last_y + i));
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        }
                     }
                 }
                 // Draw the circle
@@ -979,29 +983,33 @@ namespace scls {
                 for(;i < last_y;i++) {
                     // Left of the circle
                     needed_x = (x_center - radius) + current_x;
-                    int current_y = (y_center + i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    } current_y = (y_center - i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
+                    if(needed_x >= 0 && needed_x < needed_width) {
+                        int current_y = (y_center + i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        } current_y = (y_center - i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        }
                     }
                     // Right of the circle
                     needed_x = (x_center + radius) - current_x;
-                    current_y = (y_center + i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    } current_y = (y_center - i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
+                    if(needed_x >= 0 && needed_x < needed_width){
+                        int current_y = (y_center + i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        } current_y = (y_center - i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        }
                     }
                 }
             }

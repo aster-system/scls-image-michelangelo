@@ -621,6 +621,42 @@ namespace scls {
         current_position_in_plain_text++;
         current_width += resize_image.get()->width();
     }
+    void Text_Image_Line::__generate_words_without_balise(std::string text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text) {
+        // Handle a single text
+        std::vector<std::string> words_cutted = cut_string(text, " ");
+        // Get the needed words
+        for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
+            Word_Datas data_to_add = Word_Datas();
+            std::string word_content = words_cutted[j];
+            std::shared_ptr<Text_Image_Word> word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
+            if(word_to_add.get() != 0) {
+                word_to_add.get()->set_x_position(a_current_width);
+                if(word_to_add.get()->bottom_offset() < a_y_offset){a_y_offset = word_to_add.get()->bottom_offset();}
+            }
+            current_position_in_plain_text += word_content.size();
+
+            // Add the part
+            if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+            a_words.push_back(word_to_add);
+            a_words_datas.push_back(data_to_add);
+
+            // Add the space
+            if(j < static_cast<int>(words_cutted.size()) - 1) {
+                word_content = std::string(" ");
+                word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
+                if(word_to_add.get() != 0) {
+                    word_to_add.get()->set_x_position(a_current_width);
+                    if(word_to_add.get()->bottom_offset() < a_y_offset){a_y_offset = word_to_add.get()->bottom_offset();}
+                }
+                current_position_in_plain_text += word_content.size();
+
+                // Add the part
+                if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                a_words.push_back(word_to_add);
+                a_words_datas.push_back(data_to_add);
+            }
+        }
+    }
     void Text_Image_Line::generate_words() {
         // Create the needed configurations
         Text_Style current_style = a_global_style;
@@ -635,39 +671,7 @@ namespace scls {
         if(cutted->only_text()) {
             // Handle a single text
             std::string words_content = format_string_as_plain_text(cutted->text());
-            std::vector<std::string> words_cutted = cut_string(words_content, " ");
-            // Get the needed words
-            for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
-                Word_Datas data_to_add = Word_Datas();
-                std::string word_content = words_cutted[j];
-                std::shared_ptr<Text_Image_Word> word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
-                if(word_to_add.get() != 0) {
-                    word_to_add.get()->set_x_position(current_width);
-                    if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
-                }
-                current_position_in_plain_text += word_content.size();
-
-                // Add the part
-                if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
-                words.push_back(word_to_add);
-                a_words_datas.push_back(data_to_add);
-
-                // Add the space
-                if(j < static_cast<int>(words_cutted.size()) - 1) {
-                    word_content = std::string(" ");
-                    word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
-                    if(word_to_add.get() != 0) {
-                        word_to_add.get()->set_x_position(current_width);
-                        if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
-                    }
-                    current_position_in_plain_text += word_content.size();
-
-                    // Add the part
-                    if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
-                    words.push_back(word_to_add);
-                    a_words_datas.push_back(data_to_add);
-                }
-            }
+            __generate_words_without_balise(words_content, current_style, current_position_in_plain_text);
         }
         else {
             // Handle a lot of balises
@@ -675,40 +679,9 @@ namespace scls {
                 std::shared_ptr<Text_Image_Word> word_to_add;
                 Word_Datas data_to_add = Word_Datas();
                 if(!cutted->sub_texts()[i].get()->use_balise()) {
-                    // Draw the image with a full sentence
+                    // Draw the image with a single text
                     std::string words_content = format_string_as_plain_text(cutted->sub_texts()[i].get()->text());
-                    std::vector<std::string> words_cutted = cut_string(words_content, " ");
-                    // Get the needed words
-                    for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
-                        std::string word_content = words_cutted[j];
-                        word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
-                        if(word_to_add.get() != 0) {
-                            word_to_add.get()->set_x_position(current_width);
-                            if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
-                        }
-                        current_position_in_plain_text += word_content.size();
-
-                        // Add the part
-                        if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
-                        words.push_back(word_to_add);
-                        a_words_datas.push_back(data_to_add);
-
-                        // Add the space
-                        if(j < static_cast<int>(words_cutted.size()) - 1) {
-                            word_content = std::string(" ");
-                            word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
-                            if(word_to_add.get() != 0) {
-                                word_to_add.get()->set_x_position(current_width);
-                                if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
-                            }
-                            current_position_in_plain_text += word_content.size();
-
-                            // Add the part
-                            if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
-                            words.push_back(word_to_add);
-                            a_words_datas.push_back(data_to_add);
-                        }
-                    }
+                    __generate_words_without_balise(words_content, current_style, current_position_in_plain_text);
                 }
                 else {
                     // Apply a balise
