@@ -629,109 +629,169 @@ namespace scls {
         free_memory();
         unsigned int current_position_in_plain_text = 0;
         int& current_width = a_current_width; current_width = 0;
-        std::vector<_Text_Balise_Part> cutted = a_defined_balises->__cut_block(text());
+        XML_Text* cutted = text();
         std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
         short& y_offset = a_y_offset;
-        for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-            std::shared_ptr<Text_Image_Word> word_to_add;
-            Word_Datas data_to_add = Word_Datas();
-            if(cutted[i].balise_content.size() > 0 && cutted[i].balise_content[0] == '<') {
-                // Apply a balise
-                std::string balise = cutted[i].balise_content;
-                if(balise.size() <= 0 || balise[balise.size() - 1] != '>') {
-                    print("Warning", "SCLS Image \"Michelangelo\"", "A balise you want to parse is badly syntaxed.");
-                    continue;
-                }
-
-                std::string balise_content = formatted_balise(balise);
-                std::string current_balise_name = balise_name(balise_content);
-                if(current_balise_name == "img") {
-                    // The balise is an image
-                    std::vector<std::string> attributes = cut_balise_by_attributes(balise_content);
-                    std::string source = "";
-                    int height = -1; int width = -1;
-                    for(int i = 0;i<static_cast<int>(attributes.size());i++) {
-                        std::string &current_attribute = attributes[i];
-                        if(attribute_name(current_attribute) == "src") {
-                            // Source of the image
-                            source = attribute_value(current_attribute);
-                            if(source.size() > 0 && source[0] == '\"') source = source.substr(1, source.size() - 1);
-                            if(source.size() > 0 && source[source.size() - 1] == '\"') source = source.substr(0, source.size() - 1);
-                        } else if(attribute_name(current_attribute) == "height") {
-                            // Height of the image
-                            height = Fraction::from_std_string(attribute_value(current_attribute)).to_double();
-                        } else if(attribute_name(current_attribute) == "width") {
-                            // Width of the image
-                            width = Fraction::from_std_string(attribute_value(current_attribute)).to_double();
-                        }
-                    }
-
-                    // Load the image from the source
-                    if(source.size() > 0) {
-                        std::shared_ptr<Image>* src_img = 0;
-                        if(source[0] == '#') {
-                            // The image is a preload image
-                            source = source.substr(1, source.size() - 1);
-                            src_img = a_defined_balises->image(source);
-                            if(src_img != 0) {
-                                // Set the size
-                                if(height == -1 && width == -1) {height = src_img->get()->height();width = src_img->get()->width();}
-                            }
-                            else {
-                                print("Warning", "SCLS Image \"Michelangelo\"", "The \"" + source + "\" <img> you want to load does not exist.");
-                            }
-                        }
-                        else {
-                            // The image is an unloaded image
-                            if(std::filesystem::exists(source)) {src_img = a_defined_balises->add_image(source, source);}
-                            if(src_img != 0) {
-                                // Set the size
-                                if(height == -1 && width == -1) {height = src_img->get()->height();width = src_img->get()->width();}
-                                else if(height != -1 && width == -1) {
-                                    width = static_cast<int>(static_cast<double>(height) * (static_cast<double>(src_img->get()->width()) / static_cast<double>(src_img->get()->height())));
-                                } else if(height == -1 && width != -1) {
-                                    height = static_cast<int>(static_cast<double>(width) * (static_cast<double>(src_img->get()->height()) / static_cast<double>(src_img->get()->width())));
-                                }
-                                // Last update of the size
-                                if(current_style.max_width > 0 && width > current_style.max_width) {
-                                    width = current_style.max_width;
-                                    height = static_cast<int>(static_cast<double>(width) * (static_cast<double>(src_img->get()->height()) / static_cast<double>(src_img->get()->width())));
-                                }
-                            }
-                            else {
-                                print("Warning", "SCLS Image \"Michelangelo\"", "The \"" + source + "\" <img> path you want to load does not exist.");
-                            }
-                        }
-
-                        // Create the image
-                        if(src_img != 0){__generate_image(word_to_add, *src_img, current_position_in_plain_text, current_width, height, width);}
-                    }
-                }
-                else if(current_balise_name == "math") {
-                    // The balise is a piece of mathml
-                    int temp_font_size = current_style.font_size;
-                    current_style.font_size = 40; // EXPERIMENTAL
-                    std::shared_ptr<Image> src_img = generate_maths(cutted[i].content, current_style).get()->image;
-                    current_style.font_size = temp_font_size;
-                    __generate_image(word_to_add, src_img, current_position_in_plain_text, current_width, src_img.get()->height(), src_img.get()->width());
-                    word_to_add.get()->set_balise_content(balise_content);
-                }
-            }
-            else {
-                // Draw the image
-                std::string word_content = format_string_as_plain_text(cutted[i].content);
-                word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
+        if(cutted->only_text()) {
+            // Handle a single text
+            std::string words_content = format_string_as_plain_text(cutted->text());
+            std::vector<std::string> words_cutted = cut_string(words_content, " ");
+            // Get the needed words
+            for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
+                Word_Datas data_to_add = Word_Datas();
+                std::string word_content = words_cutted[j];
+                std::shared_ptr<Text_Image_Word> word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
                 if(word_to_add.get() != 0) {
                     word_to_add.get()->set_x_position(current_width);
-                    if(word_to_add.get()->bottom_offset() < y_offset) y_offset = word_to_add.get()->bottom_offset();
+                    if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
                 }
                 current_position_in_plain_text += word_content.size();
-            }
-            if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
 
-            // Add the part
-            words.push_back(word_to_add);
-            a_words_datas.push_back(data_to_add);
+                // Add the part
+                if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                words.push_back(word_to_add);
+                a_words_datas.push_back(data_to_add);
+
+                // Add the space
+                if(j < static_cast<int>(words_cutted.size()) - 1) {
+                    word_content = std::string(" ");
+                    word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
+                    if(word_to_add.get() != 0) {
+                        word_to_add.get()->set_x_position(current_width);
+                        if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
+                    }
+                    current_position_in_plain_text += word_content.size();
+
+                    // Add the part
+                    if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                    words.push_back(word_to_add);
+                    a_words_datas.push_back(data_to_add);
+                }
+            }
+        }
+        else {
+            // Handle a lot of balises
+            for(int i = 0;i<static_cast<int>(cutted->sub_texts().size());i++) {
+                std::shared_ptr<Text_Image_Word> word_to_add;
+                Word_Datas data_to_add = Word_Datas();
+                if(!cutted->sub_texts()[i].get()->use_balise()) {
+                    // Draw the image with a full sentence
+                    std::string words_content = format_string_as_plain_text(cutted->sub_texts()[i].get()->text());
+                    std::vector<std::string> words_cutted = cut_string(words_content, " ");
+                    // Get the needed words
+                    for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
+                        std::string word_content = words_cutted[j];
+                        word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
+                        if(word_to_add.get() != 0) {
+                            word_to_add.get()->set_x_position(current_width);
+                            if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
+                        }
+                        current_position_in_plain_text += word_content.size();
+
+                        // Add the part
+                        if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                        words.push_back(word_to_add);
+                        a_words_datas.push_back(data_to_add);
+
+                        // Add the space
+                        if(j < static_cast<int>(words_cutted.size()) - 1) {
+                            word_content = std::string(" ");
+                            word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
+                            if(word_to_add.get() != 0) {
+                                word_to_add.get()->set_x_position(current_width);
+                                if(word_to_add.get()->bottom_offset() < y_offset){y_offset = word_to_add.get()->bottom_offset();}
+                            }
+                            current_position_in_plain_text += word_content.size();
+
+                            // Add the part
+                            if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                            words.push_back(word_to_add);
+                            a_words_datas.push_back(data_to_add);
+                        }
+                    }
+                }
+                else {
+                    // Apply a balise
+                    std::string balise_content = cutted->sub_texts()[i].get()->xml_balise();
+                    std::string current_balise_name = cutted->sub_texts()[i].get()->xml_balise_name();
+                    if(current_balise_name == "img") {
+                        // The balise is an image
+                        std::vector<std::string> attributes = cut_balise_by_attributes(balise_content);
+                        std::string source = "";
+                        int height = -1; int width = -1;
+                        for(int i = 0;i<static_cast<int>(attributes.size());i++) {
+                            std::string &current_attribute = attributes[i];
+                            if(attribute_name(current_attribute) == "src") {
+                                // Source of the image
+                                source = attribute_value(current_attribute);
+                                if(source.size() > 0 && source[0] == '\"') source = source.substr(1, source.size() - 1);
+                                if(source.size() > 0 && source[source.size() - 1] == '\"') source = source.substr(0, source.size() - 1);
+                            } else if(attribute_name(current_attribute) == "height") {
+                                // Height of the image
+                                height = Fraction::from_std_string(attribute_value(current_attribute)).to_double();
+                            } else if(attribute_name(current_attribute) == "width") {
+                                // Width of the image
+                                width = Fraction::from_std_string(attribute_value(current_attribute)).to_double();
+                            }
+                        }
+
+                        // Load the image from the source
+                        if(source.size() > 0) {
+                            std::shared_ptr<Image>* src_img = 0;
+                            if(source[0] == '#') {
+                                // The image is a preload image
+                                source = source.substr(1, source.size() - 1);
+                                src_img = a_defined_balises->image(source);
+                                if(src_img != 0) {
+                                    // Set the size
+                                    if(height == -1 && width == -1) {height = src_img->get()->height();width = src_img->get()->width();}
+                                }
+                                else {
+                                    print("Warning", "SCLS Image \"Michelangelo\"", "The \"" + source + "\" <img> you want to load does not exist.");
+                                }
+                            }
+                            else {
+                                // The image is an unloaded image
+                                if(std::filesystem::exists(source)) {src_img = a_defined_balises->add_image(source, source);}
+                                if(src_img != 0) {
+                                    // Set the size
+                                    if(height == -1 && width == -1) {height = src_img->get()->height();width = src_img->get()->width();}
+                                    else if(height != -1 && width == -1) {
+                                        width = static_cast<int>(static_cast<double>(height) * (static_cast<double>(src_img->get()->width()) / static_cast<double>(src_img->get()->height())));
+                                    } else if(height == -1 && width != -1) {
+                                        height = static_cast<int>(static_cast<double>(width) * (static_cast<double>(src_img->get()->height()) / static_cast<double>(src_img->get()->width())));
+                                    }
+                                    // Last update of the size
+                                    if(current_style.max_width > 0 && width > current_style.max_width) {
+                                        width = current_style.max_width;
+                                        height = static_cast<int>(static_cast<double>(width) * (static_cast<double>(src_img->get()->height()) / static_cast<double>(src_img->get()->width())));
+                                    }
+                                }
+                                else {
+                                    print("Warning", "SCLS Image \"Michelangelo\"", "The \"" + source + "\" <img> path you want to load does not exist.");
+                                }
+                            }
+
+                            // Create the image
+                            if(src_img != 0){__generate_image(word_to_add, *src_img, current_position_in_plain_text, current_width, height, width);}
+                        }
+                    }
+                    else if(current_balise_name == "math") {
+                        // The balise is a piece of mathml
+                        int temp_font_size = current_style.font_size;
+                        current_style.font_size = 40; // EXPERIMENTAL
+                        std::shared_ptr<Image> src_img = generate_maths(cutted->sub_texts()[i], current_style).get()->image;
+                        current_style.font_size = temp_font_size;
+                        __generate_image(word_to_add, src_img, current_position_in_plain_text, current_width, src_img.get()->height(), src_img.get()->width());
+                        word_to_add.get()->set_balise_content(balise_content);
+                    }
+
+                    // Add the part
+                    if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                    words.push_back(word_to_add);
+                    a_words_datas.push_back(data_to_add);
+                }
+            }
         }
     };
 
@@ -1081,7 +1141,7 @@ namespace scls {
             size_to_delete = start_position - defined_balises()->first_plain_text_character_before_position_in_informatted_text(text().to_code_point(), start_position - size_to_delete);
 
             // Remove the needed text
-            String global_text = a_datas.get()->content;
+            String global_text = String(a_datas.get()->content.get()->full_text());
             String deleted_text = global_text.substr(start_position - size_to_delete, size_to_delete);
             global_text = global_text.substr(0, start_position - size_to_delete) + global_text.substr(start_position, global_text.size() - start_position);
             set_text(global_text);
@@ -1104,7 +1164,7 @@ namespace scls {
         for(int i = 0;i<static_cast<int>(cutted.size());i++) {
             // Check if the line exists or not
             Line_Datas datas;
-            datas.content = cutted[i];
+            datas.content = xml(a_defined_balises, cutted[i]);
             datas.content_in_plain_text = a_defined_balises->plain_text(cutted[i]);
             datas.line_number = i;
             datas.start_position = current_position;
@@ -1112,14 +1172,14 @@ namespace scls {
             lines_text.push_back(datas);
 
             // Update the positions
-            current_position += (datas.content.size() + 5);
+            current_position += (datas.content.get()->full_text().size() + 5);
             current_position_in_plain_text += (datas.content_in_plain_text.size() + 1);
         }
 
         // Handle empty lines
         if(cutted.size() <= 0) {
             Line_Datas datas;
-            datas.content = "";
+            datas.content = std::make_shared<XML_Text>(a_defined_balises, std::string(""), true);
             datas.content_in_plain_text = "";
             datas.line_number = 0;
             datas.start_position = 0;
@@ -1133,7 +1193,7 @@ namespace scls {
         free_memory();
         for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
             std::shared_ptr<Text_Image_Block> new_block = std::make_shared<Text_Image_Block>(a_defined_balises, a_blocks_datas[i]);
-            std::string needed_balise_name = a_blocks_datas[i].get()->balise_content;
+            std::string needed_balise_name = a_blocks_datas[i].get()->content.get()->xml_balise_name();
             Balise_Style_Datas* needed_style = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(needed_balise_name));
             if(needed_style != 0){new_block.get()->global_style() = needed_style->style;}
             new_block.get()->global_style().max_width = (global_style().max_width);
@@ -1197,10 +1257,8 @@ namespace scls {
         String to_return;
         for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
             if(a_blocks_datas.at(i).get() != 0){
-                std::string balise_content = a_blocks_datas.at(i).get()->balise_content;
-                if(balise_content != ""){to_return += std::string("<") + balise_content + std::string(">"); }
-                to_return += a_blocks_datas.at(i).get()->content;
-                if(balise_content != ""){to_return += std::string("</") + balise_content + std::string(">"); }
+                // Add each balise
+                to_return += a_blocks_datas.at(i).get()->content.get()->full_text();
             }
         }
         return to_return;
@@ -1209,35 +1267,34 @@ namespace scls {
     // Update the datas of each blocks
     void Text_Image_Multi_Block::update_blocks_datas(String text_to_analyse) {
         a_blocks_datas.clear();
-        std::string current_balise = "";
         std::shared_ptr<XML_Text> cutted = xml(a_defined_balises, text_to_analyse);
-        for(int i = 0;i<static_cast<int>(cutted.get()->sub_texts().size());i++) {
-            std::string current_balise_name = cutted.get()->sub_texts()[i].get()->xml_balise_name();
-            Balise_Style_Datas* needed_balise = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(current_balise_name));
-            if(needed_balise == 0 || needed_balise->is_paragraph) {
-                // Create a new paragraph
-                std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i].get()->text());
-                current_block_data.get()->balise_content = current_balise_name;
-                current_balise = current_block_data.get()->balise_content;
-                a_blocks_datas.push_back(current_block_data);
-            }
-            else if(a_blocks_datas.size() <= 0) {
-                // Create a new paragraph for a non-paragraphed balise
-                std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i].get()->text());
-                current_block_data.get()->content = std::string("<") + current_balise_name + std::string(">") + current_block_data.get()->content.to_std_string();
-                current_block_data.get()->content = std::string("</") + current_balise_name + std::string(">");
-                a_blocks_datas.push_back(current_block_data);
-            }
-            else {
-                // Add the paragraph to the last paragraph
-                a_blocks_datas[a_blocks_datas.size() - 1].get()->content += std::string("<") + current_balise_name + std::string(">");
-                a_blocks_datas[a_blocks_datas.size() - 1].get()->content += cutted.get()->sub_texts()[i].get()->text() + std::string("</") + current_balise_name + std::string(">");
+        if(cutted.get()->only_text()) {
+            // A single text
+            std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted);
+            a_blocks_datas.push_back(current_block_data);
+        }
+        else {
+            // More than a single text
+            for(int i = 0;i<static_cast<int>(cutted.get()->sub_texts().size());i++) {
+                std::string current_balise_name = cutted.get()->sub_texts()[i].get()->xml_balise_name();
+                Balise_Style_Datas* needed_balise = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(current_balise_name));
+                if(needed_balise == 0 || needed_balise->is_paragraph) {
+                    // Create a new paragraph
+                    std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted.get()->sub_texts()[i]);
+                    a_blocks_datas.push_back(current_block_data);
+                }
+                else {
+                    // Create a new paragraph for a non-paragraphed balise
+                    std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(std::make_shared<XML_Text>(a_defined_balises, std::string(""), false));
+                    current_block_data.get()->content.get()->sub_texts().push_back(cutted.get()->sub_texts()[i]);
+                    current_block_data.get()->content.get()->sub_texts()[0].get()->set_xml_balise_name(current_balise_name);
+                    cutted.get()->sub_texts()[i] = current_block_data.get()->content;
+                    a_blocks_datas.push_back(current_block_data);
+                }
             }
         }
 
         // Apply the style of each blocks
-        for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {
-            a_blocks_datas[i].get()->global_style = global_style();
-        }
+        for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {a_blocks_datas[i].get()->global_style = global_style();}
     };
 }

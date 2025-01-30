@@ -82,44 +82,12 @@ namespace scls {
 	//*********
 
 	// Enumeration of each horizontal alignment possible
-	enum Alignment_Horizontal {
-	    H_Left, H_Center, H_Right, H_User_Defined
-	};
+	enum Alignment_Horizontal {H_Left, H_Center, H_Right, H_User_Defined};
 
 	// Enumeration of each vertical alignment possible
-	enum Alignment_Vertical {
-	    V_Top, V_Center, V_Bottom, V_User_Defined
-	};
+	enum Alignment_Vertical {V_Top, V_Center, V_Bottom, V_User_Defined};
 
-	// Datas about the text to draw
-    struct Text_Image_Data {
-        // Color of the text
-        unsigned char alpha = 255;
-        unsigned char blue = 0;
-        unsigned char green = 0;
-        unsigned char red = 0;
-
-        // Color of the background
-        unsigned char background_alpha = 0;
-        unsigned char background_blue = 0;
-        unsigned char background_green = 0;
-        unsigned char background_red = 0;
-
-        // Font particularity
-        Font font;
-        unsigned short font_size = 50;
-
-        // Multi line caracteristic
-        Alignment_Horizontal alignment = Alignment_Horizontal::H_Left;
-
-        // Out offset
-        unsigned short out_offset_bottom_width = 0;
-        unsigned short out_offset_left_width = 0;
-        unsigned short out_offset_right_width = 0;
-        unsigned short out_offset_top_width = 0;
-    };
-
-    // Style about a text
+	// Style about a text
     struct Text_Style {
         // Horizontal alignment of the text
         Alignment_Horizontal alignment_horizontal = Alignment_Horizontal::H_Left;
@@ -153,53 +121,9 @@ namespace scls {
         Color border_color = scls::Color(0, 0, 0);
     };
 
-    // Block of text in a text
-    struct Text_Block {
-        // Content of the block
-        std::string content = "";
-    };
-
-    // Part of a block of a text representing a word to draw
-    struct _Text_Block_Part {
-        // If the block should be ignored or not
-        bool ignore = false;
-        // Pointer to the image
-        Image* image = 0;
-        // If the part is filled or not
-        bool is_filled = true;
-        // If the part is a paragraph or not
-        bool is_paragraph = false;
-        // Line of this block
-        unsigned int line = 0;
-        // Style of the part
-        Text_Style style;
-        // Offset in the Y axis
-        int y_offset = 0;
-    };
-
-    // Datas about a maker of _Text_Block_Part
-    struct _Text_Block_Part_Maker {
-        // Height of the cursor
-        int cursor_height = 0;
-        // If the block contains the cursor
-        bool has_cursor = false;
-        // All created _Text_Block_Part by the maker
-        std::vector<_Text_Block_Part> image_parts = std::vector<_Text_Block_Part>();
-        // All width of each lines made by the maker
-        std::vector<unsigned int> lines_width = std::vector<unsigned int>();
-        // Max width of a line made
-        int max_width = 0;
-        // Minimim x value made
-        unsigned int min_x = 0;
-        // Minimim y value made
-        unsigned int min_y = 0;
-        // Total height of the block
-        unsigned int total_height = 0;
-    };
-
     //*********
 	//
-	// Hidden classes to handle text
+	// Classes used to handle datas
 	//
 	//*********
 
@@ -331,9 +255,10 @@ namespace scls {
     struct Line_Datas {
         // Struct containing the datas necessary for a line
         // Content of the line
-        String content;
+        std::shared_ptr<XML_Text> content;
         // Content in plain text of the line
         String content_in_plain_text;
+
         // Number of the line (starting by 0)
         unsigned int line_number = 0;
         // Start of the text in the parent block in absolute text
@@ -348,18 +273,25 @@ namespace scls {
     struct Block_Datas {
         // Struct containing the datas necessary for a block
         // Block_Datas constructor
-        Block_Datas(std::string block_content) : content(block_content) {}
+        Block_Datas(std::shared_ptr<XML_Text> block_content) : content(block_content) {}
+
         // Content of the balise
-        String balise_content;
-        // Content of the block
-        String content;
+        std::shared_ptr<XML_Text> content;
+
         // Global style in the block
         Text_Style global_style;
+
         // Max width of the block
         int max_width = 0;
         // Total height of the block
         int total_height = 0;
     };
+
+    //*********
+	//
+	// Hidden classes to handle text
+	//
+	//*********
 
     class Text_Image_Word {
         // Class containing a single word of text
@@ -457,12 +389,12 @@ namespace scls {
         //*********
 
         // Most simple Text_Image_Line constructor
-        Text_Image_Line(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, Text_Style global_style) : a_defined_balises(defined_balises), a_global_style(global_style) {set_text(text);};
+        Text_Image_Line(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<XML_Text> text, Text_Style global_style) : a_defined_balises(defined_balises), a_global_style(global_style) {set_text(text);};
         // Text_Image_Line destructor
         ~Text_Image_Line() {free_memory();};
 
         // Returns the text in plain text
-        inline String plain_text() const { return a_defined_balises.get()->plain_text(text()); };
+        inline String plain_text() const { return a_defined_balises.get()->plain_text(text()->full_text()); };
         // Returns the size of the line in plain text
         inline unsigned int plain_text_size() const { return plain_text().size(); };
 
@@ -479,8 +411,9 @@ namespace scls {
         inline void set_line_start_position_in_plain_text(unsigned int new_line_start_position_in_plain_text) {a_datas.start_position_in_plain_text = new_line_start_position_in_plain_text;};
         inline void set_max_width(int new_max_width) {a_global_style.max_width = new_max_width;if(a_update_at_max_width_modification){generate_words();}};
         inline void set_modified(bool new_modified) {a_modified = new_modified;};
-        inline void set_text(String new_text, bool move_cursor = true) {a_datas.content = new_text;a_datas.content_in_plain_text = a_defined_balises.get()->plain_text(new_text);if(move_cursor){set_cursor_position_in_plain_text(a_datas.content_in_plain_text.size());}};
-        inline String text() const {return a_datas.content;};
+        inline void set_text(std::shared_ptr<XML_Text> new_text, bool move_cursor = true) {a_datas.content = new_text;a_datas.content_in_plain_text = a_defined_balises.get()->plain_text(new_text.get()->full_text());if(move_cursor){set_cursor_position_in_plain_text(a_datas.content_in_plain_text.size());}};
+        inline XML_Text* text() const {return a_datas.content.get();};
+        inline std::shared_ptr<XML_Text> text_shared_ptr() const {return a_datas.content;};
 
         //*********
         //
@@ -599,15 +532,17 @@ namespace scls {
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) { set_text(a_datas.get()->content); };
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas) : Text_Image_Block(defined_balises, datas, Block_Type::BT_Always_Free_Memory) {  };
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
-        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(text), type) {};
+        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text)), type) {};
         // Text_Image_Block destructor
         ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
+        inline String full_text() const {return a_datas.get()->content.get()->full_text();};
         inline Text_Style& global_style() {return a_datas.get()->global_style;};
-        inline void set_text(String new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_line_text();};
+        inline void set_text(std::shared_ptr<XML_Text> new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_line_text();};
+        inline void set_text(String new_text, bool move_cursor = true) {set_text(xml(a_defined_balises, new_text.to_std_string()), move_cursor);};
         inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(to_utf_8_code_point(new_text)), move_cursor);};
-        inline String text() const {return a_datas.get()->content.to_utf_8();};
+        inline String text() const {return a_datas.get()->content.get()->text();};
         inline Block_Type type() const {return a_type;};
 
         //*********
