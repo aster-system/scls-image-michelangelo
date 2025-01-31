@@ -186,24 +186,29 @@ namespace scls {
     void _Balise_Style_Container::_load_built_in_balises() {
         std::shared_ptr<Balise_Style_Datas> current_balise = std::make_shared<Balise_Style_Datas>();
         // Create the <br> style
+        current_balise.get()->has_content = false;
         current_balise.get()->is_break_line = true;
         set_defined_balise("br", current_balise);
         // Create the <div> style
         current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         set_defined_balise<Balise_Style_Datas>("div", current_balise);
         // Create the <p> style
         current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         set_defined_balise<Balise_Style_Datas>("p", current_balise);
         // Create the <h1> style
         current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Center;
         current_balise.get()->style.color = Color(255, 0, 0); current_balise.get()->style.font_size = 50; current_balise.get()->style.font = get_system_font(__default_font);
         set_defined_balise<Balise_Style_Datas>("h1", current_balise);
         // Create the <h2> style
         current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.alignment_horizontal = Alignment_Horizontal::H_Left;
         current_balise.get()->style.color = Color(0, 0, 0); current_balise.get()->style.font_size = 35; current_balise.get()->style.font = get_system_font(__default_font);
@@ -1130,7 +1135,8 @@ namespace scls {
 
     // Update the text in each lines, without others modification
     void Text_Image_Block::update_line_text() {
-        std::vector<std::string> cutted = cut_string(text(), "</br>", false, true);
+        std::string needed_text = scls::replace(text(), std::string("</br>"), std::string("<br>"));
+        std::vector<std::string> cutted = cut_string(needed_text, "<br>", false, true);
         std::vector<Line_Datas>& lines_text = a_lines_text; a_lines_text.clear();
         unsigned int current_position = 0;
         unsigned int current_position_in_plain_text = 0;
