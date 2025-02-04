@@ -160,7 +160,7 @@ namespace scls {
         if(text_bottom_image.get() != 0){final_width = text_bottom_image.get()->width();}
         if(text_top_image.get() != 0 && text_top_image.get()->width() > final_width) {final_width = text_top_image.get()->width();}
         final_width += text_x + branch_width;
-        scls::Image* img = new scls::Image(static_cast<short>(final_width), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGB);
+        scls::Image* img = new scls::Image(static_cast<short>(final_width), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGBA);
 
         // First branch
         img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_1);
@@ -179,7 +179,7 @@ namespace scls {
         // Text
         if(text_number == 1) {text_y = img->height() / 2.0 - text_top_image.get()->height() / 2.0;}
         else if(text_number == 2){text_y = 0;}
-        if(text_top_image.get() != 0){img->paste(text_top_image.get(), text_x, text_y);}
+        if(text_top_image.get() != 0){img->paste(text_top_image.get(), text_x, text_y);std::cout << "P " << text_x << " " << text_y << std::endl; }
         if(text_number == 2){text_y = branch_y + branch_height - text_top_image.get()->height();}
         if(text_bottom_image.get() != 0){img->paste(text_bottom_image.get(), text_x, text_y);}
 

@@ -23,9 +23,7 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    scls::Text_Image_Generator gen;
-    scls::Text_Style style; style.font_size = 300;
-    gen.image_shared_ptr("<math><mi>E</mi><esh><esh><sub>S</sub><mi>dS</mi><mo>=</mo><esh><esh><esh><sub>V</sub><vec><nabla></vec><vec>E</vec><mi>dV</mi></math>", style).get()->save_png("test/math.png");
+    scls::aster_system_logo("PLEOS").get()->save_png("tests/logo.png");
 
     return 0;
 }

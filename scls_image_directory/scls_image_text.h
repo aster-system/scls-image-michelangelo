@@ -597,7 +597,7 @@ namespace scls {
         Image* image(Image_Generation_Type generation_type);
         inline Image* image() {return image(Image_Generation_Type::IGT_Full);};
         // Returns the shared pointer of the image and generates it if needed
-        inline std::shared_ptr<Image>& image_shared_pointer(Image_Generation_Type generation_type) { if(a_last_image.get() == 0) image(generation_type); return a_last_image;};
+        inline std::shared_ptr<Image>& image_shared_pointer(Image_Generation_Type generation_type) { if(a_last_image.get() == 0 || generation_type == Image_Generation_Type::IGT_Size){image(generation_type);} return a_last_image;};
         inline std::shared_ptr<Image>& image_shared_pointer() { if(a_last_image.get() == 0) image(Image_Generation_Type::IGT_Full); return a_last_image;};
         // Returns the line at a plain text position given, or 0
         inline Text_Image_Line* line_at_position_in_plain_text(unsigned int position) {int final_position = line_number_at_position_in_plain_text(position);if(final_position == -1){return 0;}return lines()[final_position];};
@@ -687,9 +687,10 @@ namespace scls {
         void __delete_blocks(unsigned int max_size = 0) { a_blocks.clear(); };
         // Deletes the last blocks in a vector
         void free_memory() {__delete_blocks();};
-        // Generate each blocks in the multiblocks (and delete the previous ones)
+        // Generates each blocks in the multiblocks (and delete the previous ones)
         void generate_blocks();
         inline void generate_blocks(std::string text_to_analyse) {update_blocks_datas(text_to_analyse);generate_blocks();};
+        std::shared_ptr<Text_Image_Block> generate_next_block(int i);
         // Return the entire text in an image
         Image* image(Image_Generation_Type generation_type, const std::string& start_text);
         Image* image() {return image(Image_Generation_Type::IGT_Full, text());};
@@ -702,6 +703,7 @@ namespace scls {
         inline void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;};
         // Update the datas of each blocks
         void update_blocks_datas(String text_to_analyse);
+        inline void update_blocks_datas(){return update_blocks_datas(text());};
 
         // Plain text handling
         // Returns the plain text of the image
@@ -711,6 +713,7 @@ namespace scls {
 
         // Getters and setters
         inline std::vector<std::shared_ptr<Text_Image_Block>>& blocks() {return a_blocks;};
+        inline std::vector<std::shared_ptr<Block_Datas>>& blocks_datas() {return a_blocks_datas;};
         inline _Balise_Style_Container* defined_balises() {return a_defined_balises.get();};
         inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
         inline Balise_Style_Datas* defined_balises(std::string balise) {return defined_balises()->defined_balise_style(balise);};
