@@ -88,17 +88,48 @@ namespace scls {
 	enum Alignment_Vertical {V_Top, V_Center, V_Bottom, V_User_Defined};
 
 	// Style about a text
-    struct Text_Style {
-        // Horizontal alignment of the text
-        Alignment_Horizontal alignment_horizontal = Alignment_Horizontal::H_Left;
-        // Color of the background color
-        Color background_color = Color(255, 255, 255);
-        // Color of the text
-        Color color = Color(0, 0, 0);
+    class Text_Style {
+    public:
+
+        // Text_Style constructor
+        Text_Style(){};
+
+        // Returns the block of this style
+        inline Text_Style* block_style() const {return a_block_style.lock().get();};
+        // Merges a style with this style
+        void merge_style(Text_Style to_merge);
+        // Returns the parent of this style
+        inline Text_Style* parent_style() const {return a_parent_style.lock().get();};
+        // Sets the shared ptr to the block style
+        inline void set_block_style(std::shared_ptr<Text_Style> block_style){a_block_style=block_style;};
+        // Sets the shared ptr to the parent style
+        inline void set_parent_style(std::weak_ptr<Text_Style> parent_style){a_parent_style=parent_style;};
+        // Sets the shared ptr to this style
+        inline void set_this_style(std::weak_ptr<Text_Style> this_style){a_this_style=this_style;};
+
+        // Getters and setters
+        // Alignment horizontal
+        inline Alignment_Horizontal alignment_horizontal() const {if(a_alignment_horizontal_modified || parent_style() == 0){return a_alignment_horizontal;}else{return parent_style()->alignment_horizontal();}};
+        inline void set_alignment_horizontal(Alignment_Horizontal new_alignment_horizontal){a_alignment_horizontal=new_alignment_horizontal;a_alignment_horizontal_modified=true;};
+        inline void unset_alignment_horizontal(){a_alignment_horizontal_modified=false;};
+        // Background color
+        inline Color background_color() const {if(a_background_color_modified || parent_style() == 0){return a_background_color;}else{return parent_style()->background_color();}};
+        inline void set_background_color(Color new_background_color){a_background_color=new_background_color;a_background_color_modified=true;};
+        inline void unset_background_color(){a_background_color_modified=false;};
+        // Color
+        inline Color color() const {if(a_color_modified || (parent_style() == 0 && block_style() == 0)){return a_color;}else if(block_style()!=0){if(block_style()->color_modified()){return block_style()->color();}else if(parent_style()==0){return a_color;}}return parent_style()->color();};
+        inline bool color_modified() const {return a_color_modified;};
+        inline void set_color(Color new_color){a_color=new_color;a_color_modified=true;};
+        inline void unset_color(){a_color_modified=false;};
+        // Font size
+        inline unsigned short font_size() const {if(a_font_size_modified || (parent_style() == 0 && block_style() == 0)){return a_font_size;}else if(block_style()!=0){if(block_style()->font_size_modified()){return block_style()->font_size();}else if(parent_style()==0){return a_font_size;}}return parent_style()->font_size();};
+        inline bool font_size_modified() const {return a_font_size_modified;};
+        inline void set_font_size(unsigned short new_font_size){a_font_size=new_font_size;a_font_size_modified=true;};
+        inline void unset_font_size(){a_font_size_modified=false;};
+
+        // TEMPORARY
         // Font of the style
         Font font;
-        // Font size of the style
-        unsigned short font_size = 20;
         // Max width of the text (only in pixel for now)
         int max_width = -1;
         // Height pos of the text offset
@@ -109,7 +140,6 @@ namespace scls {
         double text_offset_x = 0;
         // Y pos of the text offset
         double text_offset_y = 0;
-
         // Border handling
         inline void set_border_width(int new_border_width){border_bottom_width=new_border_width;border_left_width=new_border_width;border_right_width=new_border_width;border_top_width=new_border_width;};
         // Width of the border
@@ -119,6 +149,28 @@ namespace scls {
         int border_top_width = 0;
         // Color of the border
         Color border_color = scls::Color(0, 0, 0);
+
+    private:
+
+        // Horizontal alignment of the text
+        Alignment_Horizontal a_alignment_horizontal = Alignment_Horizontal::H_Left;
+        bool a_alignment_horizontal_modified = false;
+        // Color of the background color
+        Color a_background_color = Color(255, 255, 255);
+        bool a_background_color_modified = false;
+        // Color font of the style
+        Color a_color = Color(0, 0, 0);
+        bool a_color_modified = false;
+        // Font size of the style
+        unsigned short a_font_size = 20;
+        bool a_font_size_modified = false;
+
+        // Block-style-arent of this style
+        std::weak_ptr<Text_Style> a_block_style;
+        // Parent of this style
+        std::weak_ptr<Text_Style> a_parent_style;
+        // Shared ptr to this style
+        std::weak_ptr<Text_Style> a_this_style;
     };
 
     //*********
@@ -128,7 +180,7 @@ namespace scls {
 	//*********
 
 	// Balise in a text
-    struct Balise_Style_Datas : public Balise_Datas {Text_Style style;};
+    struct Balise_Style_Datas : public Balise_Datas {Balise_Style_Datas(){style.get()->set_this_style(style);};std::shared_ptr<Text_Style> style=std::make_shared<Text_Style>();};;
 
     class _Balise_Style_Container : public __Balise_Container {
         // Class faciliting the handle of balises, with style
@@ -254,10 +306,15 @@ namespace scls {
 
     struct Line_Datas {
         // Struct containing the datas necessary for a line
+        // Line_Datas constructor
+        Line_Datas(){a_global_style.get()->set_this_style(a_global_style);};
+
         // Content of the line
         std::shared_ptr<XML_Text> content;
         // Content in plain text of the line
         String content_in_plain_text;
+        // Global style in the line
+        std::shared_ptr<Text_Style> a_global_style = std::make_shared<Text_Style>();
 
         // Number of the line (starting by 0)
         unsigned int line_number = 0;
@@ -273,13 +330,13 @@ namespace scls {
     struct Block_Datas {
         // Struct containing the datas necessary for a block
         // Block_Datas constructor
-        Block_Datas(std::shared_ptr<XML_Text> block_content) : content(block_content) {}
+        Block_Datas(std::shared_ptr<XML_Text> block_content) : content(block_content) {global_style.get()->set_this_style(global_style);}
 
         // Content of the balise
         std::shared_ptr<XML_Text> content;
 
         // Global style in the block
-        Text_Style global_style;
+        std::shared_ptr<Text_Style> global_style = std::make_shared<Text_Style>();
 
         // Max width of the block
         int max_width = 0;
@@ -389,7 +446,7 @@ namespace scls {
         //*********
 
         // Most simple Text_Image_Line constructor
-        Text_Image_Line(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<XML_Text> text, Text_Style global_style) : a_defined_balises(defined_balises), a_global_style(global_style) {set_text(text);};
+        Text_Image_Line(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<XML_Text> text) : a_defined_balises(defined_balises) {set_text(text);};
         // Text_Image_Line destructor
         ~Text_Image_Line() {free_memory();};
 
@@ -400,7 +457,8 @@ namespace scls {
 
         // Getters and setters
         inline Line_Datas datas() const {return a_datas;};
-        inline Text_Style global_style() const {return a_global_style;};
+        inline Text_Style* global_style() const {return a_datas.a_global_style.get();};
+        inline std::shared_ptr<Text_Style> global_style_shared_ptr() const {return a_datas.a_global_style;};
         inline bool has_been_modified() const {return a_has_been_modified;};
         inline bool is_modified() const {return a_modified;};
         inline unsigned int line_start_position() const {return a_datas.start_position;};
@@ -409,7 +467,7 @@ namespace scls {
         inline void set_has_been_modified(bool new_has_been_modified) {a_has_been_modified = new_has_been_modified;};
         inline void set_line_start_position(unsigned int new_line_start_position) {a_datas.start_position = new_line_start_position;};
         inline void set_line_start_position_in_plain_text(unsigned int new_line_start_position_in_plain_text) {a_datas.start_position_in_plain_text = new_line_start_position_in_plain_text;};
-        inline void set_max_width(int new_max_width) {a_global_style.max_width = new_max_width;if(a_update_at_max_width_modification){generate_words();}};
+        inline void set_max_width(int new_max_width) {global_style()->max_width = new_max_width;if(a_update_at_max_width_modification){generate_words();}};
         inline void set_modified(bool new_modified) {a_modified = new_modified;};
         inline void set_text(std::shared_ptr<XML_Text> new_text, bool move_cursor = true) {a_datas.content = new_text;a_datas.content_in_plain_text = a_defined_balises.get()->plain_text(new_text.get()->full_text());if(move_cursor){set_cursor_position_in_plain_text(a_datas.content_in_plain_text.size());}};
         inline XML_Text* text() const {return a_datas.content.get();};
@@ -445,8 +503,9 @@ namespace scls {
         std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<XML_Text> content, Text_Style current_style);
         inline std::shared_ptr<__Math_Part_Image> generate_maths(std::string content, Text_Style current_style){return generate_maths(xml(a_defined_balises, content), current_style);};
         // Generates the needed words (and balises)
-        void __generate_words_without_balise(std::string text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text);
-        void generate_words();
+        void __generate_words_without_balise(std::string text, Text_Style current_style, unsigned int& current_position_in_plain_text);
+        void generate_words(XML_Text* cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style);
+        inline void generate_words(){free_memory();unsigned int current_position_in_plain_text = 0; generate_words(text(), current_position_in_plain_text, global_style_shared_ptr());};
         // Generates a word
         std::shared_ptr<Text_Image_Word> _generate_word(const std::string& word, const Text_Style& style, unsigned int start_position_in_plain_text);
         // Generates and returns an image of the line
@@ -474,8 +533,6 @@ namespace scls {
         Line_Datas a_datas;
         // Containers of each defined balises
         std::shared_ptr<_Balise_Style_Container> a_defined_balises;
-        // Global style in the block
-        Text_Style a_global_style;
         // If the line has been modified or not
         bool a_has_been_modified = true;
         // Number of sublines in this line
@@ -539,7 +596,8 @@ namespace scls {
 
         // Getters and setters
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
-        inline Text_Style& global_style() {return a_datas.get()->global_style;};
+        inline Text_Style* global_style() {return a_datas.get()->global_style.get();};
+        inline std::shared_ptr<Text_Style> global_style_shared_ptr() {return a_datas.get()->global_style;};
         inline void set_text(std::shared_ptr<XML_Text> new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_line_text();};
         inline void set_text(String new_text, bool move_cursor = true) {set_text(xml(a_defined_balises, new_text.to_std_string()), move_cursor);};
         inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(to_utf_8_code_point(new_text)), move_cursor);};
@@ -562,7 +620,7 @@ namespace scls {
         inline int cursor_x() const {return a_cursor_x;};
         inline int cursor_y() const {return a_cursor_y;};
         inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;};
-        inline void set_max_width(int new_max_width) {a_current_style.max_width = new_max_width;};
+        inline void set_max_width(int new_max_width) {global_style()->max_width = new_max_width;};
         inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
         inline bool use_cursor() const {return a_use_cursor;};
 
@@ -579,7 +637,7 @@ namespace scls {
         // Delete the useless generated lines
         inline void delete_useless_generated_lines() {for(int i = 0;i<static_cast<int>(a_lines.size()) - static_cast<int>(a_lines_text.size());i++) {delete a_lines[a_lines.size() - 1];a_lines.pop_back();}};
         // Generate the lines of the block
-        Text_Image_Line* _generate_line(Line_Datas datas, const Text_Style& style);
+        Text_Image_Line* _generate_line(Line_Datas datas);
         inline void generate_lines(bool entirely = true){if(!entirely && type() != Block_Type::BT_Always_Free_Memory) {_regenerate_lines();}else {free_memory();_regenerate_lines();}};;
         // Generates the next line to be generated and returns it
         Text_Image_Line* generate_next_line(unsigned int line_number);
@@ -587,7 +645,7 @@ namespace scls {
         // Regenerate the lines with a new text
         inline void _regenerate_lines() {std::vector<Line_Datas>& cutted = a_lines_text;reset_line_generation();for(int i = 0;i<static_cast<int>(a_lines_text.size());i++) {generate_next_line(i);} delete_useless_generated_lines();};
         // Reset the generation of lines
-        inline void reset_line_generation() {_check_modified_lines();a_current_line = 0;a_current_style = global_style();a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;};
+        inline void reset_line_generation() {_check_modified_lines();a_current_line = 0;a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;};
 
         // Add text to the block
         void add_text(String first_text);
@@ -663,8 +721,6 @@ namespace scls {
 
         // Current line which should be generated
         unsigned int a_current_line = 0;
-        // Current style for the line generation
-        Text_Style a_current_style;
         // Last created lines in the block
         std::vector<Text_Image_Line*> a_lines = std::vector<Text_Image_Line*>();
         // Last created lines text in the block
@@ -677,7 +733,7 @@ namespace scls {
         // Class containing a lot of block text
     public:
         // Most simple Text_Image constructor
-        Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text) : a_defined_balises(defined_balises) { set_text(text); };
+        Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text) : a_defined_balises(defined_balises) {a_global_style.get()->set_this_style(a_global_style);set_text(text); };
         // Text_Image destructor
         ~Text_Image_Multi_Block() { __delete_blocks(); };
 
@@ -717,16 +773,15 @@ namespace scls {
         inline _Balise_Style_Container* defined_balises() {return a_defined_balises.get();};
         inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
         inline Balise_Style_Datas* defined_balises(std::string balise) {return defined_balises()->defined_balise_style(balise);};
-        inline Text_Style& global_style() {return a_global_style;};
+        inline Text_Style* global_style() const {return a_global_style.get();};
+        inline std::shared_ptr<Text_Style> global_style_shared_ptr() const {return a_global_style;};
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
-        inline void set_text(String new_text) {update_blocks_datas(new_text);};
+        inline void set_text(String new_text) {a_blocks.clear();update_blocks_datas(new_text);};
         String text() const;
     private:
-        // Current style used for the formatting
-        Text_Style a_current_style;
         // Global style in the text
-        Text_Style a_global_style;
+        std::shared_ptr<Text_Style> a_global_style = std::make_shared<Text_Style>();
 
         // Containers of each defined balises
         std::shared_ptr<_Balise_Style_Container> a_defined_balises;
@@ -761,7 +816,7 @@ namespace scls {
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(a_balises, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
         // Create an image from a text and return it
         template <typename T = Text_Image_Block>
-        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<T> img = std::make_shared<T>(a_balises, text);img.get()->global_style() = style;return img.get()->image_shared_pointer();};
+        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<T> img = std::make_shared<T>(a_balises, text);img.get()->global_style()->merge_style(style);return img.get()->image_shared_pointer();};
         inline std::shared_ptr<Image> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
         // Returns a newly created text image
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(a_balises, text, type);return img;};

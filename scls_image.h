@@ -146,11 +146,11 @@ namespace scls {
         if(text_number > 0) {
             // Paste the text at the top
             scls::Text_Style style;
-            style.color = color_text; style.font.font_path = LOGO_FONT_PATH; style.font_size = font_size;
+            style.set_color(color_text); style.font.font_path = LOGO_FONT_PATH; style.set_font_size(font_size);
             text_top_image = tig.get()->image_shared_ptr(text_top, style);
             if(text_number > 1) {
                 // Paste the text at the bottom
-                style.color = color_text; style.font_size = font_size;
+                style.set_color(color_text); style.set_font_size(font_size);
                 text_bottom_image = tig.get()->image_shared_ptr(text_bottom, style);
             }
         }
