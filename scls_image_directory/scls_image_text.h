@@ -261,10 +261,12 @@ namespace scls {
 
         // Getters and setters
         inline String balise_content()const{return a_balise_content;};
+        inline std::shared_ptr<XML_Text> balise_parent()const{return a_balise_parent;};
         inline short bottom_offset() const {return a_bottom_offset;};
         inline std::vector<int>& characters_position() {return a_characters_position;};
         inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
         inline void set_balise_content(std::string new_balise_content){a_balise_content=new_balise_content;};
+        inline void set_balise_parent(std::shared_ptr<XML_Text> new_balise_parent){a_balise_parent=new_balise_parent;};
         inline void set_bottom_offset(short new_bottom_offset) {a_bottom_offset = new_bottom_offset;};
         inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
         inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
@@ -277,6 +279,8 @@ namespace scls {
     private:
         // Content of the balise
         String a_balise_content;
+        // Parent XML balise of this word
+        std::shared_ptr<XML_Text> a_balise_parent;
         // Content of the line
         String a_content;
         // Style of the text
@@ -395,6 +399,7 @@ namespace scls {
         inline Word_Datas datas() const {return a_datas;};
         inline Image* image() { return a_last_image.get(); };
         std::shared_ptr<Image> image_shared_pointer() {return a_last_image;};
+        inline void set_balise_parent(std::shared_ptr<XML_Text> new_balise_parent){a_datas.set_balise_parent(new_balise_parent);};
         inline void set_image_shared_ptr(std::shared_ptr<Image> img) {a_last_image=img;};
 
     private:
@@ -481,6 +486,8 @@ namespace scls {
 
         // Returns the position of the cursor in plain text with a X position
         int cursor_position_in_plain_text_at_x(int x_position);
+        // Returns a word at a position in pixel
+        std::shared_ptr<Text_Image_Word> word_at_position_in_pixel(int x, int y);
 
         // Getters and setters
         inline int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
@@ -503,9 +510,9 @@ namespace scls {
         std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<XML_Text> content, Text_Style current_style);
         inline std::shared_ptr<__Math_Part_Image> generate_maths(std::string content, Text_Style current_style){return generate_maths(xml(a_defined_balises, content), current_style);};
         // Generates the needed words (and balises)
-        void __generate_words_without_balise(std::string text, Text_Style current_style, unsigned int& current_position_in_plain_text);
-        void generate_words(XML_Text* cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style);
-        inline void generate_words(){free_memory();unsigned int current_position_in_plain_text = 0; generate_words(text(), current_position_in_plain_text, global_style_shared_ptr());};
+        void __generate_words_without_balise(std::shared_ptr<XML_Text> text, Text_Style current_style, unsigned int& current_position_in_plain_text);
+        void generate_words(std::shared_ptr<XML_Text> cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style);
+        inline void generate_words(){free_memory();unsigned int current_position_in_plain_text = 0; generate_words(text_shared_ptr(), current_position_in_plain_text, global_style_shared_ptr());};
         // Generates a word
         std::shared_ptr<Text_Image_Word> _generate_word(const std::string& word, const Text_Style& style, unsigned int start_position_in_plain_text);
         // Generates and returns an image of the line
@@ -629,6 +636,9 @@ namespace scls {
         // Optimisation system
         //
         //*********
+
+        // Returns the line at a position in pixel
+        Text_Image_Line* line_at_position_in_pixel(int x, int y, int& needed_y);
 
         // Check the modified lines
         inline void _check_modified_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) {if(a_lines[i] != 0) {if(a_lines[i]->is_modified()) {delete a_lines[i]; a_lines[i] = 0;}}}};

@@ -232,6 +232,10 @@ namespace scls {
         current_balise.get()->has_content = true;
         current_balise.get()->style.get()->set_color(Color(255, 0, 0));
         set_defined_balise<Balise_Style_Datas>("important", current_balise);
+        // Create the <a> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise<Balise_Style_Datas>("a", current_balise);
 
         // Mathematicals styles
 
@@ -738,12 +742,13 @@ namespace scls {
         current_position_in_plain_text++;
         current_width += resize_image.get()->width();
     }
-    void Text_Image_Line::__generate_words_without_balise(std::string text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text) {
+    void Text_Image_Line::__generate_words_without_balise(std::shared_ptr<XML_Text> text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text) {
         // Handle a single text
-        std::vector<std::string> words_cutted = cut_string(text, " ");
+        std::string words_content = format_string_as_plain_text(text.get()->text());
+        std::vector<std::string> words_cutted = cut_string(words_content, " ");
         // Get the needed words
         for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
-            Word_Datas data_to_add = Word_Datas();
+            Word_Datas data_to_add = Word_Datas(); data_to_add.set_balise_parent(text);
             std::string word_content = words_cutted[j];
             std::shared_ptr<Text_Image_Word> word_to_add = _generate_word(word_content, current_style, current_position_in_plain_text);
             if(word_to_add.get() != 0) {
@@ -753,7 +758,7 @@ namespace scls {
             current_position_in_plain_text += word_content.size();
 
             // Add the part
-            if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+            if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(text);data_to_add = word_to_add.get()->datas();}
             a_words.push_back(word_to_add);
             a_words_datas.push_back(data_to_add);
 
@@ -768,36 +773,28 @@ namespace scls {
                 current_position_in_plain_text += word_content.size();
 
                 // Add the part
-                if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(text);data_to_add = word_to_add.get()->datas();}
                 a_words.push_back(word_to_add);
                 a_words_datas.push_back(data_to_add);
             }
         }
     }
-    void Text_Image_Line::generate_words(XML_Text* cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style) {
+    void Text_Image_Line::generate_words(std::shared_ptr<XML_Text> cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style) {
         // Create each words
         int& current_width = a_current_width; current_width = 0;
         std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
         short& y_offset = a_y_offset;
-        if(cutted->only_text()) {
-            // Handle a single text
-            std::string words_content = format_string_as_plain_text(cutted->text());
-            __generate_words_without_balise(words_content, *needed_style.get(), current_position_in_plain_text);
-        }
+        if(cutted.get()->only_text()) {__generate_words_without_balise(cutted, *needed_style.get(), current_position_in_plain_text);}
         else {
             // Handle a lot of balises
-            for(int i = 0;i<static_cast<int>(cutted->sub_texts().size());i++) {
+            for(int i = 0;i<static_cast<int>(cutted.get()->sub_texts().size());i++) {
                 std::shared_ptr<Text_Image_Word> word_to_add;
-                Word_Datas data_to_add = Word_Datas();
-                if(!cutted->sub_texts()[i].get()->use_balise()) {
-                    // Draw the image with a single text
-                    std::string words_content = format_string_as_plain_text(cutted->sub_texts()[i].get()->text());
-                    __generate_words_without_balise(words_content, *needed_style.get(), current_position_in_plain_text);
-                }
+                Word_Datas data_to_add = Word_Datas();data_to_add.set_balise_parent(cutted.get()->sub_texts()[i]);
+                if(!cutted.get()->sub_texts()[i].get()->use_balise()) {__generate_words_without_balise(cutted.get()->sub_texts()[i], *needed_style.get(), current_position_in_plain_text);}
                 else {
                     // Apply a balise
-                    std::string balise_content = cutted->sub_texts()[i].get()->xml_balise();
-                    std::string current_balise_name = cutted->sub_texts()[i].get()->xml_balise_name();
+                    std::string balise_content = cutted.get()->sub_texts()[i].get()->xml_balise();
+                    std::string current_balise_name = cutted.get()->sub_texts()[i].get()->xml_balise_name();
                     if(current_balise_name == "img") {
                         // The balise is an image
                         std::vector<std::string> attributes = cut_balise_by_attributes(balise_content);
@@ -864,7 +861,7 @@ namespace scls {
                         // The balise is a piece of mathml
                         Text_Style math_style = *global_style();
                         math_style.set_font_size(40); // EXPERIMENTAL
-                        std::shared_ptr<Image> src_img = generate_maths(cutted->sub_texts()[i], math_style).get()->image;
+                        std::shared_ptr<Image> src_img = generate_maths(cutted.get()->sub_texts()[i], math_style).get()->image;
                         __generate_image(word_to_add, src_img, current_position_in_plain_text, current_width, src_img.get()->height(), src_img.get()->width());
                         word_to_add.get()->set_balise_content(balise_content);
                     }
@@ -876,15 +873,15 @@ namespace scls {
                             balise_style.get()->set_block_style(needed_balise->style);
                             balise_style.get()->set_parent_style(needed_style);
                             balise_style.get()->set_this_style(balise_style);
-                            generate_words(cutted->sub_texts()[i].get(), current_position_in_plain_text, balise_style);
+                            generate_words(cutted.get()->sub_texts()[i], current_position_in_plain_text, balise_style);
                         }
                         else {
-                            generate_words(cutted->sub_texts()[i].get(), current_position_in_plain_text, needed_style);
+                            generate_words(cutted.get()->sub_texts()[i], current_position_in_plain_text, needed_style);
                         }
                     }
 
                     // Add the part
-                    if(word_to_add.get() != 0){data_to_add = word_to_add.get()->datas();}
+                    if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(cutted.get()->sub_texts()[i]);data_to_add = word_to_add.get()->datas();}
                     words.push_back(word_to_add);
                     a_words_datas.push_back(data_to_add);
                 }
@@ -1002,6 +999,29 @@ namespace scls {
         } a_line_height.push_back(current_height);
     };
 
+    // Returns a word at a position in pixel
+    std::shared_ptr<Text_Image_Word> Text_Image_Line::word_at_position_in_pixel(int x, int y) {
+        // Get the needed line
+        int current_height = a_line_height[0];
+        int current_width = 0; int current_line = 0; int i;
+        for(i = 0;i<static_cast<int>(a_words.size()) && current_height < y;i++) {
+            // Asserts
+            if(a_words[i].get() == 0){continue;}
+
+            // Check the max width
+            int image_width = a_words[i].get()->image()->width();
+            if(global_style()->max_width > 0 && current_width + image_width > global_style()->max_width) {
+                if(current_height > y){break;}
+                current_line++; current_height += a_line_height[current_line];current_width=0;
+            } current_width += image_width;
+        }
+
+        // Get the needed word
+        if(i < static_cast<int>(a_words.size())){
+            return a_words[i];
+        } return std::shared_ptr<Text_Image_Word>();
+    }
+
     //*********
 	//
 	// Text classes
@@ -1104,6 +1124,18 @@ namespace scls {
         }
 
         return current_line;
+    }
+
+    // Returns the line at a position in pixel
+    Text_Image_Line* Text_Image_Block::line_at_position_in_pixel(int x, int y, int& needed_y) {
+        int current_y = 0;
+        for(int i = 0;i<static_cast<int>(lines().size());i++) {
+            if(lines()[i] != 0) {
+                current_y += lines()[i]->image()->height();
+                if(y < current_y) {needed_y=current_y-lines()[i]->image()->height();return lines()[i];}
+            }
+        }
+        return lines()[lines().size() - 1];
     }
 
     // Add text to the block
