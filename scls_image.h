@@ -146,11 +146,11 @@ namespace scls {
         if(text_number > 0) {
             // Paste the text at the top
             scls::Text_Style style;
-            style.set_color(color_text); style.font.font_path = LOGO_FONT_PATH; style.set_font_size(font_size);
+            style.set_color(color_text); style.set_font_path(LOGO_FONT_PATH); style.set_font_size(font_size);
             text_top_image = tig.get()->image_shared_ptr(text_top, style);
             if(text_number > 1) {
                 // Paste the text at the bottom
-                style.set_color(color_text); style.set_font_size(font_size);
+                style.set_color(color_text);style.set_font_path(LOGO_FONT_PATH);style.set_font_size(font_size);
                 text_bottom_image = tig.get()->image_shared_ptr(text_bottom, style);
             }
         }
@@ -179,7 +179,7 @@ namespace scls {
         // Text
         if(text_number == 1) {text_y = img->height() / 2.0 - text_top_image.get()->height() / 2.0;}
         else if(text_number == 2){text_y = 0;}
-        if(text_top_image.get() != 0){img->paste(text_top_image.get(), text_x, text_y);std::cout << "P " << text_x << " " << text_y << std::endl; }
+        if(text_top_image.get() != 0){img->paste(text_top_image.get(), text_x, text_y);}
         if(text_number == 2){text_y = branch_y + branch_height - text_top_image.get()->height();}
         if(text_bottom_image.get() != 0){img->paste(text_bottom_image.get(), text_x, text_y);}
 
@@ -187,6 +187,7 @@ namespace scls {
     }
     inline std::shared_ptr<scls::Image> aster_system_logo(unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, "ASTER", "SYSTÈME");};
     inline std::shared_ptr<scls::Image> aster_system_logo(std::string single_text, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, single_text, "");};
+    inline std::shared_ptr<scls::Image> aster_system_logo(std::string text_top, std::string text_bottom, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, text_top, text_bottom);};
 };
 
 #endif // SCLS_IMAGE

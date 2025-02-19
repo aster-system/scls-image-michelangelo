@@ -121,6 +121,13 @@ namespace scls {
         inline bool color_modified() const {return a_color_modified;};
         inline void set_color(Color new_color){a_color=new_color;a_color_modified=true;};
         inline void unset_color(){a_color_modified=false;};
+        // Font
+        inline Font font()const{if(a_font_modified || (parent_style() == 0 && block_style() == 0)){return a_font;}else if(block_style()!=0){if(block_style()->font_modified()){return block_style()->font();}else if(parent_style()==0){return a_font;}}return parent_style()->font();};
+        inline bool font_modified() const {return a_font_modified;};
+        inline std::string font_path()const{return font().font_path;};
+        inline void set_font(Font new_font){a_font=new_font;a_font_modified=true;}
+        inline void set_font_path(std::string new_font_path){a_font.font_path=new_font_path;a_font_modified=true;};
+        inline void unset_font(){a_font_modified=false;};
         // Font size
         inline unsigned short font_size() const {if(a_font_size_modified || (parent_style() == 0 && block_style() == 0)){return a_font_size;}else if(block_style()!=0){if(block_style()->font_size_modified()){return block_style()->font_size();}else if(parent_style()==0){return a_font_size;}}return parent_style()->font_size();};
         inline bool font_size_modified() const {return a_font_size_modified;};
@@ -128,8 +135,6 @@ namespace scls {
         inline void unset_font_size(){a_font_size_modified=false;};
 
         // TEMPORARY
-        // Font of the style
-        Font font;
         // Max width of the text (only in pixel for now)
         int max_width = -1;
         // Height pos of the text offset
@@ -161,6 +166,9 @@ namespace scls {
         // Color font of the style
         Color a_color = Color(0, 0, 0);
         bool a_color_modified = false;
+        // Font of the style
+        Font a_font;
+        bool a_font_modified = false;
         // Font size of the style
         unsigned short a_font_size = 20;
         bool a_font_size_modified = false;
@@ -334,6 +342,7 @@ namespace scls {
     struct Block_Datas {
         // Struct containing the datas necessary for a block
         // Block_Datas constructor
+        Block_Datas(std::shared_ptr<XML_Text> block_content, std::shared_ptr<Text_Style> new_global_style) : content(block_content),global_style(new_global_style) {global_style.get()->set_this_style(global_style);}
         Block_Datas(std::shared_ptr<XML_Text> block_content) : content(block_content) {global_style.get()->set_this_style(global_style);}
 
         // Content of the balise
@@ -596,8 +605,10 @@ namespace scls {
         // Text_Image_Block constructor with a Block_Datas and an user defined type
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) { set_text(a_datas.get()->content); };
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas) : Text_Image_Block(defined_balises, datas, Block_Type::BT_Always_Free_Memory) {  };
-        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text)), type) {};
+        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
+        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, std::shared_ptr<Text_Style> style, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text), style), type) {};
+        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, std::shared_ptr<Text_Style> style) : Text_Image_Block(defined_balises, text, style, Block_Type::BT_Always_Free_Memory) { };
         // Text_Image_Block destructor
         ~Text_Image_Block() { free_memory(); };
 
@@ -826,7 +837,7 @@ namespace scls {
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(a_balises, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
         // Create an image from a text and return it
         template <typename T = Text_Image_Block>
-        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<T> img = std::make_shared<T>(a_balises, text);img.get()->global_style()->merge_style(style);return img.get()->image_shared_pointer();};
+        inline std::shared_ptr<Image> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<T> img = std::make_shared<T>(a_balises, text, std::make_shared<Text_Style>(style));return img.get()->image_shared_pointer();};
         inline std::shared_ptr<Image> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
         // Returns a newly created text image
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(a_balises, text, type);return img;};

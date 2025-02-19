@@ -23,7 +23,7 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    scls::aster_system_logo("PLEOS").get()->save_png("tests/logo.png");
+    scls::aster_system_logo("ASTER", "CITY").get()->save_png("tests/aster_city.png");
 
     return 0;
 }

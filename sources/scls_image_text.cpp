@@ -187,13 +187,24 @@ namespace scls {
         if(to_merge.a_alignment_horizontal){set_alignment_horizontal(to_merge.a_alignment_horizontal);}
         if(to_merge.a_background_color_modified){set_background_color(to_merge.a_background_color);}
         if(to_merge.a_color_modified){set_color(to_merge.a_color);}
+        if(to_merge.a_font_modified){set_font(to_merge.a_font);}
         if(to_merge.a_font_size_modified){set_font_size(to_merge.a_font_size);}
-        font = to_merge.font;max_width = to_merge.max_width;
+        max_width = to_merge.max_width;
     };
 
 	// Load the built-ins balises
     void _Balise_Style_Container::_load_built_in_balises() {
         std::shared_ptr<Balise_Style_Datas> current_balise = std::make_shared<Balise_Style_Datas>();
+
+        // HTML styles
+
+        // Create the <DOCTYPE> style
+        current_balise.get()->has_content = false;
+        current_balise.get()->is_break_line = true;
+        set_defined_balise("DOCTYPE", current_balise);
+        // Create the <body> style
+        current_balise.get()->has_content = true;
+        set_defined_balise("body", current_balise);
         // Create the <br> style
         current_balise.get()->has_content = false;
         current_balise.get()->is_break_line = true;
@@ -203,6 +214,9 @@ namespace scls {
         current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         set_defined_balise<Balise_Style_Datas>("div", current_balise);
+        // Create the <head> style
+        current_balise.get()->has_content = true;
+        set_defined_balise("head", current_balise);
         // Create the <p> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -213,7 +227,7 @@ namespace scls {
         current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.get()->set_alignment_horizontal(Alignment_Horizontal::H_Center);
-        current_balise.get()->style.get()->set_color(Color(255, 0, 0)); current_balise.get()->style.get()->set_font_size(50); current_balise.get()->style.get()->font = get_system_font(__default_font);
+        current_balise.get()->style.get()->set_color(Color(255, 0, 0)); current_balise.get()->style.get()->set_font_size(50); current_balise.get()->style.get()->set_font(get_system_font(__default_font));
         set_defined_balise<Balise_Style_Datas>("h1", current_balise);
         // Create the <h2> style
         current_balise = std::make_shared<Balise_Style_Datas>();
@@ -227,6 +241,10 @@ namespace scls {
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.get()->set_font_size(30);
         set_defined_balise<Balise_Style_Datas>("h3", current_balise);
+        // Create the <html> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("html", current_balise);
         // Create the <important> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -247,7 +265,7 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         current_balise.get()->style.get()->set_font_size(40);
-        current_balise.get()->style.get()->font = get_system_font("DejaVuMathTeXGyre");
+        current_balise.get()->style.get()->set_font(get_system_font("DejaVuMathTeXGyre"));
         set_defined_balise<Balise_Style_Datas>("math", current_balise);
         // Create the <mi> style
         current_balise = std::make_shared<Balise_Style_Datas>();
@@ -299,7 +317,7 @@ namespace scls {
     // Generate the image of the word
     void Text_Image_Word::generate_word() {
         // Base variables for the creation
-        std::string path = style().font.font_path;
+        std::string path = style().font_path();
         if(path == ""){path = get_system_font(__default_font).font_path;}
 
         // Load the FreeType base system
@@ -407,10 +425,7 @@ namespace scls {
         }
 
         // Join each threads
-        for(int i = 0;i<static_cast<int>(threads.size());i++) {
-            threads[i]->join();
-            delete threads[i];
-        }
+        for(int i = 0;i<static_cast<int>(threads.size());i++) {threads[i]->join();delete threads[i];}
         FT_Done_Face(face);
     };
 
@@ -701,7 +716,7 @@ namespace scls {
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
 
         // EXPERIMENTAL
-        current_style.font = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises->defined_balise("math"))->style.get()->font;
+        current_style.set_block_style(reinterpret_cast<Balise_Style_Datas*>(a_defined_balises->defined_balise("math"))->style);
 
         if(content.get()->only_text()) {
             // If the content is only a text
