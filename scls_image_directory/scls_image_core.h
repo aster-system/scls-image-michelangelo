@@ -296,6 +296,9 @@ namespace scls
         void draw_arrow(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double hat_position_in_percentage, double hat_size_in_percentage, unsigned short line_width);
         inline void draw_arrow(int x_1, int y_1, int x_2, int y_2, Color color, double hat_position_in_percentage, double hat_size_in_percentage, unsigned short width) {draw_arrow(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), hat_position_in_percentage, hat_size_in_percentage, width);};
         inline void draw_arrow(int x_1, int y_1, int x_2, int y_2, Color color, double hat_percentage, unsigned short width) {draw_arrow(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), 1, hat_percentage, width);};
+        // Draws a border on the image
+        void draw_border(int top, int left, int bottom, int right, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
+        inline void draw_border(int top, int left, int bottom, int right, scls::Color color){draw_border(top, left, bottom, right, color.red(), color.green(), color.blue(), color.alpha());};
         // Draw a line on the image
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
         inline void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);};

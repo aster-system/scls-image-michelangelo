@@ -345,6 +345,9 @@ namespace scls {
         Block_Datas(std::shared_ptr<XML_Text> block_content, std::shared_ptr<Text_Style> new_global_style) : content(block_content),global_style(new_global_style) {global_style.get()->set_this_style(global_style);}
         Block_Datas(std::shared_ptr<XML_Text> block_content) : content(block_content) {global_style.get()->set_this_style(global_style);}
 
+        // Adds text in the block
+        void add_text(std::string text);
+
         // Content of the balise
         std::shared_ptr<XML_Text> content;
 
@@ -519,6 +522,8 @@ namespace scls {
         std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<XML_Text> content, Text_Style current_style);
         inline std::shared_ptr<__Math_Part_Image> generate_maths(std::string content, Text_Style current_style){return generate_maths(xml(a_defined_balises, content), current_style);};
         // Generates the needed words (and balises)
+        static void __generate_image(std::shared_ptr<Text_Image_Word>& word, std::shared_ptr<Image> resize_image, unsigned int& current_position_in_plain_text, int& current_width, int height, int width);
+        virtual void generate_word(std::shared_ptr<XML_Text> current_text, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style, std::shared_ptr<Text_Image_Word>& word_to_add);
         void __generate_words_without_balise(std::shared_ptr<XML_Text> text, Text_Style current_style, unsigned int& current_position_in_plain_text);
         void generate_words(std::shared_ptr<XML_Text> cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style);
         inline void generate_words(){free_memory();unsigned int current_position_in_plain_text = 0; generate_words(text_shared_ptr(), current_position_in_plain_text, global_style_shared_ptr());};
@@ -536,7 +541,8 @@ namespace scls {
         // Paste a letter of a word in an image with thread system
         void __word_letter(Image* image_to_apply, Image* image_to_paste, unsigned int x, unsigned int y) {image_to_apply->paste(image_to_paste, x, y);delete image_to_paste; image_to_paste = 0;};
 
-    private:
+    protected:
+
         //*********
         //
         // Text_Image_Line mains attributes
@@ -545,6 +551,14 @@ namespace scls {
 
         // Current width of the line
         int a_current_width = 0;
+
+    private:
+        //*********
+        //
+        // Text_Image_Line mains attributes
+        //
+        //*********
+
         // Datas about the line
         Line_Datas a_datas;
         // Containers of each defined balises
@@ -655,11 +669,14 @@ namespace scls {
         inline void _check_modified_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) {if(a_lines[i] != 0) {if(a_lines[i]->is_modified()) {delete a_lines[i]; a_lines[i] = 0;}}}};
         // Clear the memory from the lines
         inline void clear_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) { if(a_lines[i] != 0) delete a_lines[i]; } a_lines.clear(); };
+        // Creates and returns a line for the block
+        virtual Text_Image_Line* __create_line(Line_Datas& needed_datas){return new Text_Image_Line(a_defined_balises, needed_datas.content);};
         // Delete the useless generated lines
         inline void delete_useless_generated_lines() {for(int i = 0;i<static_cast<int>(a_lines.size()) - static_cast<int>(a_lines_text.size());i++) {delete a_lines[a_lines.size() - 1];a_lines.pop_back();}};
-        // Generate the lines of the block
+        // Generate all the lines of the block
         Text_Image_Line* _generate_line(Line_Datas datas);
-        inline void generate_lines(bool entirely = true){if(!entirely && type() != Block_Type::BT_Always_Free_Memory) {_regenerate_lines();}else {free_memory();_regenerate_lines();}};;
+        inline void generate_lines(bool entirely){if(entirely){free_memory();}_regenerate_lines();};;
+        inline void generate_lines(){generate_lines(true);};
         // Generates the next line to be generated and returns it
         Text_Image_Line* generate_next_line(unsigned int line_number);
         Text_Image_Line* generate_next_line() {Text_Image_Line* to_return = generate_next_line(a_current_line);a_current_line++;return to_return;};
@@ -676,8 +693,8 @@ namespace scls {
         Image* image(Image_Generation_Type generation_type);
         inline Image* image() {return image(Image_Generation_Type::IGT_Full);};
         // Returns the shared pointer of the image and generates it if needed
-        inline std::shared_ptr<Image>& image_shared_pointer(Image_Generation_Type generation_type) { if(a_last_image.get() == 0 || generation_type == Image_Generation_Type::IGT_Size){image(generation_type);} return a_last_image;};
-        inline std::shared_ptr<Image>& image_shared_pointer() { if(a_last_image.get() == 0) image(Image_Generation_Type::IGT_Full); return a_last_image;};
+        inline std::shared_ptr<Image>& image_shared_pointer(Image_Generation_Type generation_type) {image(generation_type);return a_last_image;};
+        inline std::shared_ptr<Image>& image_shared_pointer() { return image_shared_pointer(Image_Generation_Type::IGT_Full);};
         // Returns the line at a plain text position given, or 0
         inline Text_Image_Line* line_at_position_in_plain_text(unsigned int position) {int final_position = line_number_at_position_in_plain_text(position);if(final_position == -1){return 0;}return lines()[final_position];};
         // Returns the line number at the position given, or 0
@@ -756,10 +773,12 @@ namespace scls {
         // Most simple Text_Image constructor
         Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text) : a_defined_balises(defined_balises) {a_global_style.get()->set_this_style(a_global_style);set_text(text); };
         // Text_Image destructor
-        ~Text_Image_Multi_Block() { __delete_blocks(); };
+        ~Text_Image_Multi_Block() {__delete_blocks();};
 
         // Generates and returns a block
         Text_Image_Block* _block(std::shared_ptr<Block_Datas> block) { Text_Image_Block* new_block = new Text_Image_Block(a_defined_balises, block); return new_block; };
+        // Creates and returns a Text_Image_Block
+        virtual std::shared_ptr<Text_Image_Block>__create_block(std::shared_ptr<Block_Datas>needed_datas){return std::make_shared<Text_Image_Block>(a_defined_balises, needed_datas);};
         // Deletes the blocks in the image
         void __delete_blocks(unsigned int max_size = 0) { a_blocks.clear(); };
         // Deletes the last blocks in a vector
@@ -842,7 +861,7 @@ namespace scls {
         // Returns a newly created text image
         inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(a_balises, text, type);return img;};
         // Returns a newly created text image multi block
-        inline Text_Image_Multi_Block* new_text_image_multi_block(std::string text) {Text_Image_Multi_Block *img = new Text_Image_Multi_Block(a_balises, text);return img;};
+        template <typename T = Text_Image_Multi_Block> T* new_text_image_multi_block(std::string text) {T *img = new T(a_balises, text);return img;};
 
         // Methods to directly use balises
         inline std::string plain_text(std::string text)const{return a_balises.get()->plain_text(text);};

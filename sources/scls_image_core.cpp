@@ -1141,6 +1141,14 @@ namespace scls {
         draw_line(current_x + needed_x, current_y + needed_y, current_x, current_y, red, green, blue, alpha, line_width);
     }
 
+    // Draws a border on the image
+    void Image::draw_border(int top, int left, int bottom, int right, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+        if(top > 0) {fill_rect(0, 0, width(), top, red, green, blue, alpha);}
+        if(left > 0) {fill_rect(0, 0, left, height(), red, green, blue, alpha);}
+        if(bottom > 0) {fill_rect(0, height() - bottom, width(), bottom, red, green, blue, alpha);}
+        if(right > 0) {fill_rect(width() - right, 0, right, height(), red, green, blue, alpha);}
+    }
+
     // Draw a line on the image
     void Image::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
         // Only case which the algorithm does not work correctly
