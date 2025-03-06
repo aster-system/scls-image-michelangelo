@@ -73,8 +73,8 @@
 
 // Include some others SCLS Images files (in development)
 #ifdef __ASTER_DEV
-#include "scls_image_directory/scls_image_fractal.h"
-#include "scls_image_directory/scls_image_math.h"
+#include "./scls_image_directory/scls_image_fractal.h"
+#include "./scls_image_directory/scls_image_math.h"
 #endif // __ASTER_DEV
 
 namespace scls {
