@@ -782,7 +782,7 @@ namespace scls {
         // Deletes the blocks in the image
         void __delete_blocks(unsigned int max_size = 0) { a_blocks.clear(); };
         // Deletes the last blocks in a vector
-        void free_memory() {__delete_blocks();};
+        void free_memory() {a_blocks.clear();a_blocks_datas.clear();};
         // Generates each blocks in the multiblocks (and delete the previous ones)
         void generate_blocks();
         inline void generate_blocks(std::string text_to_analyse) {update_blocks_datas(text_to_analyse);generate_blocks();};
