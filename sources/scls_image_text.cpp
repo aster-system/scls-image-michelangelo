@@ -1045,6 +1045,15 @@ namespace scls {
             } current_width += image_width;
         }
 
+        // Check the good x
+        for(;i<static_cast<int>(a_words.size());i++) {
+            // Asserts
+            if(a_words[i].get() == 0){continue;}
+            int image_width = a_words[i].get()->image()->width();
+            if(current_width + image_width > x){break;}
+            current_width += image_width;
+        }
+
         // Get the needed word
         if(i < static_cast<int>(a_words.size())){
             return a_words[i];
