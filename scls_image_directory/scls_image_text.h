@@ -72,6 +72,7 @@ namespace scls {
     void load_system_font();
 	// Return the system path of a font
     Font get_system_font(std::string font, bool bold = false, bool italic = false, bool condensed = false, bool light = false);
+    Font get_system_font();
 	// Print each system fonts
     void print_system_fonts();
 

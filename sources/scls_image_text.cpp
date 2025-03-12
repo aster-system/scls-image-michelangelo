@@ -88,7 +88,7 @@ namespace scls {
 
 	// Return the system path of a font
     Font get_system_font(std::string font, bool bold, bool italic, bool condensed, bool light) {
-	    if(__system_fonts.size() <= 0) load_system_font();
+	    if(__system_fonts.size() <= 0){load_system_font();}
 
 	    std::string last_name = "";
 	    if(bold) last_name += "b";
@@ -103,6 +103,7 @@ namespace scls {
 
         return __system_fonts[font + last_name];
 	};
+	Font get_system_font(){return get_system_font(__default_font, false, false, false, false);}
 
 	// Print each system fonts
     void print_system_fonts() {
@@ -362,7 +363,7 @@ namespace scls {
         std::vector<unsigned int> characters_width;
         std::vector<int> characters_x;
         std::vector<int> cursor_pos;
-        unsigned int final_character = 0; int current_character_level = 0;
+        unsigned int final_character = 0; int current_character_level = 0;int max_current_character_level = 0;
         int max_height = 0;
         short min_bottom_position = 0;
         int to_add_font_size = 0;
@@ -391,13 +392,22 @@ namespace scls {
                 if(y_position < min_bottom_position){min_bottom_position = y_position;}
                 total_width += real_width;
                 characters_width.push_back(real_width);
-                final_character = 0; current_character_level = 0;
-            } else if(utf_8_level(current_character) == 1) {
+                final_character = 0; current_character_level = 0;max_current_character_level = 0;
+            }
+            else if(utf_8_level(current_character) == 1 || current_character_level == 2) {
                 // Needs an UTF-8 leveling
                 current_character &= 0b00011111;
                 unsigned int to_compare_as_character = current_character;to_compare_as_character = to_compare_as_character << 6;
                 final_character |= to_compare_as_character;
-                current_character_level = 1;
+                current_character_level = 1;if(max_current_character_level == 0){max_current_character_level = 1;}
+            }
+            else if(utf_8_level(current_character) == 2) {
+                // Needs an UTF-8 leveling
+                current_character &= 0b00001111;
+                unsigned int to_compare_as_character = current_character;
+                to_compare_as_character = to_compare_as_character << 12;
+                final_character |= to_compare_as_character;
+                current_character_level = 2;max_current_character_level = 2;
             }
         }
         a_datas.set_bottom_offset(min_bottom_position);
@@ -670,17 +680,20 @@ namespace scls {
             // Generate a delta text
             std::string text = std::string(""); add_utf_8(text, 916);
             needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "mmat") {
-            // Generate a matrice sign
-            needed_part = __generate_matrice(content, current_style);
-        } else if(needed_balise_name == "mpartial") {
+        }
+        else if(needed_balise_name == "mequiv") {
+            // Generate a delta text
+            std::string text = std::string();Text_Style needed_style = current_style;needed_style.set_font(get_system_font());add_utf_8(text, 8801);
+            needed_part = __generate_text_for_maths(text, needed_style, line);
+        }
+        else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
+        else if(needed_balise_name == "mpartial") {
             // Generate a partial text
             std::string text = std::string(""); add_utf_8(text, 948);
             needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "msup") {
-            // Generate a sub text
-            needed_part = __generate_sup(content, current_style, line);
-        } else if(needed_balise_name == "mu") {
+        }
+        else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
+        else if(needed_balise_name == "mu") {
             // Generate a mu sign
             std::string text = std::string(""); add_utf_8(text, 956);
             needed_part = __generate_text_for_maths(text, current_style, line);
