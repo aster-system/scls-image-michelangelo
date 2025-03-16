@@ -68,6 +68,22 @@ namespace scls {
         return to_return;
     };
 
+    // Return a color loaded from an XML balise
+    Color Color::from_xml(std::shared_ptr<XML_Text> source) {
+        Color color(0, 0, 0, 255);
+        for(int j = 0;j<static_cast<int>(source.get()->xml_balise_attributes().size());j++) {
+            XML_Attribute& current_attribute = source.get()->xml_balise_attributes()[j];
+            std::string current_attribute_name = current_attribute.name;
+            std::string current_attribute_value = current_attribute.value;
+
+            if(current_attribute_name == "red") {color.set_red(std::stoi(current_attribute_value));}
+            else if(current_attribute_name == "green") {color.set_green(std::stoi(current_attribute_value));}
+            else if(current_attribute_name == "blue") {color.set_blue(std::stoi(current_attribute_value));}
+            else if(current_attribute_name == "alpha") {color.set_alpha(std::stoi(current_attribute_value)); }
+        }
+        return color;
+    }
+
     //*********
 	//
 	// Compression handling

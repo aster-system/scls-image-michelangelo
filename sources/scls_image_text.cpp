@@ -258,6 +258,10 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise<Balise_Style_Datas>("a", current_balise);
+        // Create the <span> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise<Balise_Style_Datas>("span", current_balise);
 
         // Mathematicals styles
 
@@ -881,6 +885,13 @@ namespace scls {
         // Handle a single text
         std::string words_content = format_string_as_plain_text(text.get()->text());
         std::vector<std::string> words_cutted = cut_string(words_content, " ");
+
+        // TEMPORARY
+        // Edit the style if necessary
+        for(int i = 0;i<static_cast<int>(text.get()->xml_attributes().size());i++) {
+            if(text.get()->xml_attributes()[i].name == std::string("class") && text.get()->xml_attributes()[i].value == std::string("important")){current_style.set_color(Color(255, 0, 0));}
+        }
+
         // Get the needed words
         for(int j = 0;j<static_cast<int>(words_cutted.size());j++) {
             Word_Datas data_to_add = Word_Datas(); data_to_add.set_balise_parent(text);
@@ -1453,9 +1464,8 @@ namespace scls {
     }
 
     // Update the datas of each blocks
-    void Text_Image_Multi_Block::update_blocks_datas(String text_to_analyse) {
+    void Text_Image_Multi_Block::update_blocks_datas(std::shared_ptr<XML_Text> cutted) {
         a_blocks_datas.clear();
-        std::shared_ptr<XML_Text> cutted = xml(a_defined_balises, text_to_analyse);
         if(cutted.get()->only_text()) {
             // A single text
             std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted);

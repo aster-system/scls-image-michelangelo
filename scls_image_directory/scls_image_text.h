@@ -799,8 +799,9 @@ namespace scls {
         // Save the image as an image
         inline void save_image(std::string path) {Image* img = image();img->save_png(path);delete img;img = 0;};
         // Update the datas of each blocks
-        void update_blocks_datas(String text_to_analyse);
-        inline void update_blocks_datas(){return update_blocks_datas(text());};
+        void update_blocks_datas(std::shared_ptr<XML_Text> cutted);
+        inline void update_blocks_datas(String text_to_analyse){update_blocks_datas(xml(a_defined_balises, text_to_analyse));};
+        inline void update_blocks_datas(){return update_blocks_datas(xml(a_defined_balises, text()));};
 
         // Plain text handling
         // Returns the plain text of the image
@@ -819,6 +820,7 @@ namespace scls {
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
         inline void set_text(String new_text) {a_blocks.clear();update_blocks_datas(new_text);};
+        inline void set_xml_text(std::shared_ptr<XML_Text> new_text) {a_blocks.clear();update_blocks_datas(new_text);};
         String text() const;
     private:
         // Global style in the text

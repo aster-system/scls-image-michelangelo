@@ -121,6 +121,8 @@ namespace scls
 
         // Return a color loaded from a text
         static Color from_std_string(std::string source);
+        // Return a color loaded from an XML balise
+        static Color from_xml(std::shared_ptr<XML_Text> source);
 
         // Getters and setters (ONLY WITH ATTRIBUTES)
         inline unsigned char alpha() const {return static_cast<unsigned char>(a_alpha * 255.0);};
