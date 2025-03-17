@@ -51,9 +51,9 @@
 
 // Font path of the Aster System's logo
 #ifndef LOGO_FONT_PATH
-// Before school PC : "C:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
+// Before school PC : "/usr/share/fonts/truetype/AlteHaasGroteskBold.ttf"
 // Development PC : "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
-#define LOGO_FONT_PATH "/usr/share/fonts/truetype/AlteHaasGroteskBold.ttf"
+#define LOGO_FONT_PATH "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
 #endif // LOGO_FONT_PATH
 
 // Define SCLS_INIT
