@@ -219,6 +219,7 @@ namespace scls {
         current_balise.get()->is_paragraph = true;
         set_defined_balise<Balise_Style_Datas>("div", current_balise);
         // Create the <head> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("head", current_balise);
         // Create the <p> style
