@@ -276,6 +276,10 @@ namespace scls {
         current_balise.get()->style.get()->set_font_size(40);
         current_balise.get()->style.get()->set_font(get_system_font("DejaVuMathTeXGyre"));
         set_defined_balise<Balise_Style_Datas>("math", current_balise);
+        // Create the <frac> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("mfrac", current_balise);
         // Create the <mi> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -670,33 +674,20 @@ namespace scls {
     }
     void __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<XML_Text> content, const Text_Style& current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Line* line) {
         std::shared_ptr<__Math_Part_Image> needed_part;
-        if(needed_balise_name == "epsilon") {
-            // Generate a pi sign
-            std::string text = std::string(""); add_utf_8(text, 949);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "esh") {
-            // Generate a pi sign
-            std::string text = std::string(""); add_utf_8(text, 643);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "frac") {
-            // Generate a fraction
-            needed_part = __generate_frac(content, current_style, line);
-        } else if(needed_balise_name == "mdelta") {
-            // Generate a delta text
-            std::string text = std::string(""); add_utf_8(text, 916);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        }
+        if(needed_balise_name == "epsilon") {std::string text = std::string(""); add_utf_8(text, 949);needed_part = __generate_text_for_maths(text, current_style, line);}
+        else if(needed_balise_name == "esh") {std::string text = std::string(""); add_utf_8(text, 643);needed_part = __generate_text_for_maths(text, current_style, line);}
+        else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style, line);}
+        else if(needed_balise_name == "mdelta") {std::string text = std::string(""); add_utf_8(text, 916);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "mequiv") {
             // Generate a delta text
             std::string text = std::string();Text_Style needed_style = current_style;needed_style.set_font(get_system_font());add_utf_8(text, 8801);
             needed_part = __generate_text_for_maths(text, needed_style, line);
         }
+        else if(needed_balise_name == "mequi") {std::string text = std::string();add_utf_8(text, 8660);needed_part = __generate_text_for_maths(text, current_style, line);}
+        else if(needed_balise_name == "mforall"){std::string text = std::string();add_utf_8(text, 8704);needed_part = __generate_text_for_maths(text, current_style, line);}
+        else if(needed_balise_name == "min"){std::string text = std::string();add_utf_8(text, 8712);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
-        else if(needed_balise_name == "mpartial") {
-            // Generate a partial text
-            std::string text = std::string(""); add_utf_8(text, 948);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        }
+        else if(needed_balise_name == "mpartial") {std::string text = std::string(""); add_utf_8(text, 948);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
         else if(needed_balise_name == "mu") {
             // Generate a mu sign

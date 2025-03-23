@@ -101,6 +101,8 @@ namespace scls {
         void merge_style(Text_Style to_merge);
         // Returns the parent of this style
         inline Text_Style* parent_style() const {return a_parent_style.lock().get();};
+        // Create a children for this style
+        inline std::shared_ptr<Text_Style> new_child(){std::shared_ptr<Text_Style> child = std::make_shared<Text_Style>();child.get()->a_this_style=child;child.get()->a_parent_style=a_this_style;return child;};
         // Sets the shared ptr to the block style
         inline void set_block_style(std::shared_ptr<Text_Style> block_style){a_block_style=block_style;};
         // Sets the shared ptr to the parent style
@@ -134,6 +136,15 @@ namespace scls {
         inline bool font_size_modified() const {return a_font_size_modified;};
         inline void set_font_size(unsigned short new_font_size){a_font_size=new_font_size;a_font_size_modified=true;};
         inline void unset_font_size(){a_font_size_modified=false;};
+        // Padding
+        inline int padding_bottom() const {return a_padding_bottom;};
+        inline int padding_left() const {return a_padding_left;};
+        inline int padding_right() const {return a_padding_right;};
+        inline int padding_top() const {return a_padding_top;};
+        inline void set_padding_bottom(int new_padding_bottom) {a_padding_bottom = new_padding_bottom;};
+        inline void set_padding_left(int new_padding_left) {a_padding_left = new_padding_left;};
+        inline void set_padding_right(int new_padding_right) {a_padding_right = new_padding_right;};
+        inline void set_padding_top(int new_padding_top) {a_padding_top = new_padding_top;};
 
         // TEMPORARY
         // Max width of the text (only in pixel for now)
@@ -173,6 +184,8 @@ namespace scls {
         // Font size of the style
         unsigned short a_font_size = 20;
         bool a_font_size_modified = false;
+        // Padding of the style
+        int a_padding_bottom = 0;int a_padding_left = 0;int a_padding_right = 0;int a_padding_top = 0;
 
         // Block-style-arent of this style
         std::weak_ptr<Text_Style> a_block_style;
