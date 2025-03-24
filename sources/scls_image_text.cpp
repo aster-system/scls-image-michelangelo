@@ -25,6 +25,7 @@
 //
 
 // Include the good header file
+#include <charconv>
 #include "../scls_image.h"
 
 // The namespace "scls" is used to simplify the all.
@@ -461,6 +462,46 @@ namespace scls {
         FT_Done_Face(face);
     };
 
+    // Get an utf-8 symbol from a text
+	int utf_8_symbol_by_name(std::string name) {
+        if(name == "epsilon") {return 949;}
+        else if(name == "esh") {return 643;}
+        else if(name == "mdelta") {return 916;}
+        else if(name == "mequiv") {return 8801;}
+        else if(name == "mequi") {return 8660;}
+        else if(name == "mforall"){return 8704;}
+        else if(name == "min"){return 8712;}
+        else if(name == "mpartial") {return 948;}
+        else if(name == "mu") {return 956;}
+        else if(name == "nabla") {return 2207;}
+        else if(name == "phi") {return 632;}
+        else if(name == "pi") {return 960;}
+        else if(name == "rho") {return 961;}
+        return -1;
+	}
+
+	// Get an utf-8 symbol from a XML content
+	void utf_8_symbol_xml(std::shared_ptr<scls::XML_Text> text, bool to_html) {
+	    for(int i = 0;i<static_cast<int>(text.get()->sub_texts().size());i++) {
+            int potential_symbol = utf_8_symbol_by_name(text.get()->sub_texts().at(i).get()->xml_balise_name());
+            if(potential_symbol != -1) {
+                text.get()->sub_texts().at(i).get()->clear();
+                text.get()->sub_texts().at(i).get()->set_xml_balise_name(std::string());
+                if(to_html) {
+                    char* c = new char[8];std::to_chars(c, c + 5, potential_symbol, 16);std::string symbol_to_str = c;delete c;c=0;
+                    std::string needed_text = std::string("&#x") + symbol_to_str.substr(0, std::ceil(std::log(potential_symbol) / std::log(16))) + std::string(";");
+                    text.get()->sub_texts().at(i).get()->parse_text(needed_text);
+                }
+                else {
+                    std::string needed_text = std::string("");
+                    add_utf_8(needed_text, potential_symbol);
+                    text.get()->sub_texts().at(i).get()->parse_text(needed_text);
+                }
+            }
+            else{utf_8_symbol_xml(text.get()->sub_texts().at(i), to_html);}
+        }
+	}
+
     // Returns the position of the cursor in plain text with a X position
     int Text_Image_Line::cursor_position_in_plain_text_at_x(int x_position) {
         if(a_words_datas.size() == 0) return 0;
@@ -674,50 +715,14 @@ namespace scls {
     }
     void __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<XML_Text> content, const Text_Style& current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Line* line) {
         std::shared_ptr<__Math_Part_Image> needed_part;
-        if(needed_balise_name == "epsilon") {std::string text = std::string(""); add_utf_8(text, 949);needed_part = __generate_text_for_maths(text, current_style, line);}
-        else if(needed_balise_name == "esh") {std::string text = std::string(""); add_utf_8(text, 643);needed_part = __generate_text_for_maths(text, current_style, line);}
+        int potential_symbol = utf_8_symbol_by_name(needed_balise_name);
+        if(potential_symbol != -1) {std::string text = std::string(""); add_utf_8(text, potential_symbol);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style, line);}
-        else if(needed_balise_name == "mdelta") {std::string text = std::string(""); add_utf_8(text, 916);needed_part = __generate_text_for_maths(text, current_style, line);}
-        else if(needed_balise_name == "mequiv") {
-            // Generate a delta text
-            std::string text = std::string();Text_Style needed_style = current_style;needed_style.set_font(get_system_font());add_utf_8(text, 8801);
-            needed_part = __generate_text_for_maths(text, needed_style, line);
-        }
-        else if(needed_balise_name == "mequi") {std::string text = std::string();add_utf_8(text, 8660);needed_part = __generate_text_for_maths(text, current_style, line);}
-        else if(needed_balise_name == "mforall"){std::string text = std::string();add_utf_8(text, 8704);needed_part = __generate_text_for_maths(text, current_style, line);}
-        else if(needed_balise_name == "min"){std::string text = std::string();add_utf_8(text, 8712);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
-        else if(needed_balise_name == "mpartial") {std::string text = std::string(""); add_utf_8(text, 948);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
-        else if(needed_balise_name == "mu") {
-            // Generate a mu sign
-            std::string text = std::string(""); add_utf_8(text, 956);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "nabla") {
-            // Generate a nabla sign
-            needed_part = __generate_nabla(current_style);
-        } else if(needed_balise_name == "phi") {
-            // Generate a pi sign
-            std::string text = std::string(""); add_utf_8(text, 632);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "pi") {
-            // Generate a pi sign
-            std::string text = std::string(""); add_utf_8(text, 960);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "rho") {
-            // Generate a pi sign
-            std::string text = std::string(""); add_utf_8(text, 961);
-            needed_part = __generate_text_for_maths(text, current_style, line);
-        } else if(needed_balise_name == "sub") {
-            // Generate a sub text
-            needed_part = __generate_sub(content, current_style, line);
-        } else if(needed_balise_name == "vec") {
-            // Generate a vec sign
-            needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);
-        } else {
-            // Generate a vec sign
-            needed_part = __generate_text_for_maths(content.get()->text(), current_style, line);
-        }
+        else if(needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style, line);}
+        else if(needed_balise_name == "vec") {needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);}
+        else {needed_part = __generate_text_for_maths(content.get()->text(), current_style, line);}
 
         // Validation of the image
         if(needed_part.get() != 0) {

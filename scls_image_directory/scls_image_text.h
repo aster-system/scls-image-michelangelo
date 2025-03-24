@@ -467,6 +467,11 @@ namespace scls {
     // Type of possible image generation
 	enum Image_Generation_Type {IGT_Full, IGT_Size};
 
+	// Get an utf-8 symbol from a text
+	int utf_8_symbol_by_name(std::string name);
+	// Get an utf-8 symbol from a XML content
+	void utf_8_symbol_xml(std::shared_ptr<scls::XML_Text> text, bool to_html);
+
     class Text_Image_Line {
         // Class containing a single line text
     public:
