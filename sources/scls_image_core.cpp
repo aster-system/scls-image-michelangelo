@@ -1278,7 +1278,7 @@ namespace scls {
         unsigned int to_add_line = (width() - rect_width) * needed_components;
         for (int i = 0; i < rect_height; i++) {
             for (int j = 0; j < rect_width; j++) {
-                set_pixel_rgba_directly(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
+                paste_pixel_rgba_directly(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
                 current_position+=needed_components;
             } current_position += to_add_line;
         }
@@ -1505,6 +1505,16 @@ namespace scls {
         }
     }
 
+    // Paste datas to a specific pixel
+    void Image::paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
+        double alpha_double = static_cast<double>(static_cast<unsigned char>(alpha)) / 255.0;
+        double multiple = (static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 3 * multiplier))) / 255.0) * (1.0 - alpha_double);
+        a_pixels->set_data_at_directly(position, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(red)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position))) * multiple));
+        a_pixels->set_data_at_directly(position + multiplier, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(green)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + multiplier))) * multiple));
+        a_pixels->set_data_at_directly(position + 2 * multiplier, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(blue)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 2 * multiplier))) * multiple));
+        a_pixels->set_data_at_directly(position + 3 * multiplier, static_cast<unsigned int>((alpha_double + multiple) * 255.0));
+    };
+
     // Apply a more complex horizontal gradient from the left to the right in the image
     void Image::apply_gradient_horizontal(Color left, Color right, int start_x, int end_x) {
         // Calculate the variant of each colors
@@ -1676,7 +1686,7 @@ namespace scls {
         unsigned int current_position = (start_y * width() + start_x) * needed_component;
         if(color_type() == SCLS_IMAGE_RGBA) {
             for(int i = 0;i<length;i++) {
-                double glyph_alpha = (datas[offset + i] / 255.0);
+                double glyph_alpha = static_cast<double>(static_cast<unsigned char>(datas[offset + i])) / 255.0;
                 set_pixel_rgba_directly(current_position, red, green, blue, static_cast<unsigned short>(glyph_alpha * static_cast<double>(alpha)), 1);
                 current_position+=needed_component;
             }

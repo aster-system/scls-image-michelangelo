@@ -252,6 +252,8 @@ namespace scls
         // Returns the data filtered (like in PNG format)
         std::shared_ptr<Bytes_Set> datas_filtered();
 
+        // Paste datas to a specific pixel
+        void paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
         // Set datas about a specific pixel*
 		inline void set_pixel_directly(unsigned int position, unsigned char value){a_pixels->set_data_at_directly(position, value);};
 		inline void set_pixel_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char multiplier){a_pixels->set_data_at_directly(position, red);a_pixels->set_data_at_directly(position + multiplier, green);a_pixels->set_data_at_directly(position + 2 * multiplier, blue);};
