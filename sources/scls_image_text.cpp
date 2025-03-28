@@ -297,6 +297,10 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("mrow", current_balise);
+        // Create the <msub> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("msub", current_balise);
         // Create the <msup> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -720,7 +724,7 @@ namespace scls {
         else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style, line);}
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
-        else if(needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style, line);}
+        else if(needed_balise_name == "msub" || needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style, line);}
         else if(needed_balise_name == "vec") {needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);}
         else {needed_part = __generate_text_for_maths(content.get()->text(), current_style, line);}
 
