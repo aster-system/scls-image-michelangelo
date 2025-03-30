@@ -378,19 +378,7 @@ namespace scls {
             unsigned char multiplier = (bit_depht() / 8.0);
             unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
 
-            // Process the color
-            Color color = pixel(x, y);
-            double alpha_f = normalize_value(alpha, 0, 255) / 255.0;
-            double blue_f = normalize_value(blue, 0, 255);
-            double green_f = normalize_value(green, 0, 255);
-            double red_f = normalize_value(red, 0, 255);
-            // Calculate alpha
-            alpha = normalize_value(alpha, 0, 255); if(color.alpha() > alpha) alpha = color.alpha();
-            blue = alpha_f * blue_f + (1.0 - alpha_f) * static_cast<double>(color.blue());
-            red = alpha_f * red_f + (1.0 - alpha_f) * static_cast<double>(color.red());
-            green = alpha_f * green_f + (1.0 - alpha_f) * static_cast<double>(color.green());
-
-            if(color_type() == SCLS_IMAGE_RGBA) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+            if(color_type() == SCLS_IMAGE_RGBA) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
             else if(color_type() == SCLS_IMAGE_RGB) {
                 a_pixels->set_data_at_directly(position, red);
                 a_pixels->set_data_at_directly(position + multiplier, green);
@@ -1647,6 +1635,7 @@ namespace scls {
     bool Image::_load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         a_height = height; a_width = width;
         create_memory();
+        if(alpha == 0){fill(0, 0, 0, 0);return true;}
 
         // Create each threads
         if(a_thread_number_for_pasting_text > 0) {
@@ -1673,9 +1662,7 @@ namespace scls {
                 delete threads[i]; threads[i] = 0;
             } threads.clear();
         }
-        else {
-            __load_part_from_text_binary(datas, 0, 0, 0, (static_cast<double>(width) * static_cast<double>(height)), red, green, blue, alpha);
-        }
+        else {__load_part_from_text_binary(datas, 0, 0, 0, (static_cast<double>(width) * static_cast<double>(height)), red, green, blue, alpha);}
 
         return true;
     };

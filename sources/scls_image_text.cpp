@@ -473,6 +473,7 @@ namespace scls {
         else if(name == "mdelta") {return 916;}
         else if(name == "mequiv") {return 8801;}
         else if(name == "mequi") {return 8660;}
+        else if(name == "mexists") {return 8707;}
         else if(name == "mforall"){return 8704;}
         else if(name == "min"){return 8712;}
         else if(name == "mpartial") {return 948;}
@@ -1392,6 +1393,7 @@ namespace scls {
 
             // Apply the needed style
             new_block.get()->global_style()->max_width = (global_style()->max_width);
+            new_block.get()->set_use_cursor(a_use_cursor);
             new_block.get()->image();
 
             // Add the block

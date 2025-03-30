@@ -838,6 +838,7 @@ namespace scls {
         inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
         inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
         inline void set_text(String new_text) {a_blocks.clear();update_blocks_datas(new_text);};
+        inline void set_use_cursor(bool use_cursor){a_use_cursor = use_cursor;};
         inline void set_xml_text(std::shared_ptr<XML_Text> new_text) {a_blocks.clear();update_blocks_datas(new_text);};
         String text() const;
     private:
@@ -863,6 +864,8 @@ namespace scls {
         int a_max_width = 0;
         // Total height of the image
         int a_total_height = 0;
+        // If the block use cursor or not
+        bool a_use_cursor = false;
     }; //*/
 
     class Text_Image_Generator {
