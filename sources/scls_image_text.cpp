@@ -274,7 +274,6 @@ namespace scls {
         // Create the <math> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
-        current_balise.get()->style.get()->set_font_size(40);
         current_balise.get()->style.get()->set_font(get_system_font("DejaVuMathTeXGyre"));
         set_defined_balise<Balise_Style_Datas>("math", current_balise);
         // Create the <frac> style
@@ -860,7 +859,6 @@ namespace scls {
             else if(current_balise_name == "math") {
                 // The balise is a piece of mathml
                 Text_Style math_style = *global_style();
-                math_style.set_font_size(40); // EXPERIMENTAL
                 std::shared_ptr<Image> src_img = generate_maths(current_text, math_style).get()->image;
                 __generate_image(word_to_add, src_img, current_position_in_plain_text, a_current_width, src_img.get()->height(), src_img.get()->width());
                 word_to_add.get()->set_balise_content(balise_content);
