@@ -300,6 +300,10 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("msub", current_balise);
+        // Create the <msubsup> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("msubsup", current_balise);
         // Create the <msup> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -475,6 +479,7 @@ namespace scls {
         else if(name == "mexists") {return 8707;}
         else if(name == "mforall"){return 8704;}
         else if(name == "min"){return 8712;}
+        else if(name == "mint"){return 8747;}
         else if(name == "mpartial") {return 948;}
         else if(name == "mu") {return 956;}
         else if(name == "nabla") {return 2207;}
@@ -675,6 +680,32 @@ namespace scls {
         to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
         return to_return;
     }
+    std::shared_ptr<__Math_Part_Image> __generate_subsup(std::shared_ptr<XML_Text> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
+        // Asserts
+        if(content.get()->sub_texts().size() <= 0){return std::shared_ptr<__Math_Part_Image>();}
+        else if(content.get()->sub_texts().size() == 1){return needed_line->generate_maths(content.get()->sub_texts()[0], current_style);}
+
+        // Analyse the part
+        std::shared_ptr<XML_Text> sub_part = content.get()->sub_texts()[0];
+        std::shared_ptr<XML_Text> sup_part = content.get()->sub_texts()[1];
+
+        // Draw the needed image
+        Text_Style needed_style = current_style;needed_style.set_font_size(current_style.font_size() / 2);
+        std::shared_ptr<__Math_Part_Image> sub = needed_line->generate_maths(sub_part, needed_style);
+        std::shared_ptr<__Math_Part_Image> sup = needed_line->generate_maths(sup_part, needed_style);
+        // Draw the image to return
+        int max_width = sub.get()->image.get()->width(); if(sup.get()->image.get()->width() > max_width){max_width = sup.get()->image.get()->width();}
+        int needed_size = current_style.font_size(); //sub.get()->image.get()->height() + sup.get()->image.get()->height();
+        std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
+        std::shared_ptr<Image>& image = to_return.get()->image;
+        image = std::make_shared<Image>(max_width, needed_size, current_style.background_color());
+        // Paste the needed image
+        image.get()->paste(sub.get()->image.get(), image.get()->width() / 2 - sub.get()->image.get()->width() / 2, image.get()->height() - sub.get()->image.get()->height());
+        image.get()->paste(sup.get()->image.get(), image.get()->width() / 2 - sup.get()->image.get()->width() / 2, 0);
+        to_return.get()->middle_bottom_offset = sub.get()->image.get()->height();
+        to_return.get()->middle_top_offset = sup.get()->image.get()->height();
+        return to_return;
+    }
     std::shared_ptr<__Math_Part_Image> __generate_sup(std::shared_ptr<XML_Text> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
         // Draw the needed image
         Text_Style needed_style = current_style; needed_style.set_font_size(current_style.font_size() / 2);
@@ -724,7 +755,7 @@ namespace scls {
         else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style, line);}
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
-        else if(needed_balise_name == "msub" || needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style, line);}
+        else if(needed_balise_name == "msubsup") {needed_part = __generate_subsup(content, current_style, line);}
         else if(needed_balise_name == "vec") {needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);}
         else {needed_part = __generate_text_for_maths(content.get()->text(), current_style, line);}
 

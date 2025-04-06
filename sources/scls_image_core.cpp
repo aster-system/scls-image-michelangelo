@@ -1257,11 +1257,11 @@ namespace scls {
     }
 
     // Draw a rectangle on the image
-    void Image::draw_rect(unsigned short x, unsigned short y, unsigned short width, unsigned short height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void Image::draw_rect(int x, int y, int width, int height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         fill_rect(x, y, width, rect_width, red, green, blue, alpha);
         fill_rect(x, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
-        fill_rect(width - rect_width, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
-        fill_rect(x + rect_width, height - rect_width, width - 2 * rect_width, rect_width, red, green, blue, alpha);
+        fill_rect(x + (width - rect_width), y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
+        fill_rect(x + rect_width, y + (height - rect_width), width - 2 * rect_width, rect_width, red, green, blue, alpha);
     }
 
     // Fill a rectangle on the image
