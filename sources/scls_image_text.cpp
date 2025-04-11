@@ -480,6 +480,8 @@ namespace scls {
         else if(name == "mforall"){return 8704;}
         else if(name == "min"){return 8712;}
         else if(name == "mint"){return 8747;}
+        else if(name == "mlt"){return 60;}
+        else if(name == "mgt"){return 62;}
         else if(name == "mpartial") {return 948;}
         else if(name == "mu") {return 956;}
         else if(name == "nabla") {return 2207;}
