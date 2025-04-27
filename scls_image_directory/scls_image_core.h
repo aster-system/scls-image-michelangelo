@@ -338,6 +338,13 @@ namespace scls
 		// Paste an Image on this Image
         void paste(Image* to_paste, int x, int y, double opacity = 1.0);
 		inline void paste(std::string path, int x, int y, double opacity = 1.0) {Image* img = new Image(path);paste(img, x, y, opacity);delete img; img = 0;};
+		// Pastes an Image to the bottom / center / top of the image
+		void paste_bottom_center(Image* to_paste, double offset_y, double opacity);
+		void paste_center(Image* to_paste, double opacity = 1.0);
+		void paste_top_center(Image* to_paste, double offset_y, double opacity);
+		inline void paste_bottom_center(Image* to_paste, double offset_y){paste_bottom_center(to_paste, offset_y, 1);};
+		inline void paste_center(std::shared_ptr<Image> to_paste, double opacity = 1.0){paste_center(to_paste.get(), opacity);};
+		inline void paste_top_center(Image* to_paste, double offset_y){paste_top_center(to_paste, offset_y, 1);};
         // Paste a part of an image on this image
         void __paste_part_of_image(Image* to_paste, int x_offset, int y_offset, int start_x, int start_y, int length, double opacity);
 
@@ -363,6 +370,7 @@ namespace scls
 
         // Returns a shared ptr of the image with a new size, adaptated
         inline std::shared_ptr<Image> resize_adaptative(unsigned short new_width, unsigned short new_height) {std::shared_ptr<Image> current_image = resize_adaptative_width(new_width);if(current_image.get() == 0) return resize_adaptative_height(new_height);return current_image.get()->resize_adaptative_height(new_height); };
+        inline std::shared_ptr<Image> resize_adaptative(scls::Point_2D new_size) {return resize_adaptative(new_size.x().to_double(), new_size.y().to_double()); };
         // Returns a shared ptr of the image with a new height, adaptated
         std::shared_ptr<Image> resize_adaptative_height(unsigned short new_height);
         // Returns a shared ptr of the image with a new width, adaptated

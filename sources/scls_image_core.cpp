@@ -69,7 +69,11 @@ namespace scls {
         }
         else if (cutted.size() == 1) {
             // Precise color
-            if(cutted[0] == std::string("red")){to_return = Color(255, 0, 0);}
+            if(cutted[0] == std::string("black")){to_return = Color(0, 0, 0);}
+            else if(cutted[0] == std::string("blue")){to_return = Color(0, 0, 255);}
+            else if(cutted[0] == std::string("green")){to_return = Color(0, 255, 0);}
+            else if(cutted[0] == std::string("red")){to_return = Color(255, 0, 0);}
+            else if(cutted[0] == std::string("transparent")){to_return = Color(0, 0, 0, 0);}
         }
 
         return to_return;
@@ -1150,9 +1154,10 @@ namespace scls {
         // Draw the hat of the arrow
         int x_diff = -(x_2 - x_1); int y_diff = -(y_2 - y_1);
         scls::Vector_3D base_vector = scls::Vector_3D(x_diff, 0, y_diff);
+        if(x_diff == 0 && y_diff == 0){base_vector = scls::Vector_3D(-1, 0, 0);base_vector.rotate(scls::Vector_3D(0, hat_position_in_percentage, 0));hat_position_in_percentage=0;}
         // First part
         scls::Vector_3D needed_vector = base_vector.rotated(scls::Vector_3D(0, 45, 0));
-        int needed_x = static_cast<double>(needed_vector.x()) * hat_size_in_percentage; int needed_y = static_cast<double>(needed_vector.z()) * hat_size_in_percentage;
+        int needed_x = needed_vector.x() * hat_size_in_percentage; int needed_y = needed_vector.z() * hat_size_in_percentage;
         int current_x = x_1 + (x_2 - x_1) * hat_position_in_percentage; int current_y = y_1 + (y_2 - y_1) * hat_position_in_percentage;
         draw_line(current_x + needed_x, current_y + needed_y, current_x, current_y, red, green, blue, alpha, line_width);
         // Second part
@@ -1469,7 +1474,7 @@ namespace scls {
             int start_x = 0;int start_y = 0;
             if(x < 0){start_x=-x;x=0;}
             if(y < 0){start_y=-y;y=0;}
-            if(start_x < width() && start_y < height()) {
+            if(start_x < to_paste->width() && start_y < to_paste->height()) {
                 __paste_part_of_image(to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity);
             }
         }
@@ -1509,6 +1514,11 @@ namespace scls {
 
         }
     }
+
+    // Pastes an Image to the bottom / center / top of the image
+    void Image::paste_bottom_center(Image* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, (height() - to_paste->height()) - offset_y, opacity);}
+    void Image::paste_center(Image* to_paste, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, height() / 2 - to_paste->height() / 2, opacity);}
+    void Image::paste_top_center(Image* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, offset_y, opacity);}
 
     // Paste datas to a specific pixel
     void Image::paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){

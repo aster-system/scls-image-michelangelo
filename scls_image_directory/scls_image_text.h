@@ -119,6 +119,20 @@ namespace scls {
         inline Color background_color() const {if(a_background_color_modified || parent_style() == 0){return a_background_color;}else{return parent_style()->background_color();}};
         inline void set_background_color(Color new_background_color){a_background_color=new_background_color;a_background_color_modified=true;};
         inline void unset_background_color(){a_background_color_modified=false;};
+        // Border
+        inline int border_bottom_width() const {if(a_border_bottom_width_modified || (parent_style() == 0 && block_style() == 0)){return a_border_bottom_width;}else if(block_style() != 0){if(block_style()->border_bottom_width_modified()){return block_style()->border_bottom_width();}else if(parent_style()==0){return a_border_bottom_width;}}return parent_style()->border_bottom_width();};
+        inline bool border_bottom_width_modified() const {return a_border_bottom_width_modified;};
+        inline int border_left_width() const {if(a_border_left_width_modified || (parent_style() == 0 && block_style() == 0)){return a_border_left_width;}else if(block_style() != 0){if(block_style()->border_left_width_modified()){return block_style()->border_left_width();}else if(parent_style()==0){return a_border_left_width;}}return parent_style()->border_left_width();};
+        inline bool border_left_width_modified() const {return a_border_left_width_modified;};
+        inline int border_right_width() const {if(a_border_right_width_modified || (parent_style() == 0 && block_style() == 0)){return a_border_right_width;}else if(block_style() != 0){if(block_style()->border_right_width_modified()){return block_style()->border_right_width();}else if(parent_style()==0){return a_border_right_width;}}return parent_style()->border_right_width();};
+        inline bool border_right_width_modified() const {return a_border_right_width_modified;};
+        inline int border_top_width() const {if(a_border_top_width_modified || (parent_style() == 0 && block_style() == 0)){return a_border_top_width;}else if(block_style() != 0){if(block_style()->border_top_width_modified()){return block_style()->border_top_width();}else if(parent_style()==0){return a_border_top_width;}}return parent_style()->border_top_width();};
+        inline bool border_top_width_modified() const {return a_border_top_width_modified;};
+        inline void set_border_bottom_width(int new_border_bottom_width) {a_border_bottom_width = new_border_bottom_width;a_border_bottom_width_modified=true;};
+        inline void set_border_left_width(int new_border_left_width) {a_border_left_width = new_border_left_width;a_border_left_width_modified=true;};
+        inline void set_border_right_width(int new_border_right_width) {a_border_right_width = new_border_right_width;a_border_right_width_modified=true;};
+        inline void set_border_top_width(int new_border_top_width) {a_border_top_width = new_border_top_width;a_border_top_width_modified=true;};
+        inline void set_border_width(int new_border_width){set_border_bottom_width(new_border_width);set_border_left_width(new_border_width);set_border_right_width(new_border_width);set_border_top_width(new_border_width);};
         // Color
         inline Color color() const {if(a_color_modified || (parent_style() == 0 && block_style() == 0)){return a_color;}else if(block_style()!=0){if(block_style()->color_modified()){return block_style()->color();}else if(parent_style()==0){return a_color;}}return parent_style()->color();};
         inline bool color_modified() const {return a_color_modified;};
@@ -136,6 +150,19 @@ namespace scls {
         inline bool font_size_modified() const {return a_font_size_modified;};
         inline void set_font_size(unsigned short new_font_size){a_font_size=new_font_size;a_font_size_modified=true;};
         inline void unset_font_size(){a_font_size_modified=false;};
+        // Margin
+        inline int margin_bottom() const {if(a_margin_bottom_modified || (parent_style() == 0 && block_style() == 0)){return a_margin_bottom;}else if(block_style() != 0){if(block_style()->margin_bottom_modified()){return block_style()->margin_bottom();}else if(parent_style()==0){return a_margin_bottom;}}return parent_style()->margin_bottom();};
+        inline bool margin_bottom_modified() const {return a_margin_bottom_modified;};
+        inline int margin_left() const {if(a_margin_left_modified || (parent_style() == 0 && block_style() == 0)){return a_margin_left;}else if(block_style() != 0){if(block_style()->margin_left_modified()){return block_style()->margin_left();}else if(parent_style()==0){return a_margin_left;}}return parent_style()->margin_left();};
+        inline bool margin_left_modified() const {return a_margin_left_modified;};
+        inline int margin_right() const {if(a_margin_right_modified || (parent_style() == 0 && block_style() == 0)){return a_margin_right;}else if(block_style() != 0){if(block_style()->margin_right_modified()){return block_style()->margin_right();}else if(parent_style()==0){return a_margin_right;}}return parent_style()->margin_right();};
+        inline bool margin_right_modified() const {return a_margin_right_modified;};
+        inline int margin_top() const {if(a_margin_top_modified || (parent_style() == 0 && block_style() == 0)){return a_margin_top;}else if(block_style() != 0){if(block_style()->margin_top_modified()){return block_style()->margin_top();}else if(parent_style()==0){return a_margin_top;}}return parent_style()->margin_top();};
+        inline bool margin_top_modified() const {return a_margin_top_modified;};
+        inline void set_margin_bottom(int new_margin_bottom) {a_margin_bottom = new_margin_bottom;a_margin_bottom_modified=true;};
+        inline void set_margin_left(int new_margin_left) {a_margin_left = new_margin_left;a_margin_left_modified=true;};
+        inline void set_margin_right(int new_margin_right) {a_margin_right = new_margin_right;a_margin_right_modified=true;};
+        inline void set_margin_top(int new_margin_top) {a_margin_top = new_margin_top;a_margin_top_modified=true;};
         // Padding
         inline int padding_bottom() const {return a_padding_bottom;};
         inline int padding_left() const {return a_padding_left;};
@@ -157,13 +184,6 @@ namespace scls {
         double text_offset_x = 0;
         // Y pos of the text offset
         double text_offset_y = 0;
-        // Border handling
-        inline void set_border_width(int new_border_width){border_bottom_width=new_border_width;border_left_width=new_border_width;border_right_width=new_border_width;border_top_width=new_border_width;};
-        // Width of the border
-        int border_bottom_width = 0;
-        int border_left_width = 0;
-        int border_right_width = 0;
-        int border_top_width = 0;
         // Color of the border
         Color border_color = scls::Color(0, 0, 0);
 
@@ -175,6 +195,9 @@ namespace scls {
         // Color of the background color
         Color a_background_color = Color(255, 255, 255);
         bool a_background_color_modified = false;
+        // Width of the border
+        bool a_border_bottom_width_modified = false;bool a_border_left_width_modified = false;bool a_border_right_width_modified = false;bool a_border_top_width_modified = false;
+        int a_border_bottom_width = 0;int a_border_left_width = 0;int a_border_right_width = 0;int a_border_top_width = 0;
         // Color font of the style
         Color a_color = Color(0, 0, 0);
         bool a_color_modified = false;
@@ -184,6 +207,9 @@ namespace scls {
         // Font size of the style
         unsigned short a_font_size = 20;
         bool a_font_size_modified = false;
+        // Margin of the style
+        int a_margin_bottom = 0;int a_margin_left = 0;int a_margin_right = 0;int a_margin_top = 0;
+        bool a_margin_bottom_modified = false;int a_margin_left_modified = false;int a_margin_right_modified = false;int a_margin_top_modified = false;
         // Padding of the style
         int a_padding_bottom = 0;int a_padding_left = 0;int a_padding_right = 0;int a_padding_top = 0;
 
@@ -194,6 +220,11 @@ namespace scls {
         // Shared ptr to this style
         std::weak_ptr<Text_Style> a_this_style;
     };
+
+    // Returns if an XML attribute is for a text style
+    bool text_style_from_xml_attribute(XML_Attribute* attribute, Text_Style* style);
+    // Handle a text style from XML
+    void text_style_from_xml(std::shared_ptr<XML_Text> content, Text_Style* style);
 
     //*********
 	//
@@ -700,7 +731,7 @@ namespace scls {
         Text_Image_Line* generate_next_line(unsigned int line_number);
         Text_Image_Line* generate_next_line() {Text_Image_Line* to_return = generate_next_line(a_current_line);a_current_line++;return to_return;};
         // Regenerate the lines with a new text
-        inline void _regenerate_lines() {std::vector<Line_Datas>& cutted = a_lines_text;reset_line_generation();for(int i = 0;i<static_cast<int>(a_lines_text.size());i++) {generate_next_line(i);} delete_useless_generated_lines();};
+        inline void _regenerate_lines() {reset_line_generation();for(int i = 0;i<static_cast<int>(a_lines_text.size());i++) {generate_next_line(i);} delete_useless_generated_lines();};
         // Reset the generation of lines
         inline void reset_line_generation() {_check_modified_lines();a_current_line = 0;a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;};
 
@@ -791,6 +822,7 @@ namespace scls {
     public:
         // Most simple Text_Image constructor
         Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text) : a_defined_balises(defined_balises) {a_global_style.get()->set_this_style(a_global_style);set_text(text); };
+        Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text, std::shared_ptr<Text_Style> style) : a_defined_balises(defined_balises) {a_global_style=style;a_global_style.get()->set_this_style(a_global_style);set_text(text); };
         // Text_Image destructor
         ~Text_Image_Multi_Block() {__delete_blocks();};
 

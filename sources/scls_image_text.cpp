@@ -188,11 +188,39 @@ namespace scls {
     void Text_Style::merge_style(Text_Style to_merge){
         if(to_merge.a_alignment_horizontal){set_alignment_horizontal(to_merge.a_alignment_horizontal);}
         if(to_merge.a_background_color_modified){set_background_color(to_merge.a_background_color);}
+        if(to_merge.a_border_bottom_width_modified){set_border_bottom_width(to_merge.a_border_bottom_width);}
+        if(to_merge.a_border_left_width_modified){set_border_left_width(to_merge.a_border_left_width);}
+        if(to_merge.a_border_right_width_modified){set_border_right_width(to_merge.a_border_right_width);}
+        if(to_merge.a_border_top_width_modified){set_border_top_width(to_merge.a_border_top_width);}
         if(to_merge.a_color_modified){set_color(to_merge.a_color);}
         if(to_merge.a_font_modified){set_font(to_merge.a_font);}
         if(to_merge.a_font_size_modified){set_font_size(to_merge.a_font_size);}
+        if(to_merge.a_margin_bottom_modified){set_margin_bottom(to_merge.a_margin_bottom);}
+        if(to_merge.a_margin_left_modified){set_margin_left(to_merge.a_margin_left);}
+        if(to_merge.a_margin_right_modified){set_margin_right(to_merge.a_margin_right);}
+        if(to_merge.a_margin_top_modified){set_margin_top(to_merge.a_margin_top);}
+
         max_width = to_merge.max_width;
     };
+
+    // Returns if an XML attribute is for a text style
+    bool text_style_from_xml_attribute(XML_Attribute* attribute, Text_Style* style) {
+        // Check attributes
+        if(attribute->name == std::string("color")) {style->set_color(scls::Color::from_std_string(attribute->value));return true;}
+        else if(attribute->name == std::string("max_width")) {style->max_width = std::stoi(attribute->value);return true;}
+        return false;
+    }
+    // Returns a text style from XML
+    void text_style_from_xml(std::shared_ptr<XML_Text> content, Text_Style* style) {
+        for(int j = 0;j<static_cast<int>(content.get()->xml_balise_attributes().size());j++) {
+            XML_Attribute& current_attribute = content.get()->xml_balise_attributes()[j];
+            std::string current_attribute_name = current_attribute.name;
+            std::string current_attribute_value = current_attribute.value;
+
+            // Check attributes
+            text_style_from_xml_attribute(&current_attribute, style);
+        }
+    }
 
 	// Load the built-ins balises
     void _Balise_Style_Container::_load_built_in_balises() {
@@ -227,6 +255,7 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
+        current_balise.get()->style.get()->set_margin_bottom(16);current_balise.get()->style.get()->set_margin_bottom(8);
         set_defined_balise<Balise_Style_Datas>("p", current_balise);
         // Create the <h1> style
         current_balise = std::make_shared<Balise_Style_Datas>();
@@ -234,18 +263,21 @@ namespace scls {
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.get()->set_alignment_horizontal(Alignment_Horizontal::H_Center);
         current_balise.get()->style.get()->set_color(Color(255, 0, 0)); current_balise.get()->style.get()->set_font_size(50); current_balise.get()->style.get()->set_font(get_system_font(__default_font));
+        current_balise.get()->style.get()->set_margin_bottom(16);current_balise.get()->style.get()->set_margin_bottom(8);
         set_defined_balise<Balise_Style_Datas>("h1", current_balise);
         // Create the <h2> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.get()->set_font_size(35);
+        current_balise.get()->style.get()->set_margin_bottom(16);current_balise.get()->style.get()->set_margin_bottom(8);
         set_defined_balise<Balise_Style_Datas>("h2", current_balise);
         // Create the <h3> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.get()->set_font_size(30);
+        current_balise.get()->style.get()->set_margin_bottom(16);current_balise.get()->style.get()->set_margin_bottom(8);
         set_defined_balise<Balise_Style_Datas>("h3", current_balise);
         // Create the <html> style
         current_balise = std::make_shared<Balise_Style_Datas>();
@@ -292,10 +324,18 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("mo", current_balise);
+        // Create the <mover> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("mover", current_balise);
         // Create the <mrow> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("mrow", current_balise);
+        // Create the <msqrt> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("msqrt", current_balise);
         // Create the <msub> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -308,11 +348,18 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("msup", current_balise);
+        // Create the <munder> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("munder", current_balise);
         // Create the <sub> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("sub", current_balise);
         // Create the <vec> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("mvec", current_balise);
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("vec", current_balise);
@@ -483,10 +530,11 @@ namespace scls {
         else if(name == "mlt"){return 60;}
         else if(name == "mgt"){return 62;}
         else if(name == "mpartial") {return 948;}
+        else if(name == "mto"){return 10230;}
         else if(name == "mu") {return 956;}
         else if(name == "nabla") {return 2207;}
         else if(name == "phi") {return 632;}
-        else if(name == "pi") {return 960;}
+        else if(name == "mpi" || name == "pi") {return 960;}
         else if(name == "rho") {return 961;}
         return -1;
 	}
@@ -758,7 +806,7 @@ namespace scls {
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
         else if(needed_balise_name == "msubsup") {needed_part = __generate_subsup(content, current_style, line);}
-        else if(needed_balise_name == "vec") {needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);}
+        else if(needed_balise_name == "mvec" || needed_balise_name == "vec") {needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);}
         else {needed_part = __generate_text_for_maths(content.get()->text(), current_style, line);}
 
         // Validation of the image
@@ -1272,12 +1320,12 @@ namespace scls {
         int& max_width = a_datas.get()->max_width;
         std::vector<std::thread*> threads = std::vector<std::thread*>();
         int& total_height = a_datas.get()->total_height;
-        Image* to_return = new Image(max_width + global_style()->border_left_width + global_style()->border_right_width, total_height + global_style()->border_bottom_width + global_style()->border_top_width, global_style()->background_color());
+        Image* to_return = new Image(max_width + global_style()->border_left_width() + global_style()->border_right_width(), total_height + global_style()->border_bottom_width() + global_style()->border_top_width(), global_style()->background_color());
         // Draw the border
-        to_return->fill_rect(0, 0, global_style()->border_left_width, to_return->height(), global_style()->border_color);
-        to_return->fill_rect(0, to_return->height() - global_style()->border_bottom_width, to_return->width(), global_style()->border_bottom_width, global_style()->border_color);
-        to_return->fill_rect(0, 0, to_return->width(), global_style()->border_top_width, global_style()->border_color);
-        to_return->fill_rect(to_return->width() - global_style()->border_right_width, 0, global_style()->border_right_width, to_return->height(), global_style()->border_color);
+        to_return->fill_rect(0, 0, global_style()->border_left_width(), to_return->height(), global_style()->border_color);
+        to_return->fill_rect(0, to_return->height() - global_style()->border_bottom_width(), to_return->width(), global_style()->border_bottom_width(), global_style()->border_color);
+        to_return->fill_rect(0, 0, to_return->width(), global_style()->border_top_width(), global_style()->border_color);
+        to_return->fill_rect(to_return->width() - global_style()->border_right_width(), 0, global_style()->border_right_width(), to_return->height(), global_style()->border_color);
         // Draw the lines
         for(int i = 0;i<static_cast<int>(lines().size());i++) {
             Text_Image_Line* current_line = lines()[i];
@@ -1295,14 +1343,14 @@ namespace scls {
                         }
 
                         unsigned int height_to_apply = current_image->height();
-                        std::thread* current_thread = new std::thread(&Text_Image_Block::__image_paste, this, to_return, current_image, current_x + global_style()->border_left_width, current_y + global_style()->border_top_width);
+                        std::thread* current_thread = new std::thread(&Text_Image_Block::__image_paste, this, to_return, current_image, current_x + global_style()->border_left_width(), current_y + global_style()->border_top_width());
                         threads.push_back(current_thread);
 
                         current_y += height_to_apply;
                     }
                     else {
                         unsigned int height_to_apply = current_image->height();
-                        Text_Image_Block::__image_paste(to_return, current_image, current_x + global_style()->border_left_width, current_y + global_style()->border_top_width);
+                        Text_Image_Block::__image_paste(to_return, current_image, current_x + global_style()->border_left_width(), current_y + global_style()->border_top_width());
                         current_y += height_to_apply;
                     }
                 }
@@ -1376,7 +1424,12 @@ namespace scls {
 
     // Update the text in each lines, without others modification
     void Text_Image_Block::update_line_text() {
-        std::string needed_text = scls::replace(text(), std::string("</br>"), std::string("<br>"));
+        // Get the good text
+        std::string needed_text = std::string();
+        if(datas()->content.get()->balise_datas().is_paragraph){needed_text=scls::replace(text(), std::string("</br>"), std::string("<br>"));}
+        else{needed_text=full_text();}
+
+        // Start the parsing
         std::vector<std::string> cutted = cut_string(needed_text, "<br>", false, true);
         std::vector<Line_Datas>& lines_text = a_lines_text; a_lines_text.clear();
         unsigned int current_position = 0;
@@ -1413,7 +1466,7 @@ namespace scls {
     };
 
     // Generate each blocks in the multiblocks (and delete the previous ones)
-    void Text_Image_Multi_Block::generate_blocks() {free_memory();for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {generate_next_block(i);}}
+    void Text_Image_Multi_Block::generate_blocks() {a_blocks.clear();for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {generate_next_block(i);}}
 
     // Generate a block in the multiblocks
     std::shared_ptr<Text_Image_Block> Text_Image_Multi_Block::generate_next_block(int i) {
@@ -1500,11 +1553,7 @@ namespace scls {
     // Update the datas of each blocks
     void Text_Image_Multi_Block::update_blocks_datas(std::shared_ptr<XML_Text> cutted) {
         a_blocks_datas.clear();
-        if(cutted.get()->only_text()) {
-            // A single text
-            std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted);
-            a_blocks_datas.push_back(current_block_data);
-        }
+        if(cutted.get()->only_text()) {std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted);a_blocks_datas.push_back(current_block_data);}
         else {
             // More than a single text
             std::shared_ptr<XML_Text> temp_balise;
@@ -1516,6 +1565,8 @@ namespace scls {
                         // Create a needed paragraph before this one
                         std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(temp_balise);
                         cutted.get()->sub_texts()[i - 1] = temp_balise;
+                        Balise_Style_Datas* needed_balise_temp = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(temp_balise.get()->xml_balise_name()));
+                        if(needed_balise_temp != 0){current_block_data.get()->global_style.get()->set_block_style(needed_balise_temp->style);}
                         a_blocks_datas.push_back(current_block_data); temp_balise.reset();
                     }
 
@@ -1538,6 +1589,8 @@ namespace scls {
             if(temp_balise.get() != 0) {
                 std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(temp_balise);
                 cutted.get()->sub_texts()[cutted.get()->sub_texts().size() - 1] = temp_balise;
+                Balise_Style_Datas* needed_balise_temp = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(temp_balise.get()->xml_balise_name()));
+                if(needed_balise_temp != 0){current_block_data.get()->global_style.get()->set_block_style(needed_balise_temp->style);}
                 a_blocks_datas.push_back(current_block_data); temp_balise.reset();
             }
         }
