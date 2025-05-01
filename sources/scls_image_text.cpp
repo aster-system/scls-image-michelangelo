@@ -646,7 +646,7 @@ namespace scls {
             for(int j = 0;j<dimension_y;j++) {
                 // Get each images
                 int x = j; int y = i;
-                std::shared_ptr<scls::Image> current_image = generator->image_shared_ptr(content[x][y].to_std_string(), current_style);
+                std::shared_ptr<scls::Image> current_image = generator->image_shared_ptr(content[x][y].to_std_string(0), current_style);
                 if(max_height[y] < current_image.get()->height()){max_height[y] = current_image.get()->height();}
                 if(max_width[x] < current_image.get()->width()){max_width[x] = current_image.get()->width();}
                 current_matrice.push_back(current_image);
@@ -1058,7 +1058,7 @@ namespace scls {
         int current_x = 0;
         int current_line = 1;int current_y = a_line_height[0];
         int max_width = global_style()->max_width;
-        unsigned short space_width = static_cast<unsigned short>(static_cast<double>(global_style()->font_size()) / 2.0);
+        // unsigned short space_width = static_cast<unsigned short>(static_cast<double>(global_style()->font_size()) / 2.0);
         int needed_height = total_height() - a_y_offset;
         if(max_width > 0 && a_line_height.size() > 1){a_last_image.reset(new Image(max_width, needed_height, global_style()->background_color()));}
         else{a_last_image.reset(new Image(a_current_width, needed_height, global_style()->background_color()));}
@@ -1470,7 +1470,7 @@ namespace scls {
 
     // Generate a block in the multiblocks
     std::shared_ptr<Text_Image_Block> Text_Image_Multi_Block::generate_next_block(int i) {
-        if(i >= a_blocks.size()) {
+        if(i >= static_cast<int>(a_blocks.size())) {
             // Create the block
             std::shared_ptr<Text_Image_Block> new_block = __create_block(a_blocks_datas[i]);
             std::string needed_balise_name = a_blocks_datas[i].get()->content.get()->xml_balise_name();
