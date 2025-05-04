@@ -242,7 +242,7 @@ namespace scls {
         // Most simple _Balise_Style_Container constructor
         _Balise_Style_Container() {};
         // _Balise_Style_Container destructor
-        ~_Balise_Style_Container() {};
+        virtual ~_Balise_Style_Container() {};
 
         // Return a style balise
         inline Balise_Style_Datas* defined_balise_style(std::string balise_name) { return reinterpret_cast<Balise_Style_Datas*>(defined_balise(balise_name)); };
@@ -427,7 +427,7 @@ namespace scls {
         // Simple Text_Image_Word constructor to create a word
         Text_Image_Word(Word_Datas datas) : a_datas(datas) {};
         // Most simple Text_Image_Word destructor
-        ~Text_Image_Word() {};
+        virtual ~Text_Image_Word() {};
 
         // Getters and setters
         inline short bottom_offset() const {return a_datas.bottom_offset();};
@@ -515,7 +515,7 @@ namespace scls {
         // Most simple Text_Image_Line constructor
         Text_Image_Line(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<XML_Text> text) : a_defined_balises(defined_balises) {set_text(text);};
         // Text_Image_Line destructor
-        ~Text_Image_Line() {free_memory();};
+        virtual ~Text_Image_Line() {free_memory();};
 
         // Returns the text in plain text
         inline String plain_text() const { return a_defined_balises.get()->plain_text(text()->full_text()); };
@@ -674,7 +674,7 @@ namespace scls {
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, std::shared_ptr<Text_Style> style, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text), style), type) {};
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, std::shared_ptr<Text_Style> style) : Text_Image_Block(defined_balises, text, style, Block_Type::BT_Always_Free_Memory) { };
         // Text_Image_Block destructor
-        ~Text_Image_Block() { free_memory(); };
+        virtual ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
@@ -824,7 +824,7 @@ namespace scls {
         Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text) : a_defined_balises(defined_balises) {a_global_style.get()->set_this_style(a_global_style);set_text(text); };
         Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text, std::shared_ptr<Text_Style> style) : a_defined_balises(defined_balises) {a_global_style=style;a_global_style.get()->set_this_style(a_global_style);set_text(text); };
         // Text_Image destructor
-        ~Text_Image_Multi_Block() {__delete_blocks();};
+        virtual ~Text_Image_Multi_Block() {__delete_blocks();};
 
         // Generates and returns a block
         Text_Image_Block* _block(std::shared_ptr<Block_Datas> block) { Text_Image_Block* new_block = new Text_Image_Block(a_defined_balises, block); return new_block; };
@@ -906,7 +906,7 @@ namespace scls {
         // Most simple Text_Image_Generator constructor
         Text_Image_Generator() {a_balises.get()->_load_built_in_balises();};
         // Text_Image_Generator destructor
-        ~Text_Image_Generator() {}
+        virtual ~Text_Image_Generator() {}
 
         // Create an image from a text and return it
         inline Image* image(std::string text) {Text_Image_Block *img = new Text_Image_Block(a_balises, text);Image* to_return=img->image();delete img;img = 0;return to_return;};
