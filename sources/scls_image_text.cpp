@@ -804,6 +804,7 @@ namespace scls {
         if(potential_symbol != -1) {std::string text = std::string(""); add_utf_8(text, potential_symbol);needed_part = __generate_text_for_maths(text, current_style, line);}
         else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style, line);}
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style);}
+        else if(needed_balise_name == "msub" || needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style, line);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style, line);}
         else if(needed_balise_name == "msubsup") {needed_part = __generate_subsup(content, current_style, line);}
         else if(needed_balise_name == "mvec" || needed_balise_name == "vec") {needed_part = __generate_vector(line->generate_maths(content, current_style), current_style);}
