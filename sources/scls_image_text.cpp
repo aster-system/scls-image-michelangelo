@@ -605,7 +605,6 @@ namespace scls {
     }
     std::shared_ptr<__Math_Part_Image> __generate_matrice(std::shared_ptr<XML_Text> xml_content, const Text_Style& current_style) {
         // Load the needed datas
-        int needed_size = current_style.font_size();
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
         std::shared_ptr<Image>& image = to_return.get()->image;
         // Get the needed datas
@@ -618,13 +617,13 @@ namespace scls {
         }
         // Fill the matrice
         std::vector<std::vector<Fraction>> content = std::vector<std::vector<Fraction>>(dimension_y, std::vector<Fraction>(dimension_x, 0));
-        for(int i = 0;i<static_cast<int>(dimension_x);i++) {
-            if(i >= xml_content.get()->sub_texts().size()) {break;}
+        for(int i = 0;i<dimension_x;i++) {
+            if(i >= static_cast<int>(xml_content.get()->sub_texts().size())) {break;}
             // Get the datas
             std::shared_ptr<XML_Text> current_xml_content = xml_content.get()->sub_texts()[i];
             if(current_xml_content.get()->xml_balise_name() == "mmat") {
-                for(int j = 0;j<static_cast<int>(dimension_y);j++) {
-                    if(j >= current_xml_content.get()->sub_texts().size()) {break;}
+                for(int j = 0;j<dimension_y;j++) {
+                    if(j >= static_cast<int>(current_xml_content.get()->sub_texts().size())) {break;}
                     std::shared_ptr<XML_Text> used_xml_content = current_xml_content.get()->sub_texts()[j];
                     content[j][i] = Fraction::from_std_string(used_xml_content.get()->text());
                 }
@@ -1011,7 +1010,6 @@ namespace scls {
         // Create each words
         int& current_width = a_current_width; current_width = 0;
         std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
-        short& y_offset = a_y_offset;
         if(cutted.get()->only_text()) {__generate_words_without_balise(cutted, *needed_style.get(), current_position_in_plain_text);}
         else {
             // Handle a lot of balises

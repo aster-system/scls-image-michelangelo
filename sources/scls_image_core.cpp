@@ -1351,7 +1351,7 @@ namespace scls {
         while(actual_x < x_2) {
             draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
             actual_x++; total_added_y += all_x_1_3[iter_total];
-            iter++; iter_total++; if(iter < all_x_1_2.size()){actual_y_added += all_x_1_2[iter];}
+            iter++; iter_total++; if(iter < static_cast<int>(all_x_1_2.size())){actual_y_added += all_x_1_2[iter];}
         }
         // Create the second line
         actual_y_added = distance_y_1_2; iter = 0;
