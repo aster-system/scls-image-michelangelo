@@ -978,12 +978,12 @@ namespace scls {
                         int current_y = (y_center + (last_y + i));
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         } current_y = (y_center - (last_y + i));
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
@@ -993,12 +993,12 @@ namespace scls {
                         int current_y = (y_center + (last_y + i));
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         } current_y = (y_center - (last_y + i));
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
@@ -1012,12 +1012,12 @@ namespace scls {
                         int current_y = (y_center + i);
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                             else{set_pixel_directly(position, red, green, blue, multiplier);}
                         } current_y = (y_center - i);
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                             else{set_pixel_directly(position, red, green, blue, multiplier);}
                         }
                     }
@@ -1027,12 +1027,12 @@ namespace scls {
                         int current_y = (y_center + i);
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                             else{set_pixel_directly(position, red, green, blue, multiplier);}
                         } current_y = (y_center - i);
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                             else{set_pixel_directly(position, red, green, blue, multiplier);}
                         }
                     }
@@ -1064,12 +1064,12 @@ namespace scls {
                     int current_y = (y_center + i);
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x_left) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                         else{set_pixel_directly(position, red, green, blue, multiplier);}
                     } current_y = (y_center - i);
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x_left) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                         else{set_pixel_directly(position, red, green, blue, multiplier);}
                     }
                 }
@@ -1078,12 +1078,12 @@ namespace scls {
                     int current_y = (y_center + i);
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x_right) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                         else{set_pixel_directly(position, red, green, blue, multiplier);}
                     } current_y = (y_center - i);
                     if(current_y >= 0 && current_y < needed_height) {
                         int position = (current_y * needed_width + needed_x_right) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                         else{set_pixel_directly(position, red, green, blue, multiplier);}
                     }
                 }
