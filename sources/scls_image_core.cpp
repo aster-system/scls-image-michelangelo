@@ -416,12 +416,7 @@ namespace scls {
 
         unsigned char multiplier = (bit_depht() / 8.0);
         unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
-        if(color_type() == 6)
-        {
-            // Calculate alpha
-            alpha = normalize_value(alpha, 0, 255);
-            a_pixels->set_data_at(position + 3 * multiplier,  alpha);
-        }
+        if(color_type() == 6){alpha = normalize_value(alpha, 0, 255);a_pixels->set_data_at(position + 3 * multiplier,  alpha);}
     }
     void Image::set_pixel_blue(unsigned short x, unsigned short y, unsigned char blue, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
@@ -445,10 +440,7 @@ namespace scls {
             a_pixels->set_data_at(position + 2 * multiplier, blue);
             a_pixels->set_data_at(position + 3 * multiplier, alpha);
         }
-        else
-        {
-            a_pixels->set_data_at(position + 2 * multiplier, blue);
-        }
+        else{a_pixels->set_data_at(position + 2 * multiplier, blue);}
     }
     void Image::set_pixel_by_number(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         unsigned char multiplier = (bit_depht() / 8.0);
@@ -472,11 +464,7 @@ namespace scls {
             a_pixels->set_data_at(position + 2 * multiplier, blue);
             a_pixels->set_data_at(position + 3 * multiplier,  alpha);
         }
-        else {
-            a_pixels->set_data_at(position, red);
-            a_pixels->set_data_at(position + multiplier, green);
-            a_pixels->set_data_at(position + 2 * multiplier, blue);
-        }
+        else {a_pixels->set_data_at(position, red);a_pixels->set_data_at(position + multiplier, green);a_pixels->set_data_at(position + 2 * multiplier, blue);}
     };
     void Image::set_pixel_green(unsigned short x, unsigned short y, unsigned char green, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
@@ -500,10 +488,7 @@ namespace scls {
             a_pixels->set_data_at(position + multiplier, green);
             a_pixels->set_data_at(position + 3 * multiplier, alpha);
         }
-        else
-        {
-            a_pixels->set_data_at(position + multiplier, green);
-        }
+        else{a_pixels->set_data_at(position + multiplier, green);}
     }
     void Image::set_pixel_red(unsigned short x, unsigned short y, unsigned char red, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
@@ -527,10 +512,7 @@ namespace scls {
             a_pixels->set_data_at(position, red);
             a_pixels->set_data_at(position + 3 * multiplier,  alpha);
         }
-        else
-        {
-            a_pixels->set_data_at(position, red);
-        }
+        else{a_pixels->set_data_at(position, red);}
     };
     void Image::set_pixel_rgba_directly_with_alpha(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier) {
         // Process the color
@@ -659,7 +641,8 @@ namespace scls {
             // Load IDAT chunks
             if (a_idat_chunk.size() > 0) { _load_png_IDAT_from_file(file, error_handler); }
             else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_NO_CHUNK);
-        } else { fill(0, 0, 0); error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW);}
+        }
+        else { fill(0, 0, 0); error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW);}
     }
 
     // Loads the bKGD chunk from a path and returns the color
@@ -815,7 +798,8 @@ namespace scls {
 
             // Free memory
             delete[] out;
-        } else { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); }
+        }
+        else { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); }
     }
 
     // Load the pHYS chunk from a path
@@ -846,13 +830,7 @@ namespace scls {
     }
 
     // Load the sRGB chunk from a path
-    void Image::_load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
-        if (file != 0 && chunk.name == "sRGB" && chunk.size == 1) {
-            // Read into the chunk
-            a_srgb_value = file->data_at(chunk.position);
-        }
-        else error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK);
-    }
+    void Image::_load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {if (file != 0 && chunk.name == "sRGB" && chunk.size == 1) {a_srgb_value = file->data_at(chunk.position);}else{error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK);}}
 
     // Returns the signature of a PNG file
     std::vector<unsigned char> Image::png_signature() {
@@ -901,10 +879,11 @@ namespace scls {
             if(needed_x >= 0 && needed_x < needed_width) {
                 // Draw each needed pixels
                 // Set the last y
-                int last_y = 0;
+                double current_angle = 0;int last_y = 0;
                 if(needed_x >= start_x_inner) {
                     double current_ratio = static_cast<double>(needed_x - start_x_inner) / radius_inner;
-                    last_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius_inner);
+                    current_angle = std::acos(1.0 - current_ratio);
+                    last_y = round(std::sin(current_angle) * radius_inner);
                 }
                 // Draw the circle
                 for(int i = 0;i < (needed_y - last_y);i++) {
@@ -939,7 +918,7 @@ namespace scls {
         }
     }
     // Fills a circle on the image
-    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
+    void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
         const int start_x = round(x_center - radius);
         const int start_x_inner = start_x + border_radius;
         int current_x = 0;
@@ -947,6 +926,8 @@ namespace scls {
         double radius_inner = radius - border_radius;
 
         // Upgrade in the drawing
+        while(angle_end >= 360.0){angle_end -= 360.0;}while(angle_start >= 360.0){angle_start -= 360.0;}
+        angle_end /= (180.0/SCLS_PI);angle_start /= (180.0/SCLS_PI);
         int multiplier = 1;
         int needed_components = components();
         int needed_height = height();
@@ -958,51 +939,86 @@ namespace scls {
             // Get the needed x/y
             int needed_x = start_x + current_x;
             double current_ratio = static_cast<double>(current_x) / radius;
-            int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
+            double angle_border = std::acos(1.0 - current_ratio);
+            int needed_y = round(std::sin(angle_border) * radius);
 
             // If the coordonate his out of the image
             if(needed_x >= 0 && needed_x < needed_width) {
                 // Draw each needed pixels
                 // Set the last y
-                int last_y = 0;
+                #define CHECK_ANGLE(needed_angle) ((angle_end == angle_start) || (needed_angle >= angle_start && needed_angle <= angle_end) || (angle_start > angle_end && (needed_angle <= angle_end || needed_angle >= angle_start)))
+                #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
+                #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
+                double angle = 0;int last_y = 0;
                 if(needed_x >= start_x_inner) {
                     double current_ratio = static_cast<double>(needed_x - start_x_inner) / radius_inner;
-                    last_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius_inner);
+                    angle = std::acos(1.0 - current_ratio);
+                    last_y = round(std::sin(angle) * radius_inner);
                 }
+
                 // Draw the circle border
-                int i = 0;
-                for(;i < (needed_y - last_y);i++) {
-                    // Left of the circle
+                // Left-bottom of the circle border
+                int y_height_base = (needed_y - last_y);
+                int i = 0;double current_angle = SCLS_PI - angle;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
+                if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                for(;i<y_height;i++) {
+                    needed_x = (x_center - radius) + current_x;
+                    if(needed_x >= 0 && needed_x < needed_width) {
+                        int current_y = (y_center - (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        }
+                    }
+                }
+                // Left-top of the circle border
+                i = 0;current_angle = SCLS_PI + angle;current_angle_border = SCLS_PI + angle_border;y_height = y_height_base;
+                if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                for(;i<y_height;i++) {
                     needed_x = (x_center - radius) + current_x;
                     if(needed_x >= 0 && needed_x < needed_width) {
                         int current_y = (y_center + (last_y + i));
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                        } current_y = (y_center - (last_y + i));
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                        }
-                    }
-                    // Right of the circle
-                    needed_x = (x_center + radius) - current_x;
-                    if(needed_x >= 0 && needed_x < needed_width) {
-                        int current_y = (y_center + (last_y + i));
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                        } current_y = (y_center - (last_y + i));
-                        if(current_y >= 0 && current_y < needed_height) {
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
                             if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
                 }
+                // Right-bottom of the circle border
+                i = 0;current_angle = angle;current_angle_border = angle_border;y_height = y_height_base;
+                if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                for(;i<y_height;i++) {
+                    needed_x = (x_center + radius) - current_x;
+                    if(needed_x >= 0 && needed_x < needed_width) {
+                        int current_y = (y_center - (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        }
+                    }
+                }
+                // Right-top of the circle border
+                i = 0; current_angle = SCLS_PI * 2.0 - angle;current_angle_border = SCLS_PI * 2.0 - angle_border;y_height = y_height_base;
+                if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                for(;i<y_height;i++) {
+                    needed_x = (x_center + radius) - current_x;
+                    if(needed_x >= 0 && needed_x < needed_width) {
+                        int current_y = (y_center + (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        }
+                    }
+                }
+
                 // Draw the circle
                 i = 0;
                 for(;i < last_y;i++) {
