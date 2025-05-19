@@ -853,71 +853,9 @@ namespace scls {
     //
     //*********
 
-    // Draw a circle on the image
-    void Image::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
-        const int start_x = round(x_center - radius);
-        const int start_x_inner = start_x + line_width;
-        int current_x = 0;
-        // Check the inner part
-        double radius_inner = radius - line_width;
-
-        // Upgrade in the drawing
-        int multiplier = 1;
-        int needed_components = components();
-        int needed_height = height();
-        int needed_width = width();
-        while(current_x < radius) {
-            // Update the coordinate
-            current_x++;
-
-            // Get the needed x/y
-            int needed_x = start_x + current_x;
-            double current_ratio = static_cast<double>(current_x) / radius;
-            int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
-
-            // If the coordonate his out of the image
-            if(needed_x >= 0 && needed_x < needed_width) {
-                // Draw each needed pixels
-                // Set the last y
-                double current_angle = 0;int last_y = 0;
-                if(needed_x >= start_x_inner) {
-                    double current_ratio = static_cast<double>(needed_x - start_x_inner) / radius_inner;
-                    current_angle = std::acos(1.0 - current_ratio);
-                    last_y = round(std::sin(current_angle) * radius_inner);
-                }
-                // Draw the circle
-                for(int i = 0;i < (needed_y - last_y);i++) {
-                    // Left of the circle
-                    needed_x = (x_center - radius) + current_x;
-                    int current_y = (y_center + (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    } current_y = (y_center - (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    }
-                    // Right of the circle
-                    needed_x = (x_center + radius) - current_x;
-                    current_y = (y_center + (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    } current_y = (y_center - (last_y + i));
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x) * needed_components;
-                        if(use_alpha()) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    }
-                }
-            }
-        }
-    }
-    // Fills a circle on the image
+    // Draws / fills a circle on the image
+    void Image::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {fill_circle(x_center, y_center, radius, 0, 0, 0, 0, line_width, red, green, blue, alpha);}
+    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
     void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
         const int start_x = round(x_center - radius);
         const int start_x_inner = start_x + border_radius;
@@ -956,157 +894,110 @@ namespace scls {
                     last_y = round(std::sin(angle) * radius_inner);
                 }
 
-                // Draw the circle border
-                // Left-bottom of the circle border
-                int y_height_base = (needed_y - last_y);
-                int i = 0;double current_angle = SCLS_PI - angle;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
-                if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
-                if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
-                for(;i<y_height;i++) {
-                    needed_x = (x_center - radius) + current_x;
-                    if(needed_x >= 0 && needed_x < needed_width) {
-                        int current_y = (y_center - (last_y + i));
-                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                // Border part
+                if(border_alpha > 0 && border_radius > 0) {
+                    // Draw the circle border
+                    // Left-bottom of the circle border
+                    int y_height_base = (needed_y - last_y);
+                    int i = 0;double current_angle = SCLS_PI - angle;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
+                    if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                    if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                    for(;i<y_height;i++) {
+                        needed_x = (x_center - radius) + current_x;
+                        if(needed_x >= 0 && needed_x < needed_width) {
+                            int current_y = (y_center - (last_y + i));
+                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                            }
                         }
                     }
-                }
-                // Left-top of the circle border
-                i = 0;current_angle = SCLS_PI + angle;current_angle_border = SCLS_PI + angle_border;y_height = y_height_base;
-                if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
-                if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
-                for(;i<y_height;i++) {
-                    needed_x = (x_center - radius) + current_x;
-                    if(needed_x >= 0 && needed_x < needed_width) {
-                        int current_y = (y_center + (last_y + i));
-                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                    // Left-top of the circle border
+                    i = 0;current_angle = SCLS_PI + angle;current_angle_border = SCLS_PI + angle_border;y_height = y_height_base;
+                    if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                    if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                    for(;i<y_height;i++) {
+                        needed_x = (x_center - radius) + current_x;
+                        if(needed_x >= 0 && needed_x < needed_width) {
+                            int current_y = (y_center + (last_y + i));
+                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                            }
                         }
                     }
-                }
-                // Right-bottom of the circle border
-                i = 0;current_angle = angle;current_angle_border = angle_border;y_height = y_height_base;
-                if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
-                if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
-                for(;i<y_height;i++) {
-                    needed_x = (x_center + radius) - current_x;
-                    if(needed_x >= 0 && needed_x < needed_width) {
-                        int current_y = (y_center - (last_y + i));
-                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                    // Right-bottom of the circle border
+                    i = 0;current_angle = angle;current_angle_border = angle_border;y_height = y_height_base;
+                    if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                    if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                    for(;i<y_height;i++) {
+                        needed_x = (x_center + radius) - current_x;
+                        if(needed_x >= 0 && needed_x < needed_width) {
+                            int current_y = (y_center - (last_y + i));
+                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                            }
                         }
                     }
-                }
-                // Right-top of the circle border
-                i = 0; current_angle = SCLS_PI * 2.0 - angle;current_angle_border = SCLS_PI * 2.0 - angle_border;y_height = y_height_base;
-                if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
-                if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
-                for(;i<y_height;i++) {
-                    needed_x = (x_center + radius) - current_x;
-                    if(needed_x >= 0 && needed_x < needed_width) {
-                        int current_y = (y_center + (last_y + i));
-                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                    // Right-top of the circle border
+                    i = 0; current_angle = SCLS_PI * 2.0 - angle;current_angle_border = SCLS_PI * 2.0 - angle_border;y_height = y_height_base;
+                    if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                    if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
+                    for(;i<y_height;i++) {
+                        needed_x = (x_center + radius) - current_x;
+                        if(needed_x >= 0 && needed_x < needed_width) {
+                            int current_y = (y_center + (last_y + i));
+                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                            }
                         }
                     }
                 }
 
-                // Draw the circle
-                i = 0;
-                for(;i < last_y;i++) {
-                    // Left of the circle
-                    needed_x = (x_center - radius) + current_x;
-                    if(needed_x >= 0 && needed_x < needed_width) {
-                        int current_y = (y_center + i);
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                            else{set_pixel_directly(position, red, green, blue, multiplier);}
-                        } current_y = (y_center - i);
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                // Inner part
+                if(alpha > 0) {
+                    // Fill the circle
+                    int i = 0;
+                    for(;i < last_y;i++) {
+                        // Left of the circle
+                        needed_x = (x_center - radius) + current_x;
+                        if(needed_x >= 0 && needed_x < needed_width) {
+                            int current_y = (y_center + i);
+                            if(current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                else{set_pixel_directly(position, red, green, blue, multiplier);}
+                            } current_y = (y_center - i);
+                            if(current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                else{set_pixel_directly(position, red, green, blue, multiplier);}
+                            }
                         }
-                    }
-                    // Right of the circle
-                    needed_x = (x_center + radius) - current_x;
-                    if(needed_x >= 0 && needed_x < needed_width){
-                        int current_y = (y_center + i);
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                            else{set_pixel_directly(position, red, green, blue, multiplier);}
-                        } current_y = (y_center - i);
-                        if(current_y >= 0 && current_y < needed_height) {
-                            int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        // Right of the circle
+                        needed_x = (x_center + radius) - current_x;
+                        if(needed_x >= 0 && needed_x < needed_width){
+                            int current_y = (y_center + i);
+                            if(current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                else{set_pixel_directly(position, red, green, blue, multiplier);}
+                            } current_y = (y_center - i);
+                            if(current_y >= 0 && current_y < needed_height) {
+                                int position = (current_y * needed_width + needed_x) * needed_components;
+                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                else{set_pixel_directly(position, red, green, blue, multiplier);}
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
-        radius = round(radius);
-        const int start_x = x_center - radius;
-        int current_x = 0;
-
-        // Upgrade in the drawing
-        int multiplier = 1;
-        int needed_components = components();
-        int needed_height = height();
-        int needed_width = width();
-        while(current_x <= radius) {
-            // Get the needed x/y
-            int needed_x_left = start_x + current_x;
-            int needed_x_right = (start_x + radius * 2) - (current_x + 1);
-            double current_ratio = (static_cast<double>(current_x) + 0.5) / radius;
-            int needed_y = round(std::sin(std::acos(1.0 - current_ratio)) * radius);
-
-            // Draw the circle
-            for(int i = 0;i < needed_y;i++) {
-                // Left of the circle
-                if(needed_x_left >= 0 && needed_x_left < needed_width) {
-                    int current_y = (y_center + i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x_left) * needed_components;
-                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    } current_y = (y_center - i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x_left) * needed_components;
-                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    }
-                }
-                // Right of the circle
-                if(needed_x_right >= 0 && needed_x_right < needed_width) {
-                    int current_y = (y_center + i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x_right) * needed_components;
-                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    } current_y = (y_center - i);
-                    if(current_y >= 0 && current_y < needed_height) {
-                        int position = (current_y * needed_width + needed_x_right) * needed_components;
-                        if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                        else{set_pixel_directly(position, red, green, blue, multiplier);}
-                    }
-                }
-            }
-
-            // Update the coordinate
-            current_x++;
         }
     }
     // Fill a circle with a gradient on the image
