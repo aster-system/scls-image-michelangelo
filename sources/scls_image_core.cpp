@@ -73,6 +73,7 @@ namespace scls {
             else if(cutted[0] == std::string("blue")){to_return = Color(0, 0, 255);}
             else if(cutted[0] == std::string("green")){to_return = Color(0, 255, 0);}
             else if(cutted[0] == std::string("red")){to_return = Color(255, 0, 0);}
+            else if(cutted[0] == std::string("yellow")){to_return = Color(255, 255, 0);}
             else if(cutted[0] == std::string("transparent")){to_return = Color(0, 0, 0, 0);}
         }
 
@@ -873,15 +874,15 @@ namespace scls {
         while(current_x < radius) {
             // Update the coordinate
             current_x++;
-
-            // Get the needed x/y
             int needed_x = start_x + current_x;
-            double current_ratio = static_cast<double>(current_x) / radius;
-            double angle_border = std::acos(1.0 - current_ratio);
-            int needed_y = round(std::sin(angle_border) * radius);
 
             // If the coordonate his out of the image
             if(needed_x >= 0 && needed_x < needed_width) {
+                // Get the needed x/y
+                double current_ratio = static_cast<double>(current_x) / radius;
+                double angle_border = std::acos(1.0 - current_ratio);
+                int needed_y = round(std::sin(angle_border) * radius);
+
                 // Draw each needed pixels
                 // Set the last y
                 #define CHECK_ANGLE(needed_angle) ((angle_end == angle_start) || (needed_angle >= angle_start && needed_angle <= angle_end) || (angle_start > angle_end && (needed_angle <= angle_end || needed_angle >= angle_start)))
