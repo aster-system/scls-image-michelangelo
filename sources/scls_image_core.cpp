@@ -257,6 +257,9 @@ namespace scls {
         return std::string("An unknow error of ID \"") + std::to_string(value()) + std::string("\" occured.");
     };
 
+    // Copies this image and returns the result
+    std::shared_ptr<Image> Image::copy_image(){std::shared_ptr<Image> to_return = std::make_shared<Image>();to_return.get()->a_height = a_height;to_return.get()->a_width = a_width;to_return.get()->create_memory();to_return.get()->paste(this, 0, 0);return to_return;};
+
     // Fill the image with one color
     void Image::fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         create_memory();
@@ -857,12 +860,18 @@ namespace scls {
     // Draws / fills a circle on the image
     void Image::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {fill_circle(x_center, y_center, radius, 0, 0, 0, 0, line_width, red, green, blue, alpha);}
     void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
-    void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
-        const int start_x = round(x_center - radius);
+    void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){fill_circle(x_center, y_center, radius, radius, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){fill_circle(x_center,y_center,radius,0,360,red,green,blue,alpha,border_radius,border_red,border_green,border_blue,border_alpha);};
+    void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius_x,radius_y,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void Image::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void Image::fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
+    void Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
+        const int start_x = round(x_center - radius_x);
         const int start_x_inner = start_x + border_radius;
         int current_x = 0;
         // Check the inner part
-        double radius_inner = radius - border_radius;
+        double radius_inner = radius_x - border_radius;
 
         // Upgrade in the drawing
         while(angle_end >= 360.0){angle_end -= 360.0;}while(angle_start >= 360.0){angle_start -= 360.0;}
@@ -871,7 +880,7 @@ namespace scls {
         int needed_components = components();
         int needed_height = height();
         int needed_width = width();
-        while(current_x < radius) {
+        while(current_x < radius_x) {
             // Update the coordinate
             current_x++;
             int needed_x = start_x + current_x;
@@ -879,20 +888,23 @@ namespace scls {
             // If the coordonate his out of the image
             if(needed_x >= 0 && needed_x < needed_width) {
                 // Get the needed x/y
-                double current_ratio = static_cast<double>(current_x) / radius;
+                double current_ratio = static_cast<double>(current_x) / radius_x;
                 double angle_border = std::acos(1.0 - current_ratio);
-                int needed_y = round(std::sin(angle_border) * radius);
+                double angle_border_sin = std::sin(angle_border);
+                int needed_y = round(angle_border_sin * radius_y);
 
                 // Draw each needed pixels
                 // Set the last y
                 #define CHECK_ANGLE(needed_angle) ((angle_end == angle_start) || (needed_angle >= angle_start && needed_angle <= angle_end) || (angle_start > angle_end && (needed_angle <= angle_end || needed_angle >= angle_start)))
                 #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
                 #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
-                double angle = 0;int last_y = 0;
+                double angle = 0;double angle_sin = 0;int last_y = 0;
+                double radius_inner = (radius_x + (radius_y - radius_x) * angle_border_sin) - border_radius;
                 if(needed_x >= start_x_inner) {
-                    double current_ratio = static_cast<double>(needed_x - start_x_inner) / radius_inner;
-                    angle = std::acos(1.0 - current_ratio);
-                    last_y = round(std::sin(angle) * radius_inner);
+                    double current_ratio = static_cast<double>(needed_x - start_x_inner) / (radius_x - border_radius);
+                    angle = std::acos(1.0 - current_ratio);angle_sin = std::sin(angle);
+                    double radius_inner = (radius_x + (radius_y - radius_x) * angle_sin) - border_radius;
+                    last_y = round(angle_sin * radius_inner);
                 }
 
                 // Border part
@@ -904,7 +916,7 @@ namespace scls {
                     if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center - radius) + current_x;
+                        needed_x = (x_center - radius_x) + current_x;
                         if(needed_x >= 0 && needed_x < needed_width) {
                             int current_y = (y_center - (last_y + i));
                             if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
@@ -919,7 +931,7 @@ namespace scls {
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center - radius) + current_x;
+                        needed_x = (x_center - radius_x) + current_x;
                         if(needed_x >= 0 && needed_x < needed_width) {
                             int current_y = (y_center + (last_y + i));
                             if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
@@ -934,7 +946,7 @@ namespace scls {
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center + radius) - current_x;
+                        needed_x = (x_center + radius_x) - current_x;
                         if(needed_x >= 0 && needed_x < needed_width) {
                             int current_y = (y_center - (last_y + i));
                             if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
@@ -949,7 +961,7 @@ namespace scls {
                     if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center + radius) - current_x;
+                        needed_x = (x_center + radius_x) - current_x;
                         if(needed_x >= 0 && needed_x < needed_width) {
                             int current_y = (y_center + (last_y + i));
                             if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
@@ -967,7 +979,7 @@ namespace scls {
                     int i = 0;
                     for(;i < last_y;i++) {
                         // Left of the circle
-                        needed_x = (x_center - radius) + current_x;
+                        needed_x = (x_center - radius_x) + current_x;
                         if(needed_x >= 0 && needed_x < needed_width) {
                             int current_y = (y_center + i);
                             if(current_y >= 0 && current_y < needed_height) {
@@ -982,7 +994,7 @@ namespace scls {
                             }
                         }
                         // Right of the circle
-                        needed_x = (x_center + radius) - current_x;
+                        needed_x = (x_center + radius_x) - current_x;
                         if(needed_x >= 0 && needed_x < needed_width){
                             int current_y = (y_center + i);
                             if(current_y >= 0 && current_y < needed_height) {
