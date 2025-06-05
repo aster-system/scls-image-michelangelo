@@ -54,6 +54,7 @@ namespace scls {
         else if(name == std::string("red")){color = Color(255, 0, 0);}
         else if(name == std::string("yellow")){color = Color(255, 255, 0);}
         else if(name == std::string("transparent")){color = Color(0, 0, 0, 0);}
+        else if(name == std::string("white")){color = Color(255, 255, 255);}
     }
 
     // Return a color loaded from a text
@@ -90,7 +91,7 @@ namespace scls {
             std::string current_attribute_name = current_attribute.name;
             std::string current_attribute_value = current_attribute.value;
 
-            if(current_attribute_value == std::string()) {__defined_color_by_name(current_attribute_value, color);}
+            if(current_attribute_value == std::string()) {__defined_color_by_name(current_attribute_name, color);}
             else {
                 // Precise datas for the color
                 if(current_attribute_name == "red") {color.set_red(std::stoi(current_attribute_value));}
