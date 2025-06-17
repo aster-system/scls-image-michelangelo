@@ -155,7 +155,7 @@ namespace scls {
     };
 
     // Return a pointer to an image with a char on it
-    Image* _char_image(unsigned int character, FT_Face& face, int& cursor_pos, unsigned int& real_width, int& y_pos, Color color) {
+    __Image_Base* _char_image(unsigned int character, FT_Face& face, int& cursor_pos, unsigned int& real_width, int& y_pos, Color color) {
         // Configure and load the FreeType glyph system
         FT_UInt index = FT_Get_Char_Index(face, character);
         //FT_Error error =
@@ -167,7 +167,7 @@ namespace scls {
         // Create and draw the image
         unsigned short height = static_cast<unsigned short>(binary_datas->bitmap.rows);
         unsigned short width = static_cast<unsigned short>(binary_datas->bitmap.width);
-        Image* img = new Image();
+        __Image_Base* img = new __Image_Base();
         img->_load_from_text_binary(reinterpret_cast<char*>(binary_datas->bitmap.buffer), width, height, color.red(), color.green(), color.blue(), color.alpha());
 
         // Get the position of the cursor
@@ -211,7 +211,7 @@ namespace scls {
         return false;
     }
     // Returns a text style from XML
-    void text_style_from_xml(std::shared_ptr<XML_Text> content, Text_Style* style) {
+    void text_style_from_xml(std::shared_ptr<__XML_Text_Base> content, Text_Style* style) {
         for(int j = 0;j<static_cast<int>(content.get()->xml_balise_attributes().size());j++) {
             XML_Attribute& current_attribute = content.get()->xml_balise_attributes()[j];
             std::string current_attribute_name = current_attribute.name;
@@ -423,7 +423,7 @@ namespace scls {
         error = FT_Set_Pixel_Sizes(face, 0, style().font_size());
 
         // Create each characters
-        std::vector<Image*> characters;
+        std::vector<__Image_Base*> characters;
         std::vector<unsigned int> characters_width;
         std::vector<int> characters_x;
         std::vector<int> cursor_pos;
@@ -445,7 +445,7 @@ namespace scls {
                 int cursor_position = 0;
                 unsigned int real_width = 0;
                 int y_position = 0;
-                Image* image = _char_image(final_character, face, cursor_position, real_width, y_position, style().color());
+                __Image_Base* image = _char_image(final_character, face, cursor_position, real_width, y_position, style().color());
                 characters.push_back(image); characters_x.push_back(total_width);
                 cursor_pos.push_back(total_width + cursor_position);
                 if(cursor_pos[cursor_pos.size() - 1] < 0) cursor_pos[cursor_pos.size() - 1] = 0; // Avoid a little bug with X position
@@ -488,7 +488,7 @@ namespace scls {
 
         // Create the final image and clear the memory
         a_datas.set_width(total_width);
-        a_last_image.reset(new Image(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0)));
+        a_last_image.reset(new __Image_Base(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0)));
         unsigned char max_thread_number = 0;
         std::vector<unsigned int> positions = std::vector<unsigned int>();
         std::vector<std::thread*> threads = std::vector<std::thread*>();
@@ -540,14 +540,14 @@ namespace scls {
 	}
 
 	// Get an utf-8 symbol from a XML content
-	void utf_8_symbol_xml(std::shared_ptr<scls::XML_Text> text, bool to_html) {
+	void utf_8_symbol_xml(std::shared_ptr<__XML_Text_Base> text, bool to_html) {
 	    for(int i = 0;i<static_cast<int>(text.get()->sub_texts().size());i++) {
             int potential_symbol = utf_8_symbol_by_name(text.get()->sub_texts().at(i).get()->xml_balise_name());
             if(potential_symbol != -1) {
                 text.get()->sub_texts().at(i).get()->clear();
                 text.get()->sub_texts().at(i).get()->set_xml_balise_name(std::string());
                 if(to_html) {
-                    char* c = new char[8];std::to_chars(c, c + 5, potential_symbol, 16);std::string symbol_to_str = c;delete c;c=0;
+                    char* c = new char[8];std::to_chars(c, c + 5, potential_symbol, 16);std::string symbol_to_str = c;delete[] c;c=0;
                     std::string needed_text = std::string("&#x") + symbol_to_str.substr(0, std::ceil(std::log(potential_symbol) / std::log(16))) + std::string(";");
                     text.get()->sub_texts().at(i).get()->parse_text(needed_text);
                 }
@@ -578,7 +578,7 @@ namespace scls {
     };
 
     // Generates the needed maths for a word
-    std::shared_ptr<__Math_Part_Image> __generate_frac(std::shared_ptr<XML_Text> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
+    std::shared_ptr<__Math_Part_Image> __generate_frac(std::shared_ptr<__XML_Text_Base> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
         // Asserts
         if(content.get()->sub_texts().size() <= 0){return std::shared_ptr<__Math_Part_Image>();}
         else if(content.get()->sub_texts().size() == 1){return needed_line->generate_maths(content.get()->sub_texts()[0], current_style);}
@@ -592,8 +592,8 @@ namespace scls {
         int max_width = denominator.get()->image.get()->width(); if(numerator.get()->image.get()->width() > max_width){max_width = numerator.get()->image.get()->width();}
         int needed_size = denominator.get()->image.get()->height() + numerator.get()->image.get()->height() + bar_width * 3;
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
-        image = std::make_shared<Image>(max_width, needed_size, current_style.background_color());
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(max_width, needed_size, current_style.background_color());
         // Paste the needed image
         int bar_length_offset = 1;
         image.get()->fill_rect(bar_length_offset, numerator.get()->image.get()->height() + bar_width, image.get()->width() - bar_length_offset * 2, bar_width, current_style.color());
@@ -603,10 +603,10 @@ namespace scls {
         to_return.get()->middle_top_offset = numerator.get()->image.get()->height() + bar_width + std::floor(bar_width / 2);
         return to_return;
     }
-    std::shared_ptr<__Math_Part_Image> __generate_matrice(std::shared_ptr<XML_Text> xml_content, const Text_Style& current_style) {
+    std::shared_ptr<__Math_Part_Image> __generate_matrice(std::shared_ptr<__XML_Text_Base> xml_content, const Text_Style& current_style) {
         // Load the needed datas
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
         // Get the needed datas
         int dimension_x = 0; int dimension_y = 0;
         for(int i = 0;i<static_cast<int>(xml_content.get()->xml_balise_attributes().size());i++) {
@@ -620,11 +620,11 @@ namespace scls {
         for(int i = 0;i<dimension_x;i++) {
             if(i >= static_cast<int>(xml_content.get()->sub_texts().size())) {break;}
             // Get the datas
-            std::shared_ptr<XML_Text> current_xml_content = xml_content.get()->sub_texts()[i];
+            std::shared_ptr<__XML_Text_Base> current_xml_content = xml_content.get()->sub_texts()[i];
             if(current_xml_content.get()->xml_balise_name() == "mmat") {
                 for(int j = 0;j<dimension_y;j++) {
                     if(j >= static_cast<int>(current_xml_content.get()->sub_texts().size())) {break;}
-                    std::shared_ptr<XML_Text> used_xml_content = current_xml_content.get()->sub_texts()[j];
+                    std::shared_ptr<__XML_Text_Base> used_xml_content = current_xml_content.get()->sub_texts()[j];
                     content[j][i] = Fraction::from_std_string(used_xml_content.get()->text());
                 }
             }
@@ -635,17 +635,17 @@ namespace scls {
 
         // Draw the matrice
         Text_Image_Generator gen;Text_Image_Generator* generator = &gen;
-        std::vector<std::vector<std::shared_ptr<scls::Image>>> images = std::vector<std::vector<std::shared_ptr<scls::Image>>>();
+        std::vector<std::vector<std::shared_ptr<__Image_Base>>> images = std::vector<std::vector<std::shared_ptr<__Image_Base>>>();
         // Create each images
         std::vector<int> max_height = std::vector<int>(dimension_x);
         std::vector<int> max_width = std::vector<int>(dimension_y);
         for(int i = 0;i<dimension_x;i++) {
             // Get each sub-matrices
-            std::vector<std::shared_ptr<scls::Image>> current_matrice;
+            std::vector<std::shared_ptr<__Image_Base>> current_matrice;
             for(int j = 0;j<dimension_y;j++) {
                 // Get each images
                 int x = j; int y = i;
-                std::shared_ptr<scls::Image> current_image = generator->image_shared_ptr(content[x][y].to_std_string(0), current_style);
+                std::shared_ptr<__Image_Base> current_image = generator->image_shared_ptr(content[x][y].to_std_string(0), current_style);
                 if(max_height[y] < current_image.get()->height()){max_height[y] = current_image.get()->height();}
                 if(max_width[x] < current_image.get()->width()){max_width[x] = current_image.get()->width();}
                 current_matrice.push_back(current_image);
@@ -665,7 +665,7 @@ namespace scls {
         int total_width = 0; for(int i = 0;i<static_cast<int>(max_width.size());i++){total_width+=max_width[i];}
         total_width += (static_cast<int>(max_width.size()) - 1) * separation_width + (end_width + start_width) * 2;
         int current_x = 0; int current_y = start_width * 2;
-        image = std::make_shared<scls::Image>(total_width, total_height, current_style.background_color());
+        image = std::make_shared<__Image_Base>(total_width, total_height, current_style.background_color());
         image.get()->fill_rect(0, 0, start_width, image.get()->height(), current_style.color());
         image.get()->fill_rect(0, 0,end_start_limit_width, start_width, current_style.color());
         image.get()->fill_rect(0, image.get()->height() - start_width, end_start_limit_width, start_width, current_style.color());
@@ -698,8 +698,8 @@ namespace scls {
         // Draw the nabla
         int needed_size = current_style.font_size();
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
-        image = std::make_shared<Image>(needed_size, needed_size, current_style.background_color());
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(needed_size, needed_size, current_style.background_color());
         // Draw the triangle
         double line_width = static_cast<double>(needed_size) / 10.0;
         int first_line_width = 2;
@@ -713,30 +713,30 @@ namespace scls {
         to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
         return to_return;
     }
-    std::shared_ptr<__Math_Part_Image> __generate_sub(std::shared_ptr<XML_Text> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
+    std::shared_ptr<__Math_Part_Image> __generate_sub(std::shared_ptr<__XML_Text_Base> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
         // Draw the needed image
         Text_Style needed_style = current_style; needed_style.set_font_size(current_style.font_size() / 2);
         std::shared_ptr<__Math_Part_Image> needed_part = needed_line->generate_maths(content, needed_style);
-        std::shared_ptr<Image>& needed_image = needed_part.get()->image;
+        std::shared_ptr<__Image_Base>& needed_image = needed_part.get()->image;
         // Draw the image to return
         int needed_size = current_style.font_size();
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
-        image = std::make_shared<Image>(needed_image.get()->width(), needed_size, current_style.background_color());
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(needed_image.get()->width(), needed_size, current_style.background_color());
         // Paste the needed image
         image.get()->paste(needed_image.get(), 0, image.get()->height() - needed_image.get()->height());
         to_return.get()->middle_bottom_offset = std::ceil(image.get()->height() / 2);
         to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
         return to_return;
     }
-    std::shared_ptr<__Math_Part_Image> __generate_subsup(std::shared_ptr<XML_Text> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
+    std::shared_ptr<__Math_Part_Image> __generate_subsup(std::shared_ptr<__XML_Text_Base> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
         // Asserts
         if(content.get()->sub_texts().size() <= 0){return std::shared_ptr<__Math_Part_Image>();}
         else if(content.get()->sub_texts().size() == 1){return needed_line->generate_maths(content.get()->sub_texts()[0], current_style);}
 
         // Analyse the part
-        std::shared_ptr<XML_Text> sub_part = content.get()->sub_texts()[0];
-        std::shared_ptr<XML_Text> sup_part = content.get()->sub_texts()[1];
+        std::shared_ptr<__XML_Text_Base> sub_part = content.get()->sub_texts()[0];
+        std::shared_ptr<__XML_Text_Base> sup_part = content.get()->sub_texts()[1];
 
         // Draw the needed image
         Text_Style needed_style = current_style;needed_style.set_font_size(current_style.font_size() / 2);
@@ -746,8 +746,8 @@ namespace scls {
         int max_width = sub.get()->image.get()->width(); if(sup.get()->image.get()->width() > max_width){max_width = sup.get()->image.get()->width();}
         int needed_size = current_style.font_size(); //sub.get()->image.get()->height() + sup.get()->image.get()->height();
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
-        image = std::make_shared<Image>(max_width, needed_size, current_style.background_color());
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(max_width, needed_size, current_style.background_color());
         // Paste the needed image
         image.get()->paste(sub.get()->image.get(), image.get()->width() / 2 - sub.get()->image.get()->width() / 2, image.get()->height() - sub.get()->image.get()->height());
         image.get()->paste(sup.get()->image.get(), image.get()->width() / 2 - sup.get()->image.get()->width() / 2, 0);
@@ -755,16 +755,16 @@ namespace scls {
         to_return.get()->middle_top_offset = sup.get()->image.get()->height();
         return to_return;
     }
-    std::shared_ptr<__Math_Part_Image> __generate_sup(std::shared_ptr<XML_Text> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
+    std::shared_ptr<__Math_Part_Image> __generate_sup(std::shared_ptr<__XML_Text_Base> content, const Text_Style& current_style, Text_Image_Line* needed_line) {
         // Draw the needed image
         Text_Style needed_style = current_style; needed_style.set_font_size(current_style.font_size() / 2);
         std::shared_ptr<__Math_Part_Image> needed_part = needed_line->generate_maths(content, needed_style);
-        std::shared_ptr<Image>& needed_image = needed_part.get()->image;
+        std::shared_ptr<__Image_Base>& needed_image = needed_part.get()->image;
         // Draw the image to return
         int needed_size = current_style.font_size();
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
-        image = std::make_shared<Image>(needed_image.get()->width(), needed_size, current_style.background_color());
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(needed_image.get()->width(), needed_size, current_style.background_color());
         // Paste the needed image
         image.get()->paste(needed_image.get(), 0, 0);
         to_return.get()->middle_bottom_offset = std::ceil(image.get()->height() / 2);
@@ -785,10 +785,10 @@ namespace scls {
         // Draw the nabla
         int needed_size = current_style.font_size() / 2;
         std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<Image>& image = to_return.get()->image;
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
         to_return.get()->bottom_offset = base_image.get()->bottom_offset;
         to_return.get()->top_offset = needed_size;
-        image = std::make_shared<Image>(current_style.font_size(), base_image.get()->image.get()->height() + needed_size, current_style.background_color());
+        image = std::make_shared<__Image_Base>(current_style.font_size(), base_image.get()->image.get()->height() + needed_size, current_style.background_color());
         // Paste the image
         image.get()->paste(base_image.get()->image.get(), current_style.font_size() / 2 - base_image.get()->image.get()->width() / 2, needed_size);
         // Draw the vector
@@ -797,7 +797,7 @@ namespace scls {
         to_return.get()->middle_bottom_offset = image.get()->height() - to_return.get()->middle_top_offset;
         return to_return;
     }
-    void __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<XML_Text> content, const Text_Style& current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Line* line) {
+    void __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<__XML_Text_Base> content, const Text_Style& current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Line* line) {
         std::shared_ptr<__Math_Part_Image> needed_part;
         int potential_symbol = utf_8_symbol_by_name(needed_balise_name);
         if(potential_symbol != -1) {std::string text = std::string(""); add_utf_8(text, potential_symbol);needed_part = __generate_text_for_maths(text, current_style, line);}
@@ -820,7 +820,7 @@ namespace scls {
             needed_parts.push_back(needed_part);
         }
     };
-    std::shared_ptr<__Math_Part_Image> Text_Image_Line::generate_maths(std::shared_ptr<XML_Text> content, Text_Style current_style) {
+    std::shared_ptr<__Math_Part_Image> Text_Image_Line::generate_maths(std::shared_ptr<__XML_Text_Base> content, Text_Style current_style) {
         // Cut the block
         std::vector<std::shared_ptr<__Math_Part_Image>> needed_parts = std::vector<std::shared_ptr<__Math_Part_Image>>();
         int bottom_offset = 0; int needed_height = 0; int needed_width = 0; int top_offset = 0;
@@ -844,8 +844,8 @@ namespace scls {
         // Returns the image
         int current_x = 0; int current_y = 0;
         int final_height = middle_bottom_offset + middle_top_offset;
-        std::shared_ptr<Image>& image = to_return.get()->image;
-        image = std::make_shared<Image>(needed_width, final_height, current_style.background_color());
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(needed_width, final_height, current_style.background_color());
         to_return.get()->middle_bottom_offset = middle_bottom_offset; to_return.get()->middle_top_offset = middle_top_offset;
         for(int i = 0;i<static_cast<int>(needed_parts.size());i++) {
             // Paste the image
@@ -859,7 +859,7 @@ namespace scls {
     }
 
     // Generates the needed words (and balises)
-    void Text_Image_Line::__generate_image(std::shared_ptr<Text_Image_Word>& word, std::shared_ptr<Image> resize_image, unsigned int& current_position_in_plain_text, int& current_width, int height, int width) {
+    void Text_Image_Line::__generate_image(std::shared_ptr<Text_Image_Word>& word, std::shared_ptr<__Image_Base> resize_image, unsigned int& current_position_in_plain_text, int& current_width, int height, int width) {
         // Create the image
         word = std::make_shared<Text_Image_Word>(String(std::string()));
         if(resize_image.get()->width() > width){resize_image = resize_image.get()->resize_adaptative_width(width);}
@@ -869,7 +869,7 @@ namespace scls {
         current_position_in_plain_text++;
         current_width += resize_image.get()->width();
     }
-    void Text_Image_Line::generate_word(std::shared_ptr<XML_Text> current_text, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style, std::shared_ptr<Text_Image_Word>& word_to_add) {
+    void Text_Image_Line::generate_word(std::shared_ptr<__XML_Text_Base> current_text, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style, std::shared_ptr<Text_Image_Word>& word_to_add) {
         if(!current_text.get()->use_balise()) {__generate_words_without_balise(current_text, *needed_style.get(), current_position_in_plain_text);}
         else {
             // Apply a balise
@@ -898,7 +898,7 @@ namespace scls {
 
                 // Load the image from the source
                 if(source.size() > 0) {
-                    std::shared_ptr<Image>* src_img = 0;
+                    std::shared_ptr<__Image_Base>* src_img = 0;
                     if(source[0] == '#') {
                         // The image is a preload image
                         source = source.substr(1, source.size() - 1);
@@ -940,7 +940,7 @@ namespace scls {
             else if(current_balise_name == "math") {
                 // The balise is a piece of mathml
                 Text_Style math_style = *global_style();
-                std::shared_ptr<Image> src_img = generate_maths(current_text, math_style).get()->image;
+                std::shared_ptr<__Image_Base> src_img = generate_maths(current_text, math_style).get()->image;
                 __generate_image(word_to_add, src_img, current_position_in_plain_text, a_current_width, src_img.get()->height(), src_img.get()->width());
                 word_to_add.get()->set_balise_content(balise_content);
             }
@@ -962,7 +962,7 @@ namespace scls {
 
         }
     }
-    void Text_Image_Line::__generate_words_without_balise(std::shared_ptr<XML_Text> text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text) {
+    void Text_Image_Line::__generate_words_without_balise(std::shared_ptr<__XML_Text_Base> text, scls::Text_Style current_style, unsigned int& current_position_in_plain_text) {
         // Handle a single text
         std::string words_content = format_string_as_plain_text(text.get()->text());
         std::vector<std::string> words_cutted = cut_string(words_content, " ");
@@ -1006,7 +1006,7 @@ namespace scls {
             }
         }
     }
-    void Text_Image_Line::generate_words(std::shared_ptr<XML_Text> cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style) {
+    void Text_Image_Line::generate_words(std::shared_ptr<__XML_Text_Base> cutted, unsigned int& current_position_in_plain_text, std::shared_ptr<Text_Style> needed_style) {
         // Create each words
         int& current_width = a_current_width; current_width = 0;
         std::vector<std::shared_ptr<Text_Image_Word>>& words = a_words;
@@ -1037,7 +1037,7 @@ namespace scls {
     };
 
     // Generates and returns an image of the line
-    Image* Text_Image_Line::image(Image_Generation_Type generation_type) {
+    __Image_Base* Text_Image_Line::image(Image_Generation_Type generation_type) {
         if(a_last_image.get() != 0 && generation_type == Image_Generation_Type::IGT_Full) return a_last_image.get();
 
         // Generate the words
@@ -1059,14 +1059,14 @@ namespace scls {
         int max_width = global_style()->max_width;
         // unsigned short space_width = static_cast<unsigned short>(static_cast<double>(global_style()->font_size()) / 2.0);
         int needed_height = total_height() - a_y_offset;
-        if(max_width > 0 && a_line_height.size() > 1){a_last_image.reset(new Image(max_width, needed_height, global_style()->background_color()));}
-        else{a_last_image.reset(new Image(a_current_width, needed_height, global_style()->background_color()));}
-        Image* final_image = a_last_image.get();
+        if(max_width > 0 && a_line_height.size() > 1){a_last_image.reset(new __Image_Base(max_width, needed_height, global_style()->background_color()));}
+        else{a_last_image.reset(new __Image_Base(a_current_width, needed_height, global_style()->background_color()));}
+        __Image_Base* final_image = a_last_image.get();
         // Generate each words
         for(int i = 0;i<static_cast<int>(a_words.size());i++) {
             Text_Image_Word* current_word = a_words[i].get();
             if(current_word != 0) {
-                Image* current_image = current_word->image();
+                __Image_Base* current_image = current_word->image();
                 if(current_image != 0 && current_image->width() > 0) {
                     // Check for the cursor
                     if(use_cursor() && cursor_position_in_plain_text() >= 0 && cursor_position_in_plain_text() <= static_cast<int>(datas().content_in_plain_text.size())) {
@@ -1216,7 +1216,7 @@ namespace scls {
                 // Create the new line
                 current_line = _generate_line(cutted[line_number]);
                 if(current_line != 0) {
-                    Image* current_image = current_line->image();
+                    __Image_Base* current_image = current_line->image();
                     current_line->set_has_been_modified(true);
                     if(current_image != 0) {
                         total_height += current_image->height();
@@ -1235,7 +1235,7 @@ namespace scls {
                 // Keep an already generated line
                 current_line = lines[line_number];
                 current_line->set_datas(cutted[line_number]);
-                Image* current_image = current_line->image();
+                __Image_Base* current_image = current_line->image();
                 if(current_image != 0) {
                     total_height += current_image->height();
 
@@ -1250,7 +1250,7 @@ namespace scls {
             // Create the new line
             current_line = _generate_line(cutted[line_number]);
             if(current_line != 0) {
-                Image* current_image = current_line->image();
+                __Image_Base* current_image = current_line->image();
                 if(current_image != 0) {
                     total_height += current_image->height();
 
@@ -1305,7 +1305,7 @@ namespace scls {
     };
 
     // Generates and returns an image with the block on it
-    Image* Text_Image_Block::image(Image_Generation_Type generation_type) {
+    __Image_Base* Text_Image_Block::image(Image_Generation_Type generation_type) {
         //if(a_last_image.get() != 0 && generation_type != Image_Generation_Type::IGT_Full) return a_last_image.get();
 
         // Generate the lines
@@ -1319,7 +1319,7 @@ namespace scls {
         int& max_width = a_datas.get()->max_width;
         std::vector<std::thread*> threads = std::vector<std::thread*>();
         int& total_height = a_datas.get()->total_height;
-        Image* to_return = new Image(max_width + global_style()->border_left_width() + global_style()->border_right_width(), total_height + global_style()->border_bottom_width() + global_style()->border_top_width(), global_style()->background_color());
+        __Image_Base* to_return = new __Image_Base(max_width + global_style()->border_left_width() + global_style()->border_right_width(), total_height + global_style()->border_bottom_width() + global_style()->border_top_width(), global_style()->background_color());
         // Draw the border
         to_return->fill_rect(0, 0, global_style()->border_left_width(), to_return->height(), global_style()->border_color);
         to_return->fill_rect(0, to_return->height() - global_style()->border_bottom_width(), to_return->width(), global_style()->border_bottom_width(), global_style()->border_color);
@@ -1329,7 +1329,7 @@ namespace scls {
         for(int i = 0;i<static_cast<int>(lines().size());i++) {
             Text_Image_Line* current_line = lines()[i];
             if(current_line != 0) {
-                Image* current_image = current_line->image(generation_type);
+                __Image_Base* current_image = current_line->image(generation_type);
                 if(current_image != 0) {
                     if(a_line_pasting_max_thread_number > 0) {
                         // Check for the number of thread
@@ -1452,7 +1452,7 @@ namespace scls {
         // Handle empty lines
         if(cutted.size() <= 0) {
             Line_Datas datas;
-            datas.content = std::make_shared<XML_Text>(a_defined_balises, std::string(""), true);
+            datas.content = std::make_shared<__XML_Text_Base>(a_defined_balises, std::string(""), true);
             datas.content_in_plain_text = "";
             datas.line_number = 0;
             datas.start_position = 0;
@@ -1491,7 +1491,7 @@ namespace scls {
     }
 
     // Return the entire text in an image
-    Image* Text_Image_Multi_Block::image(Image_Generation_Type generation_type, const std::string& start_text) {
+    __Image_Base* Text_Image_Multi_Block::image(Image_Generation_Type generation_type, const std::string& start_text) {
         if(generation_type == Image_Generation_Type::IGT_Full) {generate_blocks(start_text);}
         else if(generation_type == Image_Generation_Type::IGT_Size) {
             // Regenerate the block only with the size
@@ -1505,11 +1505,11 @@ namespace scls {
         Color current_background_color = global_style()->background_color();
         unsigned int current_x = 0;
         unsigned int current_y = 0;
-        Image* final_image = new Image(a_max_width, a_total_height, current_background_color);
+        __Image_Base* final_image = new __Image_Base(a_max_width, a_total_height, current_background_color);
         for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
             Text_Image_Block* current_block = a_blocks[i].get();
             if(current_block != 0) {
-                Image* image = current_block->image();
+                __Image_Base* image = current_block->image();
                 if(image == 0) {
 
                 }
@@ -1550,12 +1550,12 @@ namespace scls {
     }
 
     // Update the datas of each blocks
-    void Text_Image_Multi_Block::update_blocks_datas(std::shared_ptr<XML_Text> cutted) {
+    void Text_Image_Multi_Block::update_blocks_datas(std::shared_ptr<__XML_Text_Base> cutted) {
         a_blocks_datas.clear();
         if(cutted.get()->only_text()) {std::shared_ptr<Block_Datas> current_block_data = std::make_shared<Block_Datas>(cutted);a_blocks_datas.push_back(current_block_data);}
         else {
             // More than a single text
-            std::shared_ptr<XML_Text> temp_balise;
+            std::shared_ptr<__XML_Text_Base> temp_balise;
             for(int i = 0;i<static_cast<int>(cutted.get()->sub_texts().size());i++) {
                 std::string current_balise_name = cutted.get()->sub_texts()[i].get()->xml_balise_name();
                 Balise_Style_Datas* needed_balise = reinterpret_cast<Balise_Style_Datas*>(a_defined_balises.get()->defined_balise(current_balise_name));
@@ -1576,8 +1576,8 @@ namespace scls {
                 }
                 else {
                     // Create a new paragraph for a non-paragraphed balise
-                    std::shared_ptr<XML_Text> temp = cutted.get()->sub_texts()[i];
-                    if(temp_balise.get() == 0){temp_balise = std::make_shared<XML_Text>(a_defined_balises, std::string(""), false);}
+                    std::shared_ptr<__XML_Text_Base> temp = cutted.get()->sub_texts()[i];
+                    if(temp_balise.get() == 0){temp_balise = std::make_shared<__XML_Text_Base>(a_defined_balises, std::string(""), false);}
                     else{cutted.get()->sub_texts().erase(cutted.get()->sub_texts().begin() + i);i--;}
                     temp_balise.get()->sub_texts().push_back(temp);
                     temp_balise.get()->sub_texts()[temp_balise.get()->sub_texts().size() - 1].get()->set_xml_balise_name(current_balise_name);

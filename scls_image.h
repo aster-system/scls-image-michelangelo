@@ -79,7 +79,7 @@
 namespace scls {
 
     // Make the logo of Aster System
-    inline std::shared_ptr<scls::Image> aster_system_logo(Color branch_1_color, Color branch_2_color, unsigned int image_width, std::string text_top, std::string text_bottom) {
+    inline std::shared_ptr<__Image_Base> aster_system_logo(Color branch_1_color, Color branch_2_color, unsigned int image_width, std::string text_top, std::string text_bottom) {
         double total_width = static_cast<double>(image_width);
 
         // Datas about the branchs
@@ -140,8 +140,8 @@ namespace scls {
 
         // Create the text
         std::shared_ptr<scls::Text_Image_Generator> tig = std::make_shared<scls::Text_Image_Generator>();
-        std::shared_ptr<scls::Image> text_bottom_image;
-        std::shared_ptr<scls::Image> text_top_image;
+        std::shared_ptr<__Image_Base> text_bottom_image;
+        std::shared_ptr<__Image_Base> text_top_image;
         if(text_number > 0) {
             // Paste the text at the top
             scls::Text_Style style;
@@ -159,7 +159,7 @@ namespace scls {
         if(text_bottom_image.get() != 0){final_width = text_bottom_image.get()->width();}
         if(text_top_image.get() != 0 && text_top_image.get()->width() > final_width) {final_width = text_top_image.get()->width();}
         final_width += text_x + branch_width;
-        scls::Image* img = new scls::Image(static_cast<short>(final_width), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGBA);
+        __Image_Base* img = new __Image_Base(static_cast<short>(final_width), static_cast<short>(total_width), scls::Color(255, 255, 255), SCLS_IMAGE_RGBA);
 
         // First branch
         img->fill_rect(ll1_x, ll1_y, ll1_width, ll1_height, color_1);
@@ -182,11 +182,11 @@ namespace scls {
         if(text_number == 2){text_y = branch_y + branch_height - text_top_image.get()->height();}
         if(text_bottom_image.get() != 0){img->paste(text_bottom_image.get(), text_x, text_y);}
 
-        return std::shared_ptr<scls::Image>(img);
+        return std::shared_ptr<__Image_Base>(img);
     }
-    inline std::shared_ptr<scls::Image> aster_system_logo(unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, "ASTER", "SYSTÈME");};
-    inline std::shared_ptr<scls::Image> aster_system_logo(std::string single_text, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, single_text, "");};
-    inline std::shared_ptr<scls::Image> aster_system_logo(std::string text_top, std::string text_bottom, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, text_top, text_bottom);};
+    inline std::shared_ptr<__Image_Base> aster_system_logo(unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, "ASTER", "SYSTÈME");};
+    inline std::shared_ptr<__Image_Base> aster_system_logo(std::string single_text, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, single_text, "");};
+    inline std::shared_ptr<__Image_Base> aster_system_logo(std::string text_top, std::string text_bottom, unsigned int image_height = 1000){return aster_system_logo(scls::Color(0, 51, 102), scls::Color(0, 51, 102), image_height, text_top, text_bottom);};
 };
 
 #endif // SCLS_IMAGE

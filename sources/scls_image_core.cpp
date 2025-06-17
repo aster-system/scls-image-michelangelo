@@ -65,7 +65,7 @@ namespace scls {
 
         // Get the color
         Color to_return(255, 255, 255);
-        std::vector<std::string> cutted = cut_string(source, ",");
+        std::vector<std::string> cutted = cut_string(scls::replace(source, std::string(";"), std::string(",")) , ",");
         if(cutted.size() > 1) {
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
                 while(cutted[i][0] == ' ') cutted[i] = cutted[i].substr(1, cutted[i].size() - 1);
@@ -84,7 +84,7 @@ namespace scls {
     };
 
     // Return a color loaded from an XML balise
-    Color Color::from_xml(std::shared_ptr<XML_Text> source) {
+    Color Color::from_xml(std::shared_ptr<__XML_Text_Base> source) {
         Color color(0, 0, 0, 255);
         for(int j = 0;j<static_cast<int>(source.get()->xml_balise_attributes().size());j++) {
             XML_Attribute& current_attribute = source.get()->xml_balise_attributes()[j];
@@ -102,6 +102,9 @@ namespace scls {
         }
         return color;
     }
+
+    // Operator
+    bool Color::operator==(const Color& color) const {return color.a_red == a_red && color.a_green == a_green && color.a_blue == a_blue && color.a_alpha == a_alpha;}
 
     //*********
 	//
@@ -235,6 +238,21 @@ namespace scls {
 	//
 	//*********
 
+	// All __Image_Base constructors
+    // __Image_Base most basic constructor
+    __Image_Base::__Image_Base() {};
+    // __Image_Base constructor with a path
+    __Image_Base::__Image_Base(std::string path) : __Image_Base() {std::shared_ptr<__Image_Error> final_error = load_from_path(path);if(final_error.get()->has_error()) print("Warning", "SCLS Image \"Michelangelo\"", final_error.get()->to_std_string());};
+    // __Image_Base constructor from scratch
+    __Image_Base::__Image_Base(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned int color_type) {a_color_type = color_type;a_height = height;a_width = width;fill(red, green, blue, alpha);};
+    __Image_Base::__Image_Base(unsigned short width, unsigned short height, Color color, unsigned int color_type) : __Image_Base(width, height, color.red(), color.green(), color.blue(), color.alpha(), color_type) {}
+    __Image_Base::__Image_Base(unsigned short width, unsigned short height):__Image_Base(width, height, scls::Color(255, 255, 255)){}
+    // __Image_Base copy constructor
+    __Image_Base::__Image_Base(__Image_Base& image_copy) : __Image_Base(image_copy.width(), image_copy.height(), Color(0, 0, 0, 0)) {paste(&image_copy, 0, 0);}
+    __Image_Base::__Image_Base(__Image_Base* image_copy) : __Image_Base(image_copy->width(), image_copy->height(), Color(0, 0, 0, 0)) {paste(image_copy, 0, 0);}
+    // PNG_Image destructor
+    __Image_Base::~__Image_Base() { free_memory(); }
+
 	// Linear gradient color for the Image class circle
     Color fill_circle_gradient_linear(double distance, int radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         return scls::Color(static_cast<double>(red) * std::abs(1.0 - distance / static_cast<double>(radius)), static_cast<double>(green) * std::abs(1.0 - distance / static_cast<double>(radius)), static_cast<double>(blue) * std::abs(1.0 - distance / static_cast<double>(radius)), static_cast<double>(alpha) * std::abs(1.0 - distance / static_cast<double>(radius)));
@@ -255,10 +273,16 @@ namespace scls {
     };
 
     // Copies this image and returns the result
-    std::shared_ptr<Image> Image::copy_image(){std::shared_ptr<Image> to_return = std::make_shared<Image>();to_return.get()->a_height = a_height;to_return.get()->a_width = a_width;to_return.get()->create_memory();to_return.get()->paste(this, 0, 0);return to_return;};
+    std::shared_ptr<__Image_Base> __Image_Base::copy_image(){std::shared_ptr<__Image_Base> to_return = std::make_shared<__Image_Base>();to_return.get()->a_height = a_height;to_return.get()->a_width = a_width;to_return.get()->create_memory();to_return.get()->paste(this, 0, 0);return to_return;};
+
+    // Create the memory needed
+    void __Image_Base::create_memory(){free_memory();a_pixels.reset(new Bytes_Set(buffer_size()));};
+    // Delete the pixels in the memory
+    void __Image_Base::free_memory() {a_pixels.reset();};
 
     // Fill the image with one color
-    void Image::fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::fill(Color color) { fill(color.red(), color.green(), color.blue(), color.alpha());};
+    void __Image_Base::fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         create_memory();
         unsigned int current_thread_position = 0;
         unsigned int pixel_by_thread = floor(static_cast<double>((width() * height()) / static_cast<double>(a_thread_number_for_filling)));
@@ -267,11 +291,11 @@ namespace scls {
         if(a_thread_number_for_filling > 0) {
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             for(unsigned short i = 0;i<a_thread_number_for_filling - 1;i++) {
-                std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, pixel_by_thread, red, green, blue, alpha);
+                std::thread* current_thread = new std::thread(&__Image_Base::__fill_pixel_part, this, current_thread_position, pixel_by_thread, red, green, blue, alpha);
                 threads.push_back(current_thread);
                 current_thread_position += pixel_by_thread;
             }
-            std::thread* current_thread = new std::thread(&Image::__fill_pixel_part, this, current_thread_position, (width() * height()) - current_thread_position, red, green, blue, alpha);
+            std::thread* current_thread = new std::thread(&__Image_Base::__fill_pixel_part, this, current_thread_position, (width() * height()) - current_thread_position, red, green, blue, alpha);
             threads.push_back(current_thread);
 
             // Wait for each threads
@@ -286,7 +310,7 @@ namespace scls {
     };
 
     // Fill a part of pixel
-    void Image::__fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::__fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         if(color_type() == SCLS_IMAGE_RGBA) {for (unsigned int i = 0; i < length; i++) {set_pixel_rgba_directly(i * 4, red, green, blue, alpha, 1);}}
         else if(color_type() == SCLS_IMAGE_RGB) {
            for (unsigned int i = 0; i < length; i++) {
@@ -298,7 +322,8 @@ namespace scls {
     };
 
     // Force a pixel to change its value
-    void Image::force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::force_pixel(unsigned short x, unsigned short y, Color color) {force_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha());}
+    void __Image_Base::force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to force is out of the image.");
             return;
@@ -313,7 +338,7 @@ namespace scls {
     }
 
     // Returns the data filtered (like in PNG format)
-    std::shared_ptr<Bytes_Set> Image::datas_filtered() {
+    std::shared_ptr<Bytes_Set> __Image_Base::datas_filtered() {
         std::shared_ptr<Bytes_Set> to_return = std::make_shared<Bytes_Set>(datas()->datas_size() + height());
         unsigned char components_size = components();
         unsigned int height_used = height();
@@ -328,7 +353,7 @@ namespace scls {
     };
 
     // Loads the image from a path
-    std::shared_ptr<__Image_Error> Image::load_from_path(std::string path) {
+    std::shared_ptr<__Image_Error> __Image_Base::load_from_path(std::string path) {
         std::shared_ptr<__Image_Error> to_return = std::make_shared<__Image_Error>();
         to_return.get()->set_path(path);
         if (std::filesystem::exists(path) && !std::filesystem::is_directory(path)) {
@@ -353,7 +378,9 @@ namespace scls {
     };
 
     // Get datas about a specific pixel
-    Color Image::pixel(unsigned short x, unsigned short y) {
+    Color __Image_Base::pixel_directly(unsigned int position, unsigned int multiplier) {Color to_return = Color(255, 255, 255);to_return.set_rgb(a_pixels->data_at_directly(position), a_pixels->data_at_directly(position + multiplier), a_pixels->data_at_directly(position + 2 * multiplier));return to_return;}
+    Color __Image_Base::pixel_rgba_directly(unsigned int position, unsigned int multiplier) {Color to_return = Color(255, 255, 255);to_return.set_rgba(a_pixels->data_at_directly(position), a_pixels->data_at_directly(position + multiplier), a_pixels->data_at_directly(position + 2 * multiplier), a_pixels->data_at_directly(position + 3 * multiplier));return to_return;}
+    Color __Image_Base::pixel(unsigned short x, unsigned short y) {
         Color to_return(0, 0, 0);
         if (x >= 0 && x < width() && y >= 0 && y < height()) {
             unsigned char multiplier = (bit_depht() / 8.0);
@@ -376,7 +403,7 @@ namespace scls {
         }
         return to_return;
     };
-    Color Image::pixel_by_number(unsigned int position) {
+    Color __Image_Base::pixel_by_number(unsigned int position) {
         unsigned char multiplier = (bit_depht() / 8.0);
         position *= components() * (bit_depht() / 8.0);
         Color to_return = Color(255, 255, 255);
@@ -387,8 +414,13 @@ namespace scls {
         return to_return;
     };
 
-    // Set datas about a specific pixel*
-    void Image::set_pixel(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short width_point) {
+    // Set datas about a specific pixel
+    void __Image_Base::set_pixel_directly(unsigned int position, unsigned char value){a_pixels->set_data_at_directly(position, value);};
+    void __Image_Base::set_pixel_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char multiplier){a_pixels->set_data_at_directly(position, red);a_pixels->set_data_at_directly(position + multiplier, green);a_pixels->set_data_at_directly(position + 2 * multiplier, blue);};
+    void __Image_Base::set_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){a_pixels->set_data_at_directly(position, red);a_pixels->set_data_at_directly(position + multiplier, green);a_pixels->set_data_at_directly(position + 2 * multiplier, blue);a_pixels->set_data_at_directly(position + 3 * multiplier,  alpha);};
+    void __Image_Base::set_pixel(int x, int y, Color color, unsigned short width) { set_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha(), width); }
+    void __Image_Base::set_pixel_by_number(unsigned int position, Color color) { set_pixel_by_number(position, color.red(), color.green(), color.blue());};
+    void __Image_Base::set_pixel(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short width_point) {
         if (width_point == 0) return;
         else if (width_point == 1) {
             // Check the position
@@ -409,7 +441,7 @@ namespace scls {
         }
         else {fill_rect(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);}
     }
-    void Image::set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha) {
+    void __Image_Base::set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set the alpha is out of the image.");
             return;
@@ -419,7 +451,7 @@ namespace scls {
         unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
         if(color_type() == 6){alpha = normalize_value(alpha, 0, 255);a_pixels->set_data_at(position + 3 * multiplier,  alpha);}
     }
-    void Image::set_pixel_blue(unsigned short x, unsigned short y, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::set_pixel_blue(unsigned short x, unsigned short y, unsigned char blue, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set the blue is out of the image.");
             return;
@@ -443,7 +475,7 @@ namespace scls {
         }
         else{a_pixels->set_data_at(position + 2 * multiplier, blue);}
     }
-    void Image::set_pixel_by_number(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::set_pixel_by_number(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         unsigned char multiplier = (bit_depht() / 8.0);
         position *= components() * (bit_depht() / 8.0);
         if(color_type() == 6) {
@@ -467,7 +499,7 @@ namespace scls {
         }
         else {a_pixels->set_data_at(position, red);a_pixels->set_data_at(position + multiplier, green);a_pixels->set_data_at(position + 2 * multiplier, blue);}
     };
-    void Image::set_pixel_green(unsigned short x, unsigned short y, unsigned char green, unsigned char alpha) {
+    void __Image_Base::set_pixel_green(unsigned short x, unsigned short y, unsigned char green, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set the green is out of the image.");
             return;
@@ -491,7 +523,7 @@ namespace scls {
         }
         else{a_pixels->set_data_at(position + multiplier, green);}
     }
-    void Image::set_pixel_red(unsigned short x, unsigned short y, unsigned char red, unsigned char alpha) {
+    void __Image_Base::set_pixel_red(unsigned short x, unsigned short y, unsigned char red, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set the red is out of the image.");
             return;
@@ -499,8 +531,7 @@ namespace scls {
 
         unsigned char multiplier = (bit_depht() / 8.0);
         unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
-        if(color_type() == 6)
-        {
+        if(color_type() == 6) {
             Color color = pixel(x, y);
 
             float alpha_f = normalize_value(alpha, 0, 255) / 255.0;
@@ -515,7 +546,7 @@ namespace scls {
         }
         else{a_pixels->set_data_at(position, red);}
     };
-    void Image::set_pixel_rgba_directly_with_alpha(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier) {
+    void __Image_Base::set_pixel_rgba_directly_with_alpha(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier) {
         // Process the color
         Color color = pixel_rgba_directly(position, multiplier);
         double alpha_f = normalize_value(alpha, 0, 255) / 255.0;
@@ -531,13 +562,29 @@ namespace scls {
         set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);
     }
 
+    // Returns if the image use alpha or not
+    bool __Image_Base::use_alpha() const {return color_type() == SCLS_IMAGE_RGBA;};
+
+    // Getters and setters
+    unsigned int __Image_Base::buffer_size() const {return height() * width() * components() * static_cast<unsigned int>(static_cast<double>(bit_depht()) / 8.0);};
+    unsigned char __Image_Base::components() const { if (color_type() == 6) return 4; return 3; };
+    unsigned int __Image_Base::bit_depht() const { return a_bit_depth; };
+    unsigned int __Image_Base::color_type() const { return a_color_type; };
+    Bytes_Set* __Image_Base::datas() const { return a_pixels.get(); }
+    unsigned int __Image_Base::flip_x_number() const {return a_flip_x_number;};
+    int __Image_Base::height() const { return a_height; };
+    void __Image_Base::set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
+    void __Image_Base::set_thread_number_for_pasting(unsigned short new_thread_number) {a_thread_number_for_pasting = new_thread_number;};
+    void __Image_Base::set_thread_number_for_pasting_text(unsigned short new_thread_number) {a_thread_number_for_pasting_text = new_thread_number;};
+    int __Image_Base::width() const { return a_width; };
+
     //*********
     //
     // The Image class - PNG
     //
     //*********
 
-    Bytes_Set* Image::datas_png() {
+    Bytes_Set* __Image_Base::datas_png() {
         Bytes_Set* datas = new Bytes_Set();
         unsigned int total_size = 8;
 
@@ -599,7 +646,7 @@ namespace scls {
     }
 
     // Get every chunks into a PNG image
-    void Image::_load_all_chunks_from_png_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
+    void __Image_Base::_load_all_chunks_from_png_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
         std::vector<_PNG_Chunk> chunks = std::vector<_PNG_Chunk>();
         if (file != 0) {
             // Create the necessary things to read the PNG file
@@ -647,7 +694,7 @@ namespace scls {
     }
 
     // Loads the bKGD chunk from a path and returns the color
-    Color Image::_load_bKGD_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
+    Color __Image_Base::_load_bKGD_from_file(Bytes_Set* file, _PNG_Chunk chunk) {
         if (file != 0 && chunk.name == "bKGD" && chunk.size >= 6) {
             // Read into the chunk
             Color color(0, 0, 0);
@@ -660,7 +707,7 @@ namespace scls {
         return Color(0, 0, 0);
     }
     // Load a IDAT chunk grom a path
-    void Image::_load_png_IDAT_from_file_rgba(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data){
+    void __Image_Base::_load_png_IDAT_from_file_rgba(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data){
         if (a_filter_type == 1) { // Apply sub filtering
             for (int i = 1; i < width(); i++){
                 Color color = pixel_rgba_directly(current_line_start_position + i * component_size, multiplier);
@@ -728,7 +775,7 @@ namespace scls {
             }
         }
     }
-    void Image::_load_png_IDAT_from_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
+    void __Image_Base::_load_png_IDAT_from_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
         std::vector<_PNG_Chunk>& chunk = a_idat_chunk;
         if (file != 0) {
             if (a_pixels == 0) { error_handler.get()->set_value(SCLS_IMAGE_ERROR_UNKNOW); return; }
@@ -804,7 +851,7 @@ namespace scls {
     }
 
     // Load the pHYS chunk from a path
-    void Image::_load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
+    void __Image_Base::_load_png_pHYS_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {
         if (file != 0 && chunk.name == "pHYs" && chunk.size == 9) {
             // Read into the chunk
             a_physical_height_ratio = file->extract_uint(chunk.position + 4, true);
@@ -815,7 +862,7 @@ namespace scls {
     };
 
     // Load the Image from a PNG file
-    void Image::_load_png_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
+    void __Image_Base::_load_png_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler) {
         // Check the first chunk of the file
         a_width = file->extract_uint(16, true);
         a_height = file->extract_uint(20, true);
@@ -831,10 +878,10 @@ namespace scls {
     }
 
     // Load the sRGB chunk from a path
-    void Image::_load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {if (file != 0 && chunk.name == "sRGB" && chunk.size == 1) {a_srgb_value = file->data_at(chunk.position);}else{error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK);}}
+    void __Image_Base::_load_png_sRGB_from_file(Bytes_Set* file, _PNG_Chunk chunk, std::shared_ptr<__Image_Error>& error_handler) {if (file != 0 && chunk.name == "sRGB" && chunk.size == 1) {a_srgb_value = file->data_at(chunk.position);}else{error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_WRONG_SRGB_CHUNK);}}
 
     // Returns the signature of a PNG file
-    std::vector<unsigned char> Image::png_signature() {
+    std::vector<unsigned char> __Image_Base::png_signature() {
         std::vector<unsigned char> signature;
         signature.push_back(137);
         signature.push_back(80);
@@ -848,6 +895,17 @@ namespace scls {
         return signature;
     }
 
+    // Save the image into the PNG format
+    void __Image_Base::save_png(std::string path) {Bytes_Set* datas = datas_png();datas->save(path);delete datas; datas = 0;}
+
+    // Getters and setters
+    unsigned int __Image_Base::compression_method() const { return a_compression_method; };
+    unsigned int __Image_Base::filter_method() const { return a_filter_method; };
+    unsigned int __Image_Base::interlace_method() const { return a_interlace_method; };
+    unsigned int __Image_Base::physical_height_ratio() const { return a_physical_height_ratio; };
+    unsigned int __Image_Base::physical_unit() const { return a_physical_unit; };
+    unsigned int __Image_Base::physical_width_ratio() const { return a_physical_width_ratio; };
+
     //*********
     //
     // The Image class - Editing
@@ -855,20 +913,19 @@ namespace scls {
     //*********
 
     // Draws / fills a circle on the image
-    void Image::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {fill_circle(x_center, y_center, radius, 0, 0, 0, 0, line_width, red, green, blue, alpha);}
-    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
-    void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){fill_circle(x_center, y_center, radius, radius, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
-    void Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){fill_circle(x_center,y_center,radius,0,360,red,green,blue,alpha,border_radius,border_red,border_green,border_blue,border_alpha);};
-    void Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
-    void Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius_x,radius_y,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
-    void Image::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
-    void Image::fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
-    void Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
+    void __Image_Base::draw_circle(int x_center, int y_center, double radius, Color color, unsigned short line_width){draw_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),line_width);}
+    void __Image_Base::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {fill_circle(x_center, y_center, radius, 0, 0, 0, 0, line_width, red, green, blue, alpha);}
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){fill_circle(x_center, y_center, radius, radius, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){fill_circle(x_center,y_center,radius,0,360,red,green,blue,alpha,border_radius,border_red,border_green,border_blue,border_alpha);};
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius_x,radius_y,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
+    void __Image_Base::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
         const int start_x = round(x_center - radius_x);
         const int start_x_inner = start_x + border_radius;
         int current_x = 0;
-        // Check the inner part
-        double radius_inner = radius_x - border_radius;
 
         // Upgrade in the drawing
         while(angle_end >= 360.0){angle_end -= 360.0;}while(angle_start >= 360.0){angle_start -= 360.0;}
@@ -882,45 +939,43 @@ namespace scls {
             current_x++;
             int needed_x = start_x + current_x;
 
-            // If the coordonate his out of the image
-            if(needed_x >= 0 && needed_x < needed_width) {
-                // Get the needed x/y
-                double current_ratio = static_cast<double>(current_x) / radius_x;
-                double angle_border = std::acos(1.0 - current_ratio);
-                double angle_border_sin = std::sin(angle_border);
-                int needed_y = round(angle_border_sin * radius_y);
+            // Get the needed x/y
+            double current_ratio = static_cast<double>(current_x) / radius_x;
+            double angle_border = std::acos(1.0 - current_ratio);
+            double angle_border_sin = std::sin(angle_border);
+            int needed_y = round(angle_border_sin * radius_y);
 
-                // Draw each needed pixels
-                // Set the last y
-                #define CHECK_ANGLE(needed_angle) ((angle_end == angle_start) || (needed_angle >= angle_start && needed_angle <= angle_end) || (angle_start > angle_end && (needed_angle <= angle_end || needed_angle >= angle_start)))
-                #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
-                #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
-                double angle = 0;double angle_sin = 0;int last_y = 0;
-                double radius_inner = (radius_x + (radius_y - radius_x) * angle_border_sin) - border_radius;
-                if(needed_x >= start_x_inner) {
-                    double current_ratio = static_cast<double>(needed_x - start_x_inner) / (radius_x - border_radius);
-                    angle = std::acos(1.0 - current_ratio);angle_sin = std::sin(angle);
-                    double radius_inner = (radius_x + (radius_y - radius_x) * angle_sin) - border_radius;
-                    last_y = round(angle_sin * radius_inner);
-                }
+            // Draw each needed pixels
+            // Set the last y
+            #define CHECK_ANGLE(needed_angle) ((angle_end == angle_start) || (needed_angle >= angle_start && needed_angle <= angle_end) || (angle_start > angle_end && (needed_angle <= angle_end || needed_angle >= angle_start)))
+            #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
+            #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
+            double angle = 0;double angle_sin = 0;int last_y = 0;
+            //double radius_inner = (radius_x + (radius_y - radius_x) * angle_border_sin) - border_radius;
+            if(needed_x >= start_x_inner) {
+                double current_ratio = static_cast<double>(needed_x - start_x_inner) / (radius_x - border_radius);
+                angle = std::acos(1.0 - current_ratio);angle_sin = std::sin(angle);
+                double radius_inner = (radius_x + (radius_y - radius_x) * angle_sin) - border_radius;
+                last_y = round(angle_sin * radius_inner);
+            }
 
-                // Border part
-                if(border_alpha > 0 && border_radius > 0) {
-                    // Draw the circle border
+            // Border part
+            if(border_alpha > 0 && border_radius > 0) {
+                // Draw the circle border
+                int y_height_base = (needed_y - last_y);
+                // Left part of the border
+                needed_x = (x_center - radius_x) + current_x;
+                if(needed_x >= 0 && needed_x < needed_width) {
                     // Left-bottom of the circle border
-                    int y_height_base = (needed_y - last_y);
                     int i = 0;double current_angle = SCLS_PI - angle;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center - radius_x) + current_x;
-                        if(needed_x >= 0 && needed_x < needed_width) {
-                            int current_y = (y_center - (last_y + i));
-                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                            }
+                        int current_y = (y_center - (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
                     // Left-top of the circle border
@@ -928,29 +983,28 @@ namespace scls {
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center - radius_x) + current_x;
-                        if(needed_x >= 0 && needed_x < needed_width) {
-                            int current_y = (y_center + (last_y + i));
-                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                            }
+                        int current_y = (y_center + (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
+                }
+
+                // Right part of the border
+                needed_x = (x_center + radius_x) - current_x;
+                if(needed_x >= 0 && needed_x < needed_width){
                     // Right-bottom of the circle border
-                    i = 0;current_angle = angle;current_angle_border = angle_border;y_height = y_height_base;
+                    int i = 0;double current_angle = angle;double current_angle_border = angle_border;int y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center + radius_x) - current_x;
-                        if(needed_x >= 0 && needed_x < needed_width) {
-                            int current_y = (y_center - (last_y + i));
-                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                            }
+                        int current_y = (y_center - (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
                     // Right-top of the circle border
@@ -958,52 +1012,52 @@ namespace scls {
                     if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
-                        needed_x = (x_center + radius_x) - current_x;
-                        if(needed_x >= 0 && needed_x < needed_width) {
-                            int current_y = (y_center + (last_y + i));
-                            if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
-                                else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
-                            }
+                        int current_y = (y_center + (last_y + i));
+                        if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
+                        }
+                    }
+                }
+            }
+
+            // Inner part
+            if(alpha > 0) {
+                // Fill the circle
+                int i = 0;
+                // Left of the circle
+                needed_x = (x_center - radius_x) + current_x;
+                if(needed_x >= 0 && needed_x < needed_width){
+                    for(;i < last_y;i++) {
+                        int current_y = (y_center + i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        } current_y = (y_center - i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
                         }
                     }
                 }
 
-                // Inner part
-                if(alpha > 0) {
-                    // Fill the circle
-                    int i = 0;
+                // Right of the circle
+                i = 0;needed_x = (x_center + radius_x) - current_x;
+                if(needed_x >= 0 && needed_x < needed_width){
                     for(;i < last_y;i++) {
-                        // Left of the circle
-                        needed_x = (x_center - radius_x) + current_x;
-                        if(needed_x >= 0 && needed_x < needed_width) {
-                            int current_y = (y_center + i);
-                            if(current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                                else{set_pixel_directly(position, red, green, blue, multiplier);}
-                            } current_y = (y_center - i);
-                            if(current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                                else{set_pixel_directly(position, red, green, blue, multiplier);}
-                            }
-                        }
-                        // Right of the circle
-                        needed_x = (x_center + radius_x) - current_x;
-                        if(needed_x >= 0 && needed_x < needed_width){
-                            int current_y = (y_center + i);
-                            if(current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                                else{set_pixel_directly(position, red, green, blue, multiplier);}
-                            } current_y = (y_center - i);
-                            if(current_y >= 0 && current_y < needed_height) {
-                                int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
-                                else{set_pixel_directly(position, red, green, blue, multiplier);}
-                            }
+                        int current_y = (y_center + i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
+                        } current_y = (y_center - i);
+                        if(current_y >= 0 && current_y < needed_height) {
+                            int position = (current_y * needed_width + needed_x) * needed_components;
+                            if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                            else{set_pixel_directly(position, red, green, blue, multiplier);}
                         }
                     }
                 }
@@ -1011,7 +1065,8 @@ namespace scls {
         }
     }
     // Fill a circle with a gradient on the image
-    void Image::fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char)) {
+    void __Image_Base::fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char)){fill_circle_gradient(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),needed_function);}
+    void __Image_Base::fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char)) {
         const int start_x = round(x_center - radius);
         int current_x = 0;
 
@@ -1066,7 +1121,9 @@ namespace scls {
     }
 
     // Draw an arrow on the image
-    void Image::draw_arrow(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double hat_position_in_percentage, double hat_size_in_percentage, unsigned short line_width) {
+    void __Image_Base::draw_arrow(int x_1, int y_1, int x_2, int y_2, Color color, double hat_position_in_percentage, double hat_size_in_percentage, unsigned short width) {draw_arrow(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), hat_position_in_percentage, hat_size_in_percentage, width);}
+    void __Image_Base::draw_arrow(int x_1, int y_1, int x_2, int y_2, Color color, double hat_percentage, unsigned short width) {draw_arrow(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), 1, hat_percentage, width);}
+    void __Image_Base::draw_arrow(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double hat_position_in_percentage, double hat_size_in_percentage, unsigned short line_width) {
         draw_line(x_1, y_1, x_2, y_2, red, green, blue, alpha, line_width);
         // Draw the hat of the arrow
         int x_diff = -(x_2 - x_1); int y_diff = -(y_2 - y_1);
@@ -1085,7 +1142,8 @@ namespace scls {
     }
 
     // Draws a border on the image
-    void Image::draw_border(int top, int left, int bottom, int right, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::draw_border(int top, int left, int bottom, int right, scls::Color color){draw_border(top, left, bottom, right, color.red(), color.green(), color.blue(), color.alpha());}
+    void __Image_Base::draw_border(int top, int left, int bottom, int right, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         if(top > 0) {fill_rect(0, 0, width(), top, red, green, blue, alpha);}
         if(left > 0) {fill_rect(0, 0, left, height(), red, green, blue, alpha);}
         if(bottom > 0) {fill_rect(0, height() - bottom, width(), bottom, red, green, blue, alpha);}
@@ -1093,7 +1151,8 @@ namespace scls {
     }
 
     // Draw a line on the image
-    void Image::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
+    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);}
+    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
             // Check the X position
@@ -1179,7 +1238,9 @@ namespace scls {
     }
 
     // Draw a rectangle on the image
-    void Image::draw_rect(int x, int y, int width, int height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());}
+    void __Image_Base::draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color, Color fill_color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());fill_rect(x + rect_width, y + rect_width, width - rect_width * 2, height - rect_width * 2, fill_color.red(), fill_color.green(), fill_color.blue(), fill_color.alpha());}
+    void __Image_Base::draw_rect(int x, int y, int width, int height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         fill_rect(x, y, width, rect_width, red, green, blue, alpha);
         fill_rect(x, y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
         fill_rect(x + (width - rect_width), y + rect_width, rect_width, height - rect_width, red, green, blue, alpha);
@@ -1187,7 +1248,8 @@ namespace scls {
     }
 
     // Fill a rectangle on the image
-    void Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::fill_rect(int x, int y, unsigned short width, unsigned short height, Color color) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());}
+    void __Image_Base::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         // Check the position
         if(y >= static_cast<int>(height()) || x >= static_cast<int>(width()) || y + static_cast<int>(rect_height) < 0 || x + static_cast<int>(rect_width) < 0) return;
         if(x < 0) {x=-x;rect_width -= static_cast<unsigned short>(x);x = 0;}
@@ -1212,7 +1274,8 @@ namespace scls {
     }
 
     // Fill a rectangle on the image
-    void Image::fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    void __Image_Base::fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, Color color) {fill_triangle(x_1, y_1, x_2, y_2, x_3, y_3, color.red(), color.green(), color.blue(), color.alpha());}
+    void __Image_Base::fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         // 3 should be the point with the largest X value
         if (x_1 > x_3) {
             short temp = x_1;
@@ -1280,7 +1343,7 @@ namespace scls {
     }
 
     // Flip the image on the X axis
-    void Image::flip_x() {
+    void __Image_Base::flip_x() {
         int total_height = height();
         int total_height_needed = total_height / 2.0;
 
@@ -1325,7 +1388,7 @@ namespace scls {
         } a_flip_x_number++;
     }
     // Flip the image on the Y axis
-    void Image::flip_y() {
+    void __Image_Base::flip_y() {
         unsigned char* line1 = new unsigned char[height()];
         int max = width();
 
@@ -1357,7 +1420,8 @@ namespace scls {
     }
 
     // Paste an Image on this Image
-    void Image::paste(Image* to_paste, int x, int y, double opacity) {
+    void __Image_Base::paste(std::string path, int x, int y, double opacity) {__Image_Base* img = new __Image_Base(path);paste(img, x, y, opacity);delete img; img = 0;};
+    void __Image_Base::paste(__Image_Base* to_paste, int x, int y, double opacity) {
         unsigned int current_thread_position = 0;
         unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
@@ -1371,13 +1435,13 @@ namespace scls {
                 unsigned int start_x = floor(current_thread_position % to_paste->width());
                 unsigned int start_y = floor(current_thread_position / to_paste->width());
 
-                std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity);
+                std::thread* current_thread = new std::thread(&__Image_Base::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, pixel_by_thread, opacity);
                 threads.push_back(current_thread);
                 current_thread_position += pixel_by_thread;
             }
             unsigned int start_x = floor(current_thread_position % to_paste->width());
             unsigned int start_y = floor(current_thread_position / to_paste->width());
-            std::thread* current_thread = new std::thread(&Image::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity);
+            std::thread* current_thread = new std::thread(&__Image_Base::__paste_part_of_image, this, to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) - current_thread_position , opacity);
             threads.push_back(current_thread);
 
             // Wait for each threads
@@ -1389,15 +1453,17 @@ namespace scls {
         else {
             // Precisely adjust the image to paste
             int start_x = 0;int start_y = 0;
-            if(x < 0){start_x=-x;x=0;}
-            if(y < 0){start_y=-y;y=0;}
-            if(start_x < to_paste->width() && start_y < to_paste->height()) {
-                __paste_part_of_image(to_paste, x, y, start_x, start_y, (static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())), opacity);
-            }
+            int needed_height = to_paste->height();
+            int needed_width = to_paste->width();
+            if(x < 0){needed_width+=x;start_x=-x;x=0;}
+            if(y < 0){needed_height+=y;start_y=-y;y=0;}
+            if(start_x + needed_width > width()){needed_width = (width() - start_x);}
+            if(start_y + needed_height > height()){needed_height = (height() - start_y);}
+            if(start_x < to_paste->width() && start_y < to_paste->height()) {__paste_part_of_image(to_paste, x, y, start_x, start_y, (needed_width * needed_height), opacity);}
         }
     }
     // Paste a part of an image on this image
-    void Image::__paste_part_of_image(Image* to_paste, int x_offset, int y_offset, int start_x, int start_y, int length, double opacity) {
+    void __Image_Base::__paste_part_of_image(__Image_Base* to_paste, int x_offset, int y_offset, int start_x, int start_y, int length, double opacity) {
         // Paste image datas
         int needed_component_paste = to_paste->components();
         int needed_height_paste = to_paste->height(); int needed_width_paste = to_paste->width();
@@ -1433,12 +1499,15 @@ namespace scls {
     }
 
     // Pastes an Image to the bottom / center / top of the image
-    void Image::paste_bottom_center(Image* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, (height() - to_paste->height()) - offset_y, opacity);}
-    void Image::paste_center(Image* to_paste, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, height() / 2 - to_paste->height() / 2, opacity);}
-    void Image::paste_top_center(Image* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, offset_y, opacity);}
+    void __Image_Base::paste_bottom_center(__Image_Base* to_paste, double offset_y){paste_bottom_center(to_paste, offset_y, 1);};
+    void __Image_Base::paste_bottom_center(__Image_Base* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, (height() - to_paste->height()) - offset_y, opacity);}
+    void __Image_Base::paste_center(std::shared_ptr<__Image_Base> to_paste, double opacity){paste_center(to_paste.get(), opacity);};
+    void __Image_Base::paste_center(__Image_Base* to_paste, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, height() / 2 - to_paste->height() / 2, opacity);}
+    void __Image_Base::paste_top_center(__Image_Base* to_paste, double offset_y){paste_top_center(to_paste, offset_y, 1);};
+    void __Image_Base::paste_top_center(__Image_Base* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, offset_y, opacity);}
 
     // Paste datas to a specific pixel
-    void Image::paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
+    void __Image_Base::paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
         double alpha_double = static_cast<double>(static_cast<unsigned char>(alpha)) / 255.0;
         double multiple = (static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 3 * multiplier))) / 255.0) * (1.0 - alpha_double);
         a_pixels->set_data_at_directly(position, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(red)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position))) * multiple));
@@ -1448,7 +1517,8 @@ namespace scls {
     };
 
     // Apply a more complex horizontal gradient from the left to the right in the image
-    void Image::apply_gradient_horizontal(Color left, Color right, int start_x, int end_x) {
+    void __Image_Base::apply_gradient_horizontal(Color left, Color right) { apply_gradient_horizontal(left, right, 0, width()); };
+    void __Image_Base::apply_gradient_horizontal(Color left, Color right, int start_x, int end_x) {
         // Calculate the variant of each colors
         unsigned int current_x = end_x - start_x;
         double alpha_variant = (static_cast<double>(right.alpha()) - static_cast<double>(left.alpha())) / static_cast<double>(current_x - 1);
@@ -1474,7 +1544,8 @@ namespace scls {
     };
 
     // Apply a more complex vertical gradient from the left to the right in the image
-    void Image::apply_gradient_vertical(Color top, Color bottom, int start_y, int end_y) {
+    void __Image_Base::apply_gradient_vertical(Color top, Color bottom) { apply_gradient_vertical(top, bottom, 0, height()); }
+    void __Image_Base::apply_gradient_vertical(Color top, Color bottom, int start_y, int end_y) {
         // Calculate the variant of each colors
         unsigned int current_y = end_y - start_y;
         double alpha_variant = (static_cast<double>(bottom.alpha()) - static_cast<double>(top.alpha())) / static_cast<double>(current_y - 1);
@@ -1499,11 +1570,14 @@ namespace scls {
         }
     };
 
+    // Returns a shared ptr of the image with a new size, adaptated
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(unsigned short new_width, unsigned short new_height) {if(new_width == width() && new_height == height()){return copy_image();} std::shared_ptr<__Image_Base> current_image = resize_adaptative_width(new_width);if(current_image.get() == 0) return resize_adaptative_height(new_height);return current_image.get()->resize_adaptative_height(new_height); };
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(scls::Point_2D new_size) {return resize_adaptative(new_size.x().to_double(), new_size.y().to_double()); };
     // Returns a shared ptr of the image with a new height, adaptated
-    std::shared_ptr<Image> Image::resize_adaptative_height(unsigned short new_height) {
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_height(unsigned short new_height) {
         if(new_height < height()) {
             // Create the new image
-            std::shared_ptr<Image> new_image = std::make_shared<Image>(width(), new_height, Color(255, 255, 255));
+            std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(width(), new_height, Color(255, 255, 255));
             new_image.get()->a_flip_x_number = a_flip_x_number;
 
             std::vector<long long> repartioned_pixels = partition_number(height(), new_height);
@@ -1534,14 +1608,14 @@ namespace scls {
             }
             return new_image;
         }
-        return std::shared_ptr<Image>();
+        else if(new_height == height()){return copy_image();}
+        return std::shared_ptr<__Image_Base>();
     };
-
     // Returns a shared ptr of the image with a new width, adaptated
-    std::shared_ptr<Image> Image::resize_adaptative_width(unsigned short new_width) {
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_width(unsigned short new_width) {
         if(new_width < width()) {
             // Create the new image
-            std::shared_ptr<Image> new_image = std::make_shared<Image>(new_width, height(), Color(255, 255, 255));
+            std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(new_width, height(), Color(255, 255, 255));
             new_image.get()->a_flip_x_number = a_flip_x_number;
 
             std::vector<long long> repartioned_pixels = partition_number(width(), new_width);
@@ -1572,11 +1646,12 @@ namespace scls {
             }
             return new_image;
         }
-        return std::shared_ptr<Image>();
+        else if(new_width == width()){return copy_image();}
+        return std::shared_ptr<__Image_Base>();
     };
 
     // Load the image from a set of binary datas coming from a FreeType text
-    bool Image::_load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    bool __Image_Base::_load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         a_height = height; a_width = width;
         create_memory();
         if(alpha == 0){fill(0, 0, 0, 0);return true;}
@@ -1591,13 +1666,13 @@ namespace scls {
                 unsigned int start_x = floor(current_thread_position % width);
                 unsigned int start_y = floor(current_thread_position / width);
 
-                std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, pixel_by_thread, red, green, blue, alpha);
+                std::thread* current_thread = new std::thread(&__Image_Base::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, pixel_by_thread, red, green, blue, alpha);
                 threads.push_back(current_thread);
                 current_thread_position += pixel_by_thread;
             }
             unsigned int start_x = floor(current_thread_position % width);
             unsigned int start_y = floor(current_thread_position / width);
-            std::thread* current_thread = new std::thread(&Image::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, (static_cast<double>(width) * static_cast<double>(height)) - current_thread_position, red, green, blue, alpha);
+            std::thread* current_thread = new std::thread(&__Image_Base::__load_part_from_text_binary, this, datas, current_thread_position, start_x, start_y, (static_cast<double>(width) * static_cast<double>(height)) - current_thread_position, red, green, blue, alpha);
             threads.push_back(current_thread);
 
             // Wait for each threads
@@ -1612,7 +1687,7 @@ namespace scls {
     };
 
     // Load a part of image with a FreeType text in it
-    bool Image::__load_part_from_text_binary(char* datas, int offset, int start_x, int start_y, int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    bool __Image_Base::__load_part_from_text_binary(char* datas, int offset, int start_x, int start_y, int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         int needed_component = components();
         unsigned int current_position = (start_y * width() + start_x) * needed_component;
         if(color_type() == SCLS_IMAGE_RGBA) {

@@ -17,10 +17,9 @@
 #include "scls_image_core.h"
 
 // The namespace "scls" is used to simplify the all.
-namespace scls
-{
+namespace scls {
     // Returns an image with a Mandelbrot fractal drawn on it
-    inline Image* burning_ship_fractal(unsigned short width, unsigned short height) {
+    inline __Image_Base* burning_ship_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
         double min_y = -2.5;
@@ -28,7 +27,7 @@ namespace scls
         double height_fractal = 5;
 
         // Create the image
-        Image* img = new Image(width, height, 255, 255, 255);
+        __Image_Base* img = new __Image_Base(width, height, 255, 255, 255);
 
         // Draw the fractal pixel by pixel
         for(int i = 0;i<width;i++) {
@@ -68,7 +67,7 @@ namespace scls
     };
 
     // Returns an image with a Mandelbrot fractal drawn on it
-    inline Image* mandelbrot_fractal(unsigned short width, unsigned short height) {
+    inline __Image_Base* mandelbrot_fractal(unsigned short width, unsigned short height) {
         // Define the size of the fractale
         double min_x = -2.5;
         double min_y = -2.5;
@@ -76,7 +75,7 @@ namespace scls
         double height_fractal = 5;
 
         // Create the image
-        Image* img = new Image(width, height, 255, 255, 255);
+        __Image_Base* img = new __Image_Base(width, height, 255, 255, 255);
 
         // Draw the fractal pixel by pixel
         for(int i = 0;i<width;i++) {
@@ -116,8 +115,8 @@ namespace scls
     };
 
     // Returns an image with a modulo drawn on it
-    inline Image* modulo_circle(unsigned short width, unsigned short height, unsigned int base, unsigned int side) {
-        Image* img = new Image(width, height, 255, 255, 255);
+    inline __Image_Base* modulo_circle(unsigned short width, unsigned short height, unsigned int base, unsigned int side) {
+        __Image_Base* img = new __Image_Base(width, height, 255, 255, 255);
 
         double max_x = 0.5;
 		double min_x = 0.5;
@@ -171,15 +170,15 @@ namespace scls
     }
 
     // Returns an image with a Sierpinski carpet drawn on it
-    inline Image* sierpinski_carpet(unsigned short width, unsigned short height, unsigned char step) {
+    inline __Image_Base* sierpinski_carpet(unsigned short width, unsigned short height, unsigned char step) {
         // Create the image
-        Image* img = new Image(width, height, 255, 255, 255);
+        __Image_Base* img = new __Image_Base(width, height, 255, 255, 255);
 
         if(step == 0) {
             img->draw_rect(0, 0, width, height, static_cast<double>(width) / 3.0, Color(0, 0, 0, 0));
         }
         else {
-            Image *child = sierpinski_carpet(static_cast<unsigned short>(static_cast<double>(width) / 3.0), static_cast<unsigned short>(static_cast<double>(height) / 3.0), step - 1);
+            __Image_Base *child = sierpinski_carpet(static_cast<unsigned short>(static_cast<double>(width) / 3.0), static_cast<unsigned short>(static_cast<double>(height) / 3.0), step - 1);
             img->paste(child, 0, 0);
             img->paste(child, (static_cast<double>(width) / 3.0), 0);
             img->paste(child, (static_cast<double>(width) / 3.0) * 2.0, 0);
@@ -195,16 +194,16 @@ namespace scls
     };
 
     // Returns an image with a Sierpinski pyramid drawn on it
-    inline Image* sierpinski_pyramid(unsigned short width, unsigned short height, unsigned char step, char current_step = -1) {
+    inline __Image_Base* sierpinski_pyramid(unsigned short width, unsigned short height, unsigned char step, char current_step = -1) {
         // Create the image
-        Image* img = new Image(width, height, 255, 255, 255, 255);
+        __Image_Base* img = new __Image_Base(width, height, 255, 255, 255, 255);
 
         if(step == 0) {
             img->fill_triangle(0, height, width / 2.0, 0, width, height, Color(0, 0, 0, 0));
             if(current_step != -1) return img;
         }
         else {
-            scls::Image* child = sierpinski_pyramid(width / 2.0, height / 2.0, step - 1, step - 1);
+            __Image_Base* child = sierpinski_pyramid(width / 2.0, height / 2.0, step - 1, step - 1);
             img->paste(child, 0, height / 2.0);
             img->paste(child, width / 2.0, height / 2.0);
             img->paste(child, width / 4.0, 0);

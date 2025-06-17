@@ -24,6 +24,9 @@ using namespace scls;
 
 int main() {
     scls::aster_system_logo("ASTER", "CITY").get()->save_png("tests/aster_city.png");
+    std::shared_ptr<scls::__Image_Base> test = std::make_shared<__Image_Base>(1000, 1000, scls::Color(255, 255, 255));
+    test.get()->fill_circle(100, 500, 300, scls::Color(255, 0, 0), 5, scls::Color(0, 0, 255));
+    test.get()->save_png("tests/test.png");
 
     return 0;
 }
