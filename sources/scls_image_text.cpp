@@ -1452,7 +1452,7 @@ namespace scls {
         // Handle empty lines
         if(cutted.size() <= 0) {
             Line_Datas datas;
-            datas.content = std::make_shared<__XML_Text_Base>(a_defined_balises, std::string(""), true);
+            datas.content = __XML_Text_Base::new_xml_text(a_defined_balises, std::string(""), true);
             datas.content_in_plain_text = "";
             datas.line_number = 0;
             datas.start_position = 0;
@@ -1577,7 +1577,7 @@ namespace scls {
                 else {
                     // Create a new paragraph for a non-paragraphed balise
                     std::shared_ptr<__XML_Text_Base> temp = cutted.get()->sub_texts()[i];
-                    if(temp_balise.get() == 0){temp_balise = std::make_shared<__XML_Text_Base>(a_defined_balises, std::string(""), false);}
+                    if(temp_balise.get() == 0){temp_balise = __XML_Text_Base::new_xml_text(a_defined_balises, std::string(""), false);}
                     else{cutted.get()->sub_texts().erase(cutted.get()->sub_texts().begin() + i);i--;}
                     temp_balise.get()->sub_texts().push_back(temp);
                     temp_balise.get()->sub_texts()[temp_balise.get()->sub_texts().size() - 1].get()->set_xml_balise_name(current_balise_name);

@@ -113,7 +113,8 @@ namespace scls {
 	    // Class representing an 8 bit RGBA color
     public:
         // Basic Color constructor
-        Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
+        Color(short red, short green, short blue);
+        Color(short red, short green, short blue, short alpha);
         Color():Color(0,0,0,255){}
         // Color copy constructor
         Color(const Color& color_copy):a_alpha(color_copy.a_alpha),a_blue(color_copy.a_blue),a_green(color_copy.a_green),a_red(color_copy.a_red){};
@@ -137,12 +138,35 @@ namespace scls {
 
         // Operator
         bool operator==(const Color& color) const;
+        Color operator+(const Color& color) const;
+        Color operator-(const Color& color) const;
+        Color operator*(double proportion) const;
     private:
         // Descriptor of the color (between 0 and 1)
         double a_alpha = 1;
         double a_blue = 0;
         double a_green = 0;
         double a_red = 0;
+	};
+
+	class Color_Mixer {
+	    // Class representing a mixer of color
+    public:
+        // Basic Color_Mixer constructor
+        Color_Mixer(short red, short green, short blue);
+        Color_Mixer(Color color_1, Color color_2);
+        Color_Mixer(std::vector<Color> colors);
+        Color_Mixer(Color color);
+        Color_Mixer();
+
+        // Add a color to the mixer
+        void add_color(Color new_color);
+        // Returns the current color
+        Color current_color(double total_proportion);
+
+    private:
+        // Colors in the mixer
+        std::vector<Color> a_colors;
 	};
 
 	//*********
@@ -304,6 +328,7 @@ namespace scls {
         // Draw a line on the image
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
         void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1);
+        void draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short width);
         // Draw a rectangle on the imageE
         void draw_rect(int x, int y, int width, int height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         void draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color);

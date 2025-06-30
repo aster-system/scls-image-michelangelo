@@ -39,18 +39,24 @@ namespace scls {
 	//*********
 
 	// Basic Color constructor
-    Color::Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
-            a_alpha = static_cast<double>(alpha) / 255.0;
-            a_blue = static_cast<double>(blue) / 255.0;
-            a_green = static_cast<double>(green) / 255.0;
-            a_red = static_cast<double>(red) / 255.0;
+    Color::Color(short red, short green, short blue):Color(red, green, blue, 255){}
+    Color::Color(short red, short green, short blue, short alpha) {
+        a_alpha = static_cast<double>(alpha) / 255.0;
+        a_blue = static_cast<double>(blue) / 255.0;
+        a_green = static_cast<double>(green) / 255.0;
+        a_red = static_cast<double>(red) / 255.0;
     }
 
     // Defined colors by name
     void __defined_color_by_name(std::string name, Color& color){
         if(name == std::string("black")){color = Color(0, 0, 0);}
         else if(name == std::string("blue")){color = Color(0, 0, 255);}
+        else if(name == std::string("gray") || name == std::string("grey")){color = Color(96, 96, 96);}
         else if(name == std::string("green")){color = Color(0, 255, 0);}
+        else if(name == std::string("light_blue")){color = Color(0, 204, 204);}
+        else if(name == std::string("light_gray") || name == std::string("light_grey")){color = Color(160, 160, 160);}
+        else if(name == std::string("orange")){color = Color(204, 102, 0);}
+        else if(name == std::string("pink")){color = Color(255, 0, 127);}
         else if(name == std::string("red")){color = Color(255, 0, 0);}
         else if(name == std::string("yellow")){color = Color(255, 255, 0);}
         else if(name == std::string("transparent")){color = Color(0, 0, 0, 0);}
@@ -105,6 +111,32 @@ namespace scls {
 
     // Operator
     bool Color::operator==(const Color& color) const {return color.a_red == a_red && color.a_green == a_green && color.a_blue == a_blue && color.a_alpha == a_alpha;}
+    Color Color::operator+(const Color& color) const {return Color((a_red + color.a_red) * 255.0, (a_green + color.a_green) * 255.0, (a_blue + color.a_blue) * 255.0);}
+    Color Color::operator-(const Color& color) const {return Color((a_red - color.a_red) * 255.0, (a_green - color.a_green) * 255.0, (a_blue - color.a_blue) * 255.0);}
+    Color Color::operator*(double proportion) const {return Color(a_red * 255.0 * proportion, a_green * 255.0 * proportion, a_blue * 255.0 * proportion);}
+
+    // Basic Color_Mixer constructor
+    Color_Mixer::Color_Mixer(Color color_1, Color color_2){a_colors.push_back(color_1);a_colors.push_back(color_2);};
+    Color_Mixer::Color_Mixer(short red, short green, short blue):Color_Mixer(Color(red, green, blue)){};
+    Color_Mixer::Color_Mixer(std::vector<Color> colors){a_colors=colors;}
+    Color_Mixer::Color_Mixer(Color color){a_colors.push_back(color);};
+    Color_Mixer::Color_Mixer(){};
+
+    // Add a color to the mixer
+    void Color_Mixer::add_color(Color new_color){a_colors.push_back(new_color);}
+    // Returns the current color
+    Color Color_Mixer::current_color(double total_proportion){
+        // Asserts
+        if(static_cast<int>(a_colors.size()) <= 0){return Color(0, 0, 0);}
+        else if(static_cast<int>(a_colors.size()) == 1){return a_colors.at(0);}
+        total_proportion -= std::floor(total_proportion);
+
+        double current_time = 0;int needed_color = 0;
+        while(current_time <= total_proportion) {needed_color++;current_time += 1.0/static_cast<double>(a_colors.size());}
+        needed_color--;total_proportion-=(static_cast<double>(needed_color)/static_cast<double>(a_colors.size()));
+        int next_color = needed_color + 1;if(next_color >= static_cast<int>(a_colors.size())){next_color = 0;}
+        return a_colors.at(needed_color) + (a_colors.at(next_color) - a_colors.at(needed_color)) * total_proportion * static_cast<double>(a_colors.size());
+    }
 
     //*********
 	//
@@ -459,8 +491,7 @@ namespace scls {
 
         unsigned char multiplier = (bit_depht() / 8.0);
         unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
-        if(color_type() == 6)
-        {
+        if(color_type() == 6){
             Color color = pixel(x, y);
 
             float alpha_f = normalize_value(alpha, 0, 255) / 255.0;
@@ -951,12 +982,10 @@ namespace scls {
             #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
             #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
             double angle = 0;double angle_sin = 0;int last_y = 0;
-            //double radius_inner = (radius_x + (radius_y - radius_x) * angle_border_sin) - border_radius;
             if(needed_x >= start_x_inner) {
-                double current_ratio = static_cast<double>(needed_x - start_x_inner) / (radius_x - border_radius);
+                double current_ratio = static_cast<double>(current_x - border_radius) / (radius_x - border_radius);
                 angle = std::acos(1.0 - current_ratio);angle_sin = std::sin(angle);
-                double radius_inner = (radius_x + (radius_y - radius_x) * angle_sin) - border_radius;
-                last_y = round(angle_sin * radius_inner);
+                last_y = round(angle_sin * (radius_y - border_radius));
             }
 
             // Border part
@@ -1152,6 +1181,7 @@ namespace scls {
 
     // Draw a line on the image
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);}
+    void __Image_Base::draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short width){draw_line(point_1.x().to_double(), point_1.y().to_double(), point_2.x().to_double(), point_2.y().to_double(), color.red(), color.green(), color.blue(), color.alpha(), width);};
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
