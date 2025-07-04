@@ -339,12 +339,15 @@ namespace scls {
 
         // Drawing methods
         // Fill a circle on the image
+        void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
         void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
         void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
-        void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
         void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
-        void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
+        void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
         void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
+        void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
+        void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+        void fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color, double border_radius, Color border_color);
         void fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color);
         void fill_circle(int x_center, int y_center, double radius, Color color);
         // Fill a circle with a gradient on the image
@@ -361,6 +364,9 @@ namespace scls {
         void flip_x();
 		// Flips the image on the Y axis
         void flip_y();
+
+        // Points to draw a line
+        std::vector<Point_2D> line_points(int x_1, int y_1, int x_2, int y_2);
 
 		// Paste an __Image_Base on this __Image_Base
         void paste(__Image_Base* to_paste, int x, int y, double opacity = 1.0);
