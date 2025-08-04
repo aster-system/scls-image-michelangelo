@@ -1331,6 +1331,9 @@ namespace scls {
             if(current_line != 0) {
                 __Image_Base* current_image = current_line->image(generation_type);
                 if(current_image != 0) {
+                    // Alignment
+                    if(global_style()->alignment_horizontal() == H_Center){current_x = to_return->width() / 2 - current_image->width() / 2;}
+
                     if(a_line_pasting_max_thread_number > 0) {
                         // Check for the number of thread
                         if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
@@ -1597,4 +1600,10 @@ namespace scls {
         // Apply the style of each blocks
         for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {a_blocks_datas[i].get()->global_style.get()->set_parent_style(global_style_shared_ptr());}
     };
+
+    // Converts some well-known types into image
+    std::shared_ptr<__Image_Base> to_image(std::string value, std::shared_ptr<scls::Text_Style> style){Text_Image_Generator gen;return gen.image_shared_ptr(value, *style.get());};
+    std::shared_ptr<__Image_Base> to_image(std::string* value, scls::Text_Style style){Text_Image_Generator gen;return gen.image_shared_ptr(*value, style);};
+    std::shared_ptr<__Image_Base> to_image(std::string* value){Text_Style style;return to_image(value, style);};
+    std::shared_ptr<__Image_Base> to_image(std::string value){Text_Style style;return to_image(&value, style);};
 }

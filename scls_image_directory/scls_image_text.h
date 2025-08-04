@@ -973,8 +973,10 @@ namespace scls {
     };
 
     // Converts some well-known types into image
-    inline std::shared_ptr<__Image_Base> to_image(std::string* value, scls::Text_Style style){Text_Image_Generator gen;return gen.image_shared_ptr(*value, style);};
-    inline std::shared_ptr<__Image_Base> to_image(std::string* value){Text_Style style;return to_image(value, style);};
+    std::shared_ptr<__Image_Base> to_image(std::string value, std::shared_ptr<scls::Text_Style> style);
+    std::shared_ptr<__Image_Base> to_image(std::string* value, scls::Text_Style style);
+    std::shared_ptr<__Image_Base> to_image(std::string* value);
+    std::shared_ptr<__Image_Base> to_image(std::string value);
 }
 
 #endif // SCLS_IMAGE_TEXT

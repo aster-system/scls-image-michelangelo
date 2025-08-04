@@ -162,7 +162,7 @@ namespace scls {
         // Add a color to the mixer
         void add_color(Color new_color);
         // Returns the current color
-        Color current_color(double total_proportion);
+        Color current_color(double total_proportion) const;
 
     private:
         // Colors in the mixer
@@ -236,6 +236,81 @@ namespace scls {
 
 	    //*********
         //
+        // The Image class
+        //
+        //*********
+
+        class Image {
+            // Class representing a way to safely use "__Image_Base"
+        public:
+            // Image constructor
+            Image();
+            Image(std::string path);
+            Image(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned int color_type = SCLS_IMAGE_RGBA);
+            Image(unsigned short width, unsigned short height, Color color, unsigned int color_type);
+            Image(unsigned short width, unsigned short height, Color color);
+            Image(unsigned short width, unsigned short height);
+            Image(std::shared_ptr<__Image_Base> new_image);
+
+            // Fills the image with one color
+            void fill(Color color);
+
+            // Drawing methods
+            // Fills a circle on the image
+            void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
+            void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
+            void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
+            void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
+            void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
+            void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
+            void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
+            void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+            void fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color, double border_radius, Color border_color);
+            void fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color);
+            void fill_circle(int x_center, int y_center, double radius, Color color);
+            // Fills a rectangle on the image
+            void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
+            void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color);
+
+            // Pastes an Image on this Image
+            void paste(__Image_Base* to_paste, int x, int y, double opacity = 1.0);
+            void paste(std::string path, int x, int y, double opacity = 1.0);
+            void paste(Image* to_paste, int x, int y, double opacity);
+            void paste(Image to_paste, int x, int y, double opacity);
+            void paste(Image* to_paste, int x, int y);
+            void paste(Image to_paste, int x, int y);
+
+            // Get datas about a specific pixel
+            Color pixel(unsigned short x, unsigned short y);
+            Color pixel_by_number(unsigned int position);
+            Color pixel_directly(unsigned int position, unsigned int multiplier);
+            Color pixel_rgba_directly(unsigned int position, unsigned int multiplier);
+
+            // Replaces a color with an other on the image
+            void replace_color(Color old_color, Color new_color);
+
+            // Returns a shared ptr of the image with a new size, adaptated
+            Image resize_adaptative(unsigned short new_width, unsigned short new_height);
+            Image resize_adaptative(scls::Point_2D new_size);
+            Image resize_adaptative_height(unsigned short new_height);
+            Image resize_adaptative_width(unsigned short new_width);
+
+            // Saves / loads
+            // Save the image into the PNG format
+            void save_png(std::string path);
+
+            // Getters and setters
+            inline int height() const {if(a_image.get() == 0){return 0;}return a_image.get()->height();};
+            inline __Image_Base* image() const {return a_image.get();};
+            inline std::shared_ptr<__Image_Base> image_shared_ptr() const {return a_image;};
+            inline int width() const {if(a_image.get() == 0){return 0;}return a_image.get()->width();};
+        private:
+            // Stored image
+            std::shared_ptr<__Image_Base> a_image;
+        };
+
+	    //*********
+        //
         // The __Image_Base class - Base
         //
         //*********
@@ -271,11 +346,15 @@ namespace scls {
 		void __fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) ;
 
         // Forces a pixel to change its value
-        void force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
+        void force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, int width_point);
+        void force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
         void force_pixel(unsigned short x, unsigned short y, Color color);
 
         // Returns the data filtered (like in PNG format)
         std::shared_ptr<Bytes_Set> datas_filtered();
+
+        // Replaces a color with an other on the image
+        void replace_color(Color old_color, Color new_color);
 
         // Paste datas to a specific pixel
         void paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
@@ -329,7 +408,9 @@ namespace scls {
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
         void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1);
         void draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short width);
-        // Draw a rectangle on the imageE
+        // Draws a line gradient on the image
+        void draw_line_gradient_force(int x_1, int y_1, int x_2, int y_2, unsigned short width, Color (*needed_function)(int, int, double));
+        // Draw a rectangle on the image
         void draw_rect(int x, int y, int width, int height, unsigned int rect_width, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         void draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color);
         void draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color, Color fill_color);
@@ -338,7 +419,7 @@ namespace scls {
         void draw_circle(int x_center, int y_center, double radius, Color color, unsigned short line_width = 1);
 
         // Drawing methods
-        // Fill a circle on the image
+        // Fills a circle on the image
         void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
         void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
         void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
@@ -350,13 +431,14 @@ namespace scls {
         void fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color, double border_radius, Color border_color);
         void fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color);
         void fill_circle(int x_center, int y_center, double radius, Color color);
-        // Fill a circle with a gradient on the image
+        // Fills a circle with a gradient on the image
         void fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
         void fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
-        // Fill a rectangle on the image
+        // Fills a rectangle on the image
+		void fill_rect_force(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
 		void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color);
-        // Fill a rectangle on the image
+        // Fills a rectangle on the image
 		void fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         void fill_triangle(short x_1, short y_1, short x_2, short y_2, short x_3, short y_3, Color color);
 
@@ -371,6 +453,10 @@ namespace scls {
 		// Paste an __Image_Base on this __Image_Base
         void paste(__Image_Base* to_paste, int x, int y, double opacity = 1.0);
         void paste(std::string path, int x, int y, double opacity = 1.0);
+        void paste(Image* to_paste, int x, int y, double opacity);
+        void paste(Image to_paste, int x, int y, double opacity);
+        void paste(Image* to_paste, int x, int y);
+        void paste(Image to_paste, int x, int y);
 		// Pastes an __Image_Base to the bottom / center / top of the image
 		void paste_bottom_center(__Image_Base* to_paste, double offset_y, double opacity);
 		void paste_center(__Image_Base* to_paste, double opacity = 1.0);
@@ -408,7 +494,6 @@ namespace scls {
         std::shared_ptr<__Image_Base> resize_adaptative_height(unsigned short new_height);
         // Returns a shared ptr of the image with a new width, adaptated
         std::shared_ptr<__Image_Base> resize_adaptative_width(unsigned short new_width);
-
 
 		// Load the image from a set of binary datas coming from a FreeType text
         bool _load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
@@ -501,6 +586,7 @@ namespace scls {
         // Number of thread created for a pasting a text
         unsigned short a_thread_number_for_pasting_text = 0;
 	};
+	typedef __Image_Base::Image Image;
 }
 
 #endif // SCLS_IMAGE_CORE

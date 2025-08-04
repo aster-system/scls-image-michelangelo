@@ -23,12 +23,17 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    std::shared_ptr<scls::__Image_Base> test = std::make_shared<__Image_Base>(1000, 1000, scls::Color(255, 255, 255));
-    test.get()->fill_circle(500, 500, 400, 300, 45, 0, 360, scls::Color(255, 0, 0), 5, scls::Color(0, 0, 255));
-    test.get()->save_png("tests/test_0.png");
-    test = std::make_shared<__Image_Base>(1000, 1000, scls::Color(255, 255, 255));
-    test.get()->fill_circle(500, 500, 400, 300, -45, 0, 360, scls::Color(255, 0, 0), 5, scls::Color(0, 0, 255));
-    test.get()->save_png("tests/test_1.png");
+    scls::Image test = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+    //test.fill_circle(500, 500, 400, 400, 45, 360, scls::Color(255, 0, 0), 25, scls::Color(0, 0, 255));
+    //test.fill_circle(500, 500, 100, 400, 45, 360, scls::Color(255, 0, 0), 25, scls::Color(0, 0, 255));
+    test.fill_circle(500, 500, 400, 200, 0, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
+    test.save_png("tests/test_0.png");test.fill(scls::Color(255, 255, 255));
+    test.fill_circle(500, 500, 400, 200, -10, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
+    test.save_png("tests/test_1.png");test.fill(scls::Color(255, 255, 255));
+    test.fill_circle(500, 500, 400, 200, -25, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
+    test.save_png("tests/test_2.png");test.fill(scls::Color(255, 255, 255));
+    test.fill_circle(500, 500, 400, 200, -65, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
+    test.save_png("tests/test_3.png");
 
     return 0;
 }

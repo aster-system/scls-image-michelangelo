@@ -111,8 +111,8 @@ namespace scls {
 
     // Operator
     bool Color::operator==(const Color& color) const {return color.a_red == a_red && color.a_green == a_green && color.a_blue == a_blue && color.a_alpha == a_alpha;}
-    Color Color::operator+(const Color& color) const {return Color((a_red + color.a_red) * 255.0, (a_green + color.a_green) * 255.0, (a_blue + color.a_blue) * 255.0);}
-    Color Color::operator-(const Color& color) const {return Color((a_red - color.a_red) * 255.0, (a_green - color.a_green) * 255.0, (a_blue - color.a_blue) * 255.0);}
+    Color Color::operator+(const Color& color) const {return Color((a_red + color.a_red) * 255.0, (a_green + color.a_green) * 255.0, (a_blue + color.a_blue) * 255.0, (a_alpha + color.a_alpha) * 255.0);}
+    Color Color::operator-(const Color& color) const {return Color((a_red - color.a_red) * 255.0, (a_green - color.a_green) * 255.0, (a_blue - color.a_blue) * 255.0, (a_alpha - color.a_alpha) * 255.0);}
     Color Color::operator*(double proportion) const {return Color(a_red * 255.0 * proportion, a_green * 255.0 * proportion, a_blue * 255.0 * proportion);}
 
     // Basic Color_Mixer constructor
@@ -125,7 +125,7 @@ namespace scls {
     // Add a color to the mixer
     void Color_Mixer::add_color(Color new_color){a_colors.push_back(new_color);}
     // Returns the current color
-    Color Color_Mixer::current_color(double total_proportion){
+    Color Color_Mixer::current_color(double total_proportion) const {
         // Asserts
         if(static_cast<int>(a_colors.size()) <= 0){return Color(0, 0, 0);}
         else if(static_cast<int>(a_colors.size()) == 1){return a_colors.at(0);}
@@ -270,6 +270,68 @@ namespace scls {
 	//
 	//*********
 
+	// Image constructor
+    __Image_Base::Image::Image(){}
+    __Image_Base::Image::Image(std::string path):__Image_Base::Image::Image(std::make_shared<__Image_Base>(path)){}
+    __Image_Base::Image::Image(unsigned short width, unsigned short height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned int color_type):__Image_Base::Image::Image(std::make_shared<__Image_Base>(width, height, red, green, blue, alpha, color_type)){}
+    __Image_Base::Image::Image(unsigned short width, unsigned short height, Color color, unsigned int color_type):__Image_Base::Image::Image(std::make_shared<__Image_Base>(width, height, color, color_type)){}
+    __Image_Base::Image::Image(unsigned short width, unsigned short height, Color color):__Image_Base::Image::Image(std::make_shared<__Image_Base>(width, height, color, SCLS_IMAGE_RGBA)){}
+    __Image_Base::Image::Image(unsigned short width, unsigned short height):__Image_Base::Image::Image(std::make_shared<__Image_Base>(width, height)){}
+    __Image_Base::Image::Image(std::shared_ptr<__Image_Base> new_image):a_image(new_image){}
+
+    // Fills the image with one color
+    void __Image_Base::Image::fill(Color color){a_image.get()->fill(color);}
+
+    // Drawing methods
+    // Fill a circle on the image
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {a_image.get()->fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius_x, radius_y, 0, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius, radius, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center,y_center,radius,0,360,red,green,blue,alpha,border_radius,border_red,border_green,border_blue,border_alpha);};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,angle,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,0,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, Color color){a_image.get()->fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius_x, radius_y, angle, angle_start, angle_end, red ,green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    // Fills a rectangle on the image
+    void __Image_Base::Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){a_image.get()->fill_rect(x,y,rect_width,rect_height,red,green,blue,alpha);}
+    void __Image_Base::Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, Color color){a_image.get()->fill_rect(x,y,rect_width,rect_height,color.red(),color.green(),color.blue(),color.alpha());}
+
+    // Pastes an Image on this Image
+    void __Image_Base::Image::paste(__Image_Base* to_paste, int x, int y, double opacity){a_image.get()->paste(to_paste, x, y, opacity);}
+    void __Image_Base::Image::paste(std::string path, int x, int y, double opacity){a_image.get()->paste(path, x, y, opacity);}
+    void __Image_Base::Image::paste(Image* to_paste, int x, int y, double opacity){a_image.get()->paste(to_paste->image(), x, y, opacity);}
+    void __Image_Base::Image::paste(Image to_paste, int x, int y, double opacity){a_image.get()->paste(to_paste.image(), x, y, opacity);}
+    void __Image_Base::Image::paste(Image* to_paste, int x, int y){a_image.get()->paste(to_paste->image(), x, y);}
+    void __Image_Base::Image::paste(Image to_paste, int x, int y){a_image.get()->paste(to_paste.image(), x, y);}
+
+    // Get datas about a specific pixel
+    Color __Image_Base::Image::pixel(unsigned short x, unsigned short y){return image()->pixel(x, y);}
+    Color __Image_Base::Image::pixel_by_number(unsigned int position){return image()->pixel_by_number(position);}
+    Color __Image_Base::Image::pixel_directly(unsigned int position, unsigned int multiplier){return image()->pixel_directly(position, multiplier);}
+    Color __Image_Base::Image::pixel_rgba_directly(unsigned int position, unsigned int multiplier){return image()->pixel_rgba_directly(position, multiplier);}
+
+    // Replaces a color with an other on the image
+    void __Image_Base::Image::replace_color(Color old_color, Color new_color) {image()->replace_color(old_color, new_color);}
+
+    // Returns a shared ptr of the image with a new size, adaptated
+    __Image_Base::Image __Image_Base::Image::resize_adaptative(unsigned short new_width, unsigned short new_height){return image()->resize_adaptative(new_width, new_height);}
+    __Image_Base::Image __Image_Base::Image::resize_adaptative(scls::Point_2D new_size){return image()->resize_adaptative(new_size.x(), new_size.y());}
+    __Image_Base::Image __Image_Base::Image::resize_adaptative_height(unsigned short new_height){return image()->resize_adaptative_height(new_height);}
+    __Image_Base::Image __Image_Base::Image::resize_adaptative_width(unsigned short new_width){return image()->resize_adaptative_width(new_width);}
+
+    // Saves / loads
+    // Save the image into the PNG format
+    void __Image_Base::Image::save_png(std::string path){a_image.get()->save_png(path);}
+
+    //*********
+	//
+	// The __Image_Base class
+	//
+	//*********
+
 	// All __Image_Base constructors
     // __Image_Base most basic constructor
     __Image_Base::__Image_Base() {};
@@ -355,6 +417,27 @@ namespace scls {
 
     // Force a pixel to change its value
     void __Image_Base::force_pixel(unsigned short x, unsigned short y, Color color) {force_pixel(x, y, color.red(), color.green(), color.blue(), color.alpha());}
+    void __Image_Base::force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, int width_point) {
+        if (width_point == 0) return;
+        else if (width_point == 1) {
+            // Check the position
+            if (x < 0 || y < 0 || x >= width() || y >= height()) {
+                print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set is out of the image.");
+                return;
+            }
+
+            unsigned char multiplier = (bit_depht() / 8.0);
+            unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
+
+            if(color_type() == SCLS_IMAGE_RGBA) {set_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+            else if(color_type() == SCLS_IMAGE_RGB) {
+                a_pixels->set_data_at_directly(position, red);
+                a_pixels->set_data_at_directly(position + multiplier, green);
+                a_pixels->set_data_at_directly(position + 2 * multiplier, blue);
+            }
+        }
+        else {fill_rect_force(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);}
+    }
     void __Image_Base::force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to force is out of the image.");
@@ -445,6 +528,17 @@ namespace scls {
 
         return to_return;
     };
+
+    // Replaces a color with an other on the image
+    void __Image_Base::replace_color(Color old_color, Color new_color) {
+        int needed_height = height(); int needed_width = width();
+        if(color_type() == 6) {
+            for(int i = 0;i<needed_height*needed_width;i++){
+                int current_position = i * components();
+                if(pixel_rgba_directly(current_position, 1) == old_color){set_pixel_rgba_directly(current_position, new_color.red(), new_color.green(), new_color.blue(), new_color.alpha(), 1);}
+            }
+        }
+    }
 
     // Set datas about a specific pixel
     void __Image_Base::set_pixel_directly(unsigned int position, unsigned char value){a_pixels->set_data_at_directly(position, value);};
@@ -958,22 +1052,22 @@ namespace scls {
     void __Image_Base::fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
     void __Image_Base::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
         // Format the angle
-        while(angle <= -180.0){angle += 360.0;}while(angle >= 90.0){angle -= 180.0;}
-        if(angle >= 90.0){angle=180.0-angle;}angle /= (180.0/SCLS_PI);
+        while(angle <= -90.0){angle += 180.0;}while(angle >= 90.0){angle -= 180.0;}
+        angle /= (180.0/SCLS_PI);
 
-        double last_angle = SCLS_PI / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / SCLS_PI)).x().to_double();
-        double left_angle = SCLS_PI * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / SCLS_PI)).x().to_double();
+        double last_angle = SCLS_PI / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / SCLS_PI)).x();
+        double left_angle = SCLS_PI * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / SCLS_PI)).x();
         for(int i = 0;i<30;i++){
             double new_angle = (last_angle + left_angle) / 2.0;
-            double needed_x = oval_vector_x(radius_x, radius_y, new_angle).rotated(angle * (180.0 / SCLS_PI)).x().to_double();
+            double needed_x = oval_vector_x(radius_x, radius_y, new_angle).rotated(angle * (180.0 / SCLS_PI)).x();
             if(last_x > left_x){last_angle = new_angle;last_x = needed_x;}
             else{left_angle = new_angle;left_x = needed_x;}
         }
-        last_angle = 0;double last_y = scls::vector_2d_with_angle(last_angle).rotated(angle * (180.0 / SCLS_PI)).y().to_double() * oval_radius_proportion_y(radius_x, radius_y, last_angle);
-        double top_angle = SCLS_PI;double top_y = scls::vector_2d_with_angle(top_angle).rotated(angle * (180.0 / SCLS_PI)).y().to_double() * oval_radius_proportion_y(radius_x, radius_y, top_angle);
+        last_angle = 0;double last_y = scls::vector_2d_with_angle(last_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, last_angle);
+        double top_angle = SCLS_PI;double top_y = scls::vector_2d_with_angle(top_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, top_angle);
         for(int i = 0;i<30;i++){
             double new_angle = (last_angle + top_angle) / 2.0;
-            double needed_y = scls::vector_2d_with_angle(new_angle).rotated(angle * (180.0 / SCLS_PI)).y().to_double() * oval_radius_proportion_y(radius_x, radius_y, new_angle);
+            double needed_y = scls::vector_2d_with_angle(new_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, new_angle);
             if(last_y < top_y){last_angle = new_angle;last_y = needed_y;}
             else{top_angle = new_angle;top_y = needed_y;}
         }
@@ -994,7 +1088,9 @@ namespace scls {
         const int start_y_right = y_center + drew_y_center * y_multiplier;
 
         // Upgrade in the drawing
-        angle_end*=-1;angle_start*=-1;double temp=angle_end;angle_end=angle_start;angle_start=temp;angle_end+=180.0;angle_start+=180.0;
+        double temp=angle_end;angle_end=angle_start;angle_start=temp;
+        angle_end*=-1;angle_start*=-1;
+        angle_end+=180.0;angle_start+=180.0;
         while(angle_end < 0.0){angle_end += 360.0;}while(angle_start < 0.0){angle_start += 360.0;}
         while(angle_end >= 360.0){angle_end -= 360.0;}while(angle_start >= 360.0){angle_start -= 360.0;}
         angle_end /= (180.0/SCLS_PI);angle_start /= (180.0/SCLS_PI);
@@ -1013,9 +1109,29 @@ namespace scls {
             y_center_offset_left += y_center_offset_left_to_add;
 
             // Get the needed x/y
-            double angle_border = (oval_angle_at_x(static_cast<double>(radius_x) * current_x_proportion_border, radius_x, radius_x) + left_angle) - SCLS_PI;
-            Point_2D director_border_top = oval_vector_x(radius_x, radius_y, angle_border).rotated(angle * (180.0/SCLS_PI));
-            int first_y_top = ((director_border_top.y() * (radius_x)).to_double()) - (drew_y_center - y_center_offset_left);
+            double angle_border = circle_angle_at_x(current_x_proportion_border - 1.0) + (left_angle - SCLS_PI);
+            Point_2D director_border_before_angle = oval_vector_x(radius_x, radius_y, angle_border) * radius_x;
+            Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/SCLS_PI));
+            int first_y_top = director_border_top.y() - (drew_y_center - y_center_offset_left);
+
+            // Get the needed limits
+            int limit_top_right = 0;
+            if(angle_end != 0 && angle_end <= 90.0){
+                /*double angle_border = (circle_angle_at_x(static_cast<double>(radius_x) * current_x_proportion_border, radius_x, radius_x) + left_angle) - SCLS_PI;
+                Point_2D director_border_before_angle = oval_vector_x(radius_x, radius_y, angle_border);
+                Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/SCLS_PI));
+                double circle_y = (director_border_top.y() * (radius_x)) - (drew_y_center - y_center_offset_left);//*/
+
+                double x_hypothenus = ((radius_x - radius_x * current_x_proportion_border) / std::abs(std::cos(angle_end)));
+                if(x_hypothenus != 0){
+                    double y_hypothenus = x_hypothenus * (radius_y / radius_x);
+                    Point_2D director_limit_top_before_angle = oval_vector_x(x_hypothenus, y_hypothenus, angle_end + angle) * x_hypothenus;
+                    Point_2D director_limit_top = director_limit_top_before_angle.rotated(angle * (180.0/SCLS_PI));
+                    double circle_y = (director_limit_top.y());
+                    limit_top_right = circle_y - (drew_y_center - y_center_offset_left);
+                    //std::cout << "G " << circle_y << " " << angle << " " << (radius_x * current_x_proportion_border) << " " << angle_end << " " << x_hypothenus << " " << y_hypothenus << " " << director_limit_top.y() << " " << director_limit_top_before_angle.y() << " " << limit_top_right << std::endl;
+                }
+            }
 
             // Draw each needed pixels
             // Set the last y
@@ -1023,21 +1139,23 @@ namespace scls {
             #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
             #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
             double needed_angle_bottom = SCLS_PI;double needed_angle_top = SCLS_PI;
-            int last_y_bottom = 0;int last_y_top = 0;
+            bool in_border_bottom = true;int last_y_bottom = 0;int last_y_top = 0;
             if(needed_x >= start_x_inner) {
-                needed_angle_bottom = oval_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
-                needed_angle_top = oval_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
-
-                Point_2D director_bottom = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_bottom).rotated(angle * (180.0/SCLS_PI));
-                Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/SCLS_PI));
-
-                last_y_bottom = ((director_bottom.y() * (radius_x - border_radius)).to_double() * -1) - (drew_y_center - y_center_offset_left);
-                last_y_top = ((director_top.y() * (radius_x - border_radius)).to_double() * -1) - (drew_y_center - y_center_offset_left);
+                needed_angle_bottom = circle_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
+                needed_angle_top = circle_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
 
                 // Update angles
                 needed_angle_bottom -= SCLS_PI;needed_angle_top -= SCLS_PI;
                 while(needed_angle_bottom < 0){needed_angle_bottom += SCLS_PI * 2.0;}while(needed_angle_bottom >= SCLS_PI * 2.0){needed_angle_bottom -= SCLS_PI * 2.0;}
                 while(needed_angle_top < 0){needed_angle_top += SCLS_PI * 2.0;}while(needed_angle_top >= SCLS_PI * 2.0){needed_angle_top -= SCLS_PI * 2.0;}
+
+                Point_2D director_bottom = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_bottom).rotated(angle * (180.0/SCLS_PI));
+                Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/SCLS_PI));
+
+                double current_border_radius = std::sqrt(std::pow(radius_x, 2) + std::pow(radius_x - border_radius, 2) - 2 * radius_x * (radius_x - border_radius) * std::cos((needed_angle_bottom - angle_border) / SCLS_PI));
+                last_y_bottom = (director_bottom.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left);
+                last_y_top = (director_top.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left);
+                in_border_bottom = false;
             }
 
             // Border part
@@ -1078,7 +1196,17 @@ namespace scls {
                 if(needed_x >= 0 && needed_x < needed_width){
                     // Right-bottom of the circle border
                     int i = 0;double current_angle = needed_angle_bottom;double current_angle_border = angle_border;int y_height = y_height_base;
-                    if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                    if(CHECK_ANGLE_END(current_angle_border, current_angle) || (in_border_bottom && current_angle_border < angle_end)){
+                        double x_hypothenus = (static_cast<double>(radius_x - current_x) / std::abs(std::cos(angle_end)));
+                        double y_hypothenus = radius_y - (radius_x - x_hypothenus);//x_hypothenus * (radius_y / radius_x);
+                        //double corrected_angle = oval_angle_at_x(x_hypothenus, y_hypothenus, radius_x - current_x);
+                        //double proportion = oval_radius_proportion_y(radius_x, radius_y, corrected_angle);
+                        double circle_y = (std::abs(std::sin(angle_end)) * y_hypothenus);
+                        i = circle_y - last_y_top; // * (static_cast<double>(radius_y - border_radius) / static_cast<double>(radius_x - border_radius))
+
+                        //std::cout << "G " << i << " " << last_y_top << " " << circle_angle_at_x(static_cast<double>(radius_x - current_x) / (x_hypothenus)) << " " << (radius_x - current_x) << " " << radius_x << " " << radius_y << " " << x_hypothenus << " " << y_hypothenus << " " << (static_cast<double>(radius_y - border_radius) / static_cast<double>(radius_x - border_radius)) << std::endl;
+                        //fill_circle(x_center, y_center, x_hypothenus, y_hypothenus, scls::Color(0, ((radius_x - current_x) - 260) * 20, 0), 0, scls::Color(0, 0, 0, 0));
+                    }
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
                         int current_y = (needed_y_right - (last_y_top + i));
@@ -1090,7 +1218,10 @@ namespace scls {
                     }
                     // Right-top of the circle border
                     i = 0; current_angle = SCLS_PI * 2.0 - needed_angle_top;current_angle_border = SCLS_PI * 2.0 - angle_border;y_height = y_height_base;
-                    if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
+                    if(CHECK_ANGLE_END(current_angle, current_angle_border)){
+                        double end_hypothenus = (static_cast<double>(radius_x - current_x) / std::abs(std::cos(angle_end)));
+                        y_height = std::abs(std::sin(angle_end)) * end_hypothenus - last_y_top;
+                    }
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
                         int current_y = (needed_y_right + (last_y_top + i));
@@ -1132,6 +1263,7 @@ namespace scls {
                 // Right of the circle
                 needed_x = (x_center + drew_radius_x) - current_x;
                 if(needed_x >= 0 && needed_x < needed_width){
+                    // Bottom right part of the circle
                     for(i = 0;i < last_y_bottom;i++) {
                         int current_y = (needed_y_right + i);
                         if(current_y >= 0 && current_y < needed_height && fill_bottom) {
@@ -1140,7 +1272,9 @@ namespace scls {
                             else{set_pixel_directly(position, red, green, blue, multiplier);}
                         }
                     }
-                    for(i = 0;i < last_y_top;i++) {
+
+                    // Top right part of the circle
+                    for(i = limit_top_right;i < last_y_top;i++) {
                         int current_y = (needed_y_right - i);
                         if(current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
@@ -1339,8 +1473,8 @@ namespace scls {
     }
 
     // Draw a line on the image
-    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), width);}
-    void __Image_Base::draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short width){draw_line(point_1.x().to_double(), point_1.y().to_double(), point_2.x().to_double(), point_2.y().to_double(), color.red(), color.green(), color.blue(), color.alpha(), width);};
+    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short line_width) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), line_width);}
+    void __Image_Base::draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short line_width){draw_line(point_1.x(), point_1.y(), point_2.x(), point_2.y(), color.red(), color.green(), color.blue(), color.alpha(), line_width);};
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
@@ -1425,6 +1559,97 @@ namespace scls {
             }
         }
     }
+    // Draws a line gradient on the image
+    void __Image_Base::draw_line_gradient_force(int x_1, int y_1, int x_2, int y_2, unsigned short line_width, Color (*needed_function)(int, int, double)) {
+        const int first_x = x_1;const int first_y = y_1;
+
+        // Only case which the algorithm does not work correctly
+        if(x_1 == x_2) {
+            // Check the X position
+            if(x_1 + static_cast<int>(line_width) < 0 || x_1 >= width()) return;
+            if(y_2 < y_1) {
+                y_2 += y_1;
+                y_1 = y_2 - y_1;
+                y_2 = y_2 - y_1;
+            } y_2++;
+            // Draw the line
+            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
+            Color needed_color = needed_function(0, first_x, first_y);
+            fill_rect(x_1, y_1, line_width, y_2 - y_1, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha());
+        }
+        else if(y_1 == y_2) {
+            // Check the Y position
+            if(y_1 < 0 || y_1 >= height()) return;
+            if(x_2 < x_1) {
+                x_2 += x_1;
+                x_1 = x_2 - x_1;
+                x_2 = x_2 - x_1;
+            } x_2++;
+            // Draw the line
+            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
+            Color needed_color = needed_function(0, first_x, first_y);
+            fill_rect(x_1, y_1, x_2 - x_1, line_width, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha());
+        }
+        else {
+            x_2++; y_2++;
+            double distance_x = static_cast<double>(x_2 - x_1);
+            double distance_y = static_cast<double>(y_2 - y_1);
+
+            double x_y_ratio = distance_x / distance_y;
+
+            if (abs(x_y_ratio) < 1) {
+                // Normalize positions
+                if (y_1 > y_2) {
+                    int temp = y_1;
+                    y_1 = y_2;
+                    y_2 = temp;
+                    temp = x_1;
+                    x_1 = x_2;
+                    x_2 = temp;
+                }
+
+                double actual_x = x_1;
+                double actual_y = y_1;
+
+                // Check the positions
+                if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
+                if(y_2 >= height()) y_2 = height() - 1;
+                // Draw the line
+                while (actual_y < y_2) {
+                    actual_y++;
+                    actual_x += x_y_ratio;
+                    Color needed_color = needed_function(std::sqrt(std::pow(actual_x - first_x, 2) + std::pow(actual_y - first_y, 2)), actual_x, actual_y);
+                    force_pixel(actual_x, actual_y, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha(), line_width);
+                }
+            }
+            else {
+                // Normalize positions
+                if (x_1 > x_2) {
+                    int temp = x_1;
+                    x_1 = x_2;
+                    x_2 = temp;
+                    temp = y_1;
+                    y_1 = y_2;
+                    y_2 = temp;
+                }
+
+                double actual_x = x_1;
+                double actual_y = y_1;
+
+                // Check the positions
+                double y_x_ratio = distance_y / distance_x;
+                if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
+                if(x_2 >= width()) x_2 = width() - 1;
+                // Draw the line
+                while (actual_x < x_2) {
+                    actual_y += y_x_ratio;
+                    actual_x++;
+                    Color needed_color = needed_function(std::sqrt(std::pow(actual_x - first_x, 2) + std::pow(actual_y - first_y, 2)), actual_x, actual_y);
+                    force_pixel(actual_x, actual_y, needed_color.red(), needed_color.green(), needed_color.blue(), needed_color.alpha(), line_width);
+                }
+            }
+        }
+    }
 
     // Draw a rectangle on the image
     void __Image_Base::draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());}
@@ -1437,6 +1662,29 @@ namespace scls {
     }
 
     // Fill a rectangle on the image
+    void __Image_Base::fill_rect_force(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){
+        // Check the position
+        if(y >= static_cast<int>(height()) || x >= static_cast<int>(width()) || y + static_cast<int>(rect_height) < 0 || x + static_cast<int>(rect_width) < 0) return;
+        if(x < 0) {x=-x;rect_width -= static_cast<unsigned short>(x);x = 0;}
+        if(x + rect_width >= width()) rect_width = width() - x;
+        if(y < 0) {y=-y;rect_height -= static_cast<unsigned short>(y);y = 0;}
+        if(y + rect_height >= height()) rect_height = height() - y;
+        // Normalise the values
+        unsigned char needed_alpha = (normalize_value(alpha, 0, 255));
+        unsigned char needed_blue = (normalize_value(blue, 0, 255));
+        unsigned char needed_green = (normalize_value(green, 0, 255));
+        unsigned char needed_red = (normalize_value(red, 0, 255));
+        // Fill the rect
+        unsigned int needed_components = components();
+        unsigned int current_position = (y * width() + x) * needed_components;
+        unsigned int to_add_line = (width() - rect_width) * needed_components;
+        for (int i = 0; i < rect_height; i++) {
+            for (int j = 0; j < rect_width; j++) {
+                set_pixel_rgba_directly(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
+                current_position+=needed_components;
+            } current_position += to_add_line;
+        }
+    }
     void __Image_Base::fill_rect(int x, int y, unsigned short width, unsigned short height, Color color) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());}
     void __Image_Base::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         // Check the position
@@ -1610,7 +1858,14 @@ namespace scls {
 
     // Paste an Image on this Image
     void __Image_Base::paste(std::string path, int x, int y, double opacity) {__Image_Base* img = new __Image_Base(path);paste(img, x, y, opacity);delete img; img = 0;};
+    void __Image_Base::paste(Image* to_paste, int x, int y, double opacity){paste(to_paste->image(), x, y, opacity);}
+    void __Image_Base::paste(Image to_paste, int x, int y, double opacity){paste(to_paste.image(), x, y, opacity);}
+    void __Image_Base::paste(Image* to_paste, int x, int y){paste(to_paste->image(), x, y, 1.0);}
+    void __Image_Base::paste(Image to_paste, int x, int y){paste(to_paste.image(), x, y, 1.0);}
     void __Image_Base::paste(__Image_Base* to_paste, int x, int y, double opacity) {
+        // Asserts
+        if(to_paste == 0){print(std::string("SCLS Image"), std::string("Can't print an empty pointer (at x = ") + std::to_string(x) + std::string(" and y = ") + std::to_string(x) + std::string(")."));return;}
+
         unsigned int current_thread_position = 0;
         unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
 
@@ -1657,6 +1912,7 @@ namespace scls {
         int needed_component_paste = to_paste->components();
         int needed_height_paste = to_paste->height(); int needed_width_paste = to_paste->width();
         int current_position_paste = ((start_y) * needed_width_paste + (start_x)) * needed_component_paste;
+        int current_x_to_paste = start_x; int current_y_to_paste = start_y;
 
         // Current image datas
         int current_x = x_offset; int current_y = y_offset;
@@ -1675,16 +1931,14 @@ namespace scls {
                 current_x++;
                 if((start_x + (current_x - x_offset)) >= needed_width_paste || current_x >= needed_width) {
                     current_x = x_offset;
-                    current_y++;
-                    if(current_y - y_offset >= needed_height_paste || current_y >= needed_height){break;}
+                    current_y++;current_y_to_paste++;
+                    if(current_y - y_offset >= needed_height_paste || current_y >= needed_height || current_y_to_paste >= to_paste->height()){break;}
                     current_position = ((current_y) * needed_width + (current_x)) * needed_component;
                     current_position_paste = ((start_y + (current_y - y_offset)) * needed_width_paste + (start_x + (current_x - x_offset))) * needed_component_paste;
                 }
             }
         }
-        else if(color_type() == SCLS_IMAGE_RGB) {
-
-        }
+        else if(color_type() == SCLS_IMAGE_RGB) {}
     }
 
     // Pastes an Image to the bottom / center / top of the image
@@ -1761,12 +2015,12 @@ namespace scls {
 
     // Returns a shared ptr of the image with a new size, adaptated
     std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(unsigned short new_width, unsigned short new_height) {if(new_width == width() && new_height == height()){return copy_image();} std::shared_ptr<__Image_Base> current_image = resize_adaptative_width(new_width);if(current_image.get() == 0) return resize_adaptative_height(new_height);return current_image.get()->resize_adaptative_height(new_height); };
-    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(scls::Point_2D new_size) {return resize_adaptative(new_size.x().to_double(), new_size.y().to_double()); };
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(scls::Point_2D new_size) {return resize_adaptative(new_size.x(), new_size.y()); };
     // Returns a shared ptr of the image with a new height, adaptated
     std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_height(unsigned short new_height) {
         if(new_height < height()) {
             // Create the new image
-            std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(width(), new_height, Color(255, 255, 255));
+            std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(width(), new_height, Color(0, 0, 0, 0));
             new_image.get()->a_flip_x_number = a_flip_x_number;
 
             std::vector<long long> repartioned_pixels = partition_number(height(), new_height);
@@ -1774,10 +2028,10 @@ namespace scls {
             for(int i = 0;i<new_height;i++) {
                 for(int j = 0;j<width();j++) {
                     // Calculate the median color
-                    unsigned int alpha_value = 0;
-                    unsigned int blue_value = 0;
-                    unsigned int green_value = 0;
-                    unsigned int red_value = 0;
+                    float alpha_value = 0;
+                    float blue_value = 0;
+                    float green_value = 0;
+                    float red_value = 0;
                     for(int k = 0;k<repartioned_pixels[i];k++) {
                         Color current_color = pixel(j, current_y + k);
                         alpha_value += current_color.alpha();
@@ -1791,7 +2045,7 @@ namespace scls {
                     red_value /= repartioned_pixels[i];
 
                     // Apply the median color
-                    new_image.get()->set_pixel(j, i, Color(red_value, green_value, blue_value, alpha_value));
+                    new_image.get()->set_pixel_rgba_directly((j + i * new_image->width()) * new_image->components(), red_value, green_value, blue_value, alpha_value, 1);
                 }
                 current_y += repartioned_pixels[i];
             }
@@ -1804,7 +2058,7 @@ namespace scls {
     std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_width(unsigned short new_width) {
         if(new_width < width()) {
             // Create the new image
-            std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(new_width, height(), Color(255, 255, 255));
+            std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(new_width, height(), Color(0, 0, 0, 0));
             new_image.get()->a_flip_x_number = a_flip_x_number;
 
             std::vector<long long> repartioned_pixels = partition_number(width(), new_width);
@@ -1812,10 +2066,10 @@ namespace scls {
             for(int i = 0;i<new_width;i++) {
                 for(int j = 0;j<height();j++) {
                     // Calculate the median color
-                    unsigned int alpha_value = 0;
-                    unsigned int blue_value = 0;
-                    unsigned int green_value = 0;
-                    unsigned int red_value = 0;
+                    float alpha_value = 0;
+                    float blue_value = 0;
+                    float green_value = 0;
+                    float red_value = 0;
                     for(int k = 0;k<repartioned_pixels[i];k++) {
                         Color current_color = pixel(current_x + k, j);
                         alpha_value += current_color.alpha();
