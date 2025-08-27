@@ -53,7 +53,7 @@
 #ifndef LOGO_FONT_PATH
 // Before school PC : "/usr/share/fonts/truetype/AlteHaasGroteskBold.ttf"
 // Development PC : "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
-#define LOGO_FONT_PATH "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
+#define LOGO_FONT_PATH "/usr/share/fonts/truetype/AlteHaasGroteskBold.ttf"
 #endif // LOGO_FONT_PATH
 
 // Define SCLS_INIT
@@ -69,6 +69,7 @@
 
 // Include the needed SCLS Image files
 #include "scls_image_directory/scls_image_core.h"
+#include "scls_image_directory/scls_image_effects.h"
 #include "scls_image_directory/scls_image_text.h"
 
 // Include some others SCLS Images files (in development)

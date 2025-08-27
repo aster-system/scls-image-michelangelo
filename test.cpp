@@ -23,17 +23,11 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    scls::Image test = scls::Image(1000, 1000, scls::Color(255, 255, 255));
-    //test.fill_circle(500, 500, 400, 400, 45, 360, scls::Color(255, 0, 0), 25, scls::Color(0, 0, 255));
-    //test.fill_circle(500, 500, 100, 400, 45, 360, scls::Color(255, 0, 0), 25, scls::Color(0, 0, 255));
-    test.fill_circle(500, 500, 400, 200, 0, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
-    test.save_png("tests/test_0.png");test.fill(scls::Color(255, 255, 255));
-    test.fill_circle(500, 500, 400, 200, -10, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
-    test.save_png("tests/test_1.png");test.fill(scls::Color(255, 255, 255));
-    test.fill_circle(500, 500, 400, 200, -25, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
-    test.save_png("tests/test_2.png");test.fill(scls::Color(255, 255, 255));
-    test.fill_circle(500, 500, 400, 200, -65, 70, 360, scls::Color(255, 0, 0), 75, scls::Color(0, 0, 255));
-    test.save_png("tests/test_3.png");
+    scls::Text_Image_Generator tig;Text_Style needed_style;needed_style.set_font_size(50);needed_style.set_max_width(1000);
+    needed_style.set_background_color(scls::Color(0, 0, 0, 0));needed_style.set_color(scls::Color(0, 0, 0));
+    Image img = tig.image(std::string("Boeing"), needed_style);
+    img.save_png(std::string("tests/rotated/boeing.png"));
+    for(int i = 0;i<15;i++){img.rotated((i + 1) * 6).save_png(std::string("tests/rotated/boeing_") + std::to_string(i) + std::string(".png"));}
 
     return 0;
 }

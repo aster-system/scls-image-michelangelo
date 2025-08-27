@@ -123,6 +123,8 @@ namespace scls {
         static Color from_std_string(std::string source);
         // Return a color loaded from an XML balise
         static Color from_xml(std::shared_ptr<__XML_Text_Base> source);
+        // Returns the color to an std::string
+        std::string to_std_string(Textual_Math_Settings* settings);
 
         // Getters and setters
         inline unsigned char alpha() const {return static_cast<unsigned char>(a_alpha * 255.0);};
@@ -272,6 +274,9 @@ namespace scls {
             void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
             void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color);
 
+            // Copies the image
+            Image copy_image();
+
             // Pastes an Image on this Image
             void paste(__Image_Base* to_paste, int x, int y, double opacity = 1.0);
             void paste(std::string path, int x, int y, double opacity = 1.0);
@@ -294,6 +299,13 @@ namespace scls {
             Image resize_adaptative(scls::Point_2D new_size);
             Image resize_adaptative_height(unsigned short new_height);
             Image resize_adaptative_width(unsigned short new_width);
+
+            // Rotates the image
+            void rotate(double angle);
+            Image rotated(double angle);
+
+            // Sets the color of a certain pixel
+            void set_pixel(int x, int y, Color color);
 
             // Saves / loads
             // Save the image into the PNG format
@@ -337,13 +349,16 @@ namespace scls {
 		// Copies this image and returns the result
 		std::shared_ptr<__Image_Base> copy_image();
 		// Creates / frees the memory needed
+		void __create_memory(std::shared_ptr<Bytes_Set>& current_datas, int width, int height);
+		void __free_memory(std::shared_ptr<Bytes_Set>& current_datas);
         void create_memory();
         void free_memory();
 		// Fills the image with one color
+		void __fill(std::shared_ptr<Bytes_Set>& current_datas, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, int width, int height);
 		void fill(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         void fill(Color color);
 		// Fills a part of pixel
-		void __fill_pixel_part(unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) ;
+		void __fill_pixel_part(std::shared_ptr<Bytes_Set> current_datas, unsigned int start_position, unsigned int length, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255) ;
 
         // Forces a pixel to change its value
         void force_pixel(unsigned short x, unsigned short y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, int width_point);
@@ -381,6 +396,7 @@ namespace scls {
 		// Getters and setters
         unsigned int bit_depht() const;
         unsigned int buffer_size() const;
+        unsigned int __buffer_size(int width, int height) const;
         unsigned int color_type() const;
         unsigned char components() const;
         Bytes_Set* datas() const;
@@ -495,6 +511,11 @@ namespace scls {
         // Returns a shared ptr of the image with a new width, adaptated
         std::shared_ptr<__Image_Base> resize_adaptative_width(unsigned short new_width);
 
+        // Rotates the image
+        void rotate(double angle);
+        std::shared_ptr<__Image_Base> rotated(double angle);
+        Point_2D rotated_size(double angle);
+
 		// Load the image from a set of binary datas coming from a FreeType text
         bool _load_from_text_binary(char* datas, int width, int height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
 		// Load a part of image with a FreeType text in it
@@ -587,6 +608,10 @@ namespace scls {
         unsigned short a_thread_number_for_pasting_text = 0;
 	};
 	typedef __Image_Base::Image Image;
+
+	// Points in a circle
+    std::vector<scls::Point_2D> circle_points(int x, int y, int radius, int border_radius, int width, int height);
+    std::vector<scls::Point_2D> circle_points(int x, int y, int radius, int width, int height);
 }
 
 #endif // SCLS_IMAGE_CORE
