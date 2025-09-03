@@ -256,6 +256,7 @@ namespace scls {
 
             // Fills the image with one color
             void fill(Color color);
+            void fill(int red, int green, int blue);
 
             // Drawing methods
             // Fills a circle on the image
@@ -273,6 +274,9 @@ namespace scls {
             // Fills a rectangle on the image
             void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
             void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color);
+
+            // Forces a pixel to change its value
+            void force_pixel(int x, int y, Color color);
 
             // Copies the image
             Image copy_image();
@@ -402,6 +406,7 @@ namespace scls {
         Bytes_Set* datas() const;
         unsigned int flip_x_number() const;
         int height() const;
+        void reset(int new_width, int new_height, Color new_color);
         void set_thread_number_for_filling(unsigned short new_thread_number);
         void set_thread_number_for_pasting(unsigned short new_thread_number);
         void set_thread_number_for_pasting_text(unsigned short new_thread_number);

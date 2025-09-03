@@ -81,6 +81,18 @@ namespace scls {
         return created_image;
     }
 
+    // Sets a color in an image from a mask
+    Image set_color_from_mask(Image needed_image, Image mask, Color color) {
+        // TEMP
+        for(int i = 0;i<static_cast<int>(mask.width());i++){
+            for(int j = 0;j<static_cast<int>(mask.height());j++){
+                if(mask.pixel(i, j).red() == 255){needed_image.force_pixel(i, j, color);}
+            }
+        }
+
+        return needed_image;
+    }
+
     // Sketchs a mask
     Image sketch_mask(Image mask, int sketch_width) {
         Image created_image = mask.copy_image();

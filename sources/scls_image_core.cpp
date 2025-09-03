@@ -287,6 +287,7 @@ namespace scls {
 
     // Fills the image with one color
     void __Image_Base::Image::fill(Color color){a_image.get()->fill(color);}
+    void __Image_Base::Image::fill(int red, int green, int blue){a_image.get()->fill(red, green, blue);}
 
     // Drawing methods
     // Fill a circle on the image
@@ -304,6 +305,9 @@ namespace scls {
     // Fills a rectangle on the image
     void __Image_Base::Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){a_image.get()->fill_rect(x,y,rect_width,rect_height,red,green,blue,alpha);}
     void __Image_Base::Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, Color color){a_image.get()->fill_rect(x,y,rect_width,rect_height,color.red(),color.green(),color.blue(),color.alpha());}
+
+    // Forces a pixel to change its value
+    void __Image_Base::Image::force_pixel(int x, int y, Color color){return a_image.get()->force_pixel(x, y, color);}
 
     // Copies the image
     __Image_Base::Image __Image_Base::Image::copy_image(){return a_image.get()->copy_image();}
@@ -958,6 +962,7 @@ namespace scls {
     Bytes_Set* __Image_Base::datas() const { return a_pixels.get(); }
     unsigned int __Image_Base::flip_x_number() const {return a_flip_x_number;};
     int __Image_Base::height() const { return a_height; };
+    void __Image_Base::reset(int new_width, int new_height, Color new_color){a_height=new_height;a_width=new_width;fill(new_color);}
     void __Image_Base::set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
     void __Image_Base::set_thread_number_for_pasting(unsigned short new_thread_number) {a_thread_number_for_pasting = new_thread_number;};
     void __Image_Base::set_thread_number_for_pasting_text(unsigned short new_thread_number) {a_thread_number_for_pasting_text = new_thread_number;};
@@ -2312,7 +2317,24 @@ namespace scls {
             return new_image;
         }
         else if(new_height == height()){return copy_image();}
-        return std::shared_ptr<__Image_Base>();
+
+        // Bigger height
+        std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(width(), new_height, Color(0, 0, 0, 0));
+        new_image.get()->a_flip_x_number = a_flip_x_number;
+
+        std::vector<long long> repartioned_pixels = partition_number(new_height, height());
+        int y_normal = 0;
+        for(int i = 0;i<height();i++) {
+            for(int j = 0;j<width();j++) {
+                // Calculate the color
+                Color current_color = pixel(j, i);
+
+                // Apply the color
+                for(int k = 0;k<repartioned_pixels.at(i);k++){new_image.get()->set_pixel_rgba_directly((j + (y_normal + k) * new_image->width()) * new_image->components(), current_color.red(), current_color.green(), current_color.blue(), current_color.alpha(), 1);}
+            }
+            y_normal+=repartioned_pixels.at(i);
+        }
+        return new_image;
     };
     // Returns a shared ptr of the image with a new width, adaptated
     std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_width(unsigned short new_width) {
@@ -2350,7 +2372,25 @@ namespace scls {
             return new_image;
         }
         else if(new_width == width()){return copy_image();}
-        return std::shared_ptr<__Image_Base>();
+
+        // Bigger width
+        std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(new_width, height(), Color(0, 0, 0, 0));
+        new_image.get()->a_flip_x_number = a_flip_x_number;
+
+        std::vector<long long> repartioned_pixels = partition_number(new_width, width());
+        int x_normal = 0;
+        for(int i = 0;i<height();i++) {
+            for(int j = 0;j<width();j++) {
+                // Calculate the color
+                Color current_color = pixel(j, i);
+
+                // Apply the color
+                for(int k = 0;k<repartioned_pixels.at(j);k++){new_image.get()->set_pixel_rgba_directly(((x_normal + k) + i * new_image->width()) * new_image->components(), current_color.red(), current_color.green(), current_color.blue(), current_color.alpha(), 1);}
+                x_normal+=repartioned_pixels.at(j);
+            }
+            x_normal = 0;
+        }
+        return new_image;
     };
 
     // Rotates the image

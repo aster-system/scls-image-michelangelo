@@ -1030,6 +1030,7 @@ namespace scls {
     };
 
     // Generates and returns an image of the line
+    std::shared_ptr<__Image_Base> Text_Image_Line::image_shared_ptr(Image_Generation_Type generation_type){image(generation_type);return a_last_image;}
     __Image_Base* Text_Image_Line::image(Image_Generation_Type generation_type) {
         if(a_last_image.get() != 0 && generation_type == Image_Generation_Type::IGT_Full) return a_last_image.get();
 
@@ -1055,6 +1056,7 @@ namespace scls {
         if(max_width > 0 && a_line_height.size() > 1){a_last_image.reset(new __Image_Base(max_width, needed_height, global_style().background_color()));}
         else{a_last_image.reset(new __Image_Base(a_current_width, needed_height, global_style().background_color()));}
         __Image_Base* final_image = a_last_image.get();
+
         // Generate each words
         for(int i = 0;i<static_cast<int>(a_words.size());i++) {
             Text_Image_Word* current_word = a_words[i].get();
@@ -1096,7 +1098,7 @@ namespace scls {
 
                 }
             }
-        } //clear_words();
+        }
 
         // Draw the cursor
         if(cursor_position_in_plain_text() == 0) a_cursor_x = 0;
@@ -1121,8 +1123,16 @@ namespace scls {
             if(global_style().max_width() > 0 && current_width + image_width > global_style().max_width()) {
                 a_line_height.push_back(current_height);
                 current_height = global_style().font_size();current_width = 0;
-            } if(image_height>current_height){current_height=image_height;} current_width += image_width;
-        } a_line_height.push_back(current_height);
+            }
+            a_words[i].get()->set_line(a_line_height.size());
+
+            // Update the height and the width
+            if(image_height>current_height){current_height=image_height;}
+            current_width += image_width;
+        }
+
+        // Add the last height
+        a_line_height.push_back(current_height);
     };
 
     // Returns a word at a position in pixel

@@ -27,7 +27,7 @@ int main() {
     needed_style.set_background_color(scls::Color(0, 0, 0, 0));needed_style.set_color(scls::Color(0, 0, 0));
     Image img = tig.image(std::string("Boeing"), needed_style);
     img.save_png(std::string("tests/rotated/boeing.png"));
-    for(int i = 0;i<15;i++){img.rotated((i + 1) * 6).save_png(std::string("tests/rotated/boeing_") + std::to_string(i) + std::string(".png"));}
+    img.resize_adaptative(500, 500).save_png("tests/boeing_big.png");
 
     return 0;
 }

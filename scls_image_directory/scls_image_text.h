@@ -419,11 +419,13 @@ namespace scls {
         inline short bottom_offset() const {return a_bottom_offset;};
         inline std::vector<int>& characters_position() {return a_characters_position;};
         inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
+        inline int line() const {return a_line;};
         inline void set_balise_content(std::string new_balise_content){a_balise_content=new_balise_content;};
         inline void set_balise_parent(std::shared_ptr<__XML_Text_Base> new_balise_parent){a_balise_parent=new_balise_parent;};
         inline void set_bottom_offset(short new_bottom_offset) {a_bottom_offset = new_bottom_offset;};
         inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
         inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
+        inline void set_line(int new_line){a_line = new_line;};
         inline void set_top_offset(short new_top_offset) {a_top_offset = new_top_offset;};
         inline void set_width(unsigned int new_width) {a_width = new_width;};
         inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
@@ -450,6 +452,8 @@ namespace scls {
         std::vector<int> a_characters_position = std::vector<int>();
         // Width of each characters in the word
         std::vector<unsigned int> a_characters_width = std::vector<unsigned int>();
+        // Line of the word
+        int a_line = 0;
         // Width of the image
         unsigned int a_width = 0;
         // X position of the word
@@ -534,6 +538,7 @@ namespace scls {
         inline short bottom_offset() const {return a_datas.bottom_offset();};
         inline void set_balise_content(std::string new_balise_content){a_datas.set_balise_content(new_balise_content);};
         inline void set_bottom_offset(short new_bottom_offset) {a_datas.set_bottom_offset(new_bottom_offset); };
+        inline void set_line(int new_line){a_datas.set_line(new_line);};
         inline void set_top_offset(short new_top_offset) {a_datas.set_top_offset(new_top_offset); };
         inline void set_width(unsigned int new_width) {a_datas.set_width(new_width);};
         inline void set_x_position(int new_x_position) {a_datas.set_x_position(new_x_position);}
@@ -682,10 +687,11 @@ namespace scls {
         // Generates and returns an image of the line
         __Image_Base* image(Image_Generation_Type generation_type);
         inline __Image_Base* image() {return image(Image_Generation_Type::IGT_Full);};
+        std::shared_ptr<__Image_Base> image_shared_ptr(Image_Generation_Type generation_type);
         // Place the words as needed
         void place_words();
         // Returns the shared image
-        std::shared_ptr<__Image_Base>& shared_image() {return a_last_image;};
+        std::shared_ptr<__Image_Base> shared_image() {return a_last_image;};
         // Returns the total height of the line
         inline unsigned int total_height() {int to_return = 0;for(int i = 0;i<static_cast<int>(a_line_height.size());i++){to_return+=a_line_height[i];}return to_return;};
         // Paste a letter of a word in an image with thread system

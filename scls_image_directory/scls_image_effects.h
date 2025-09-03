@@ -41,6 +41,8 @@ namespace scls {
     // Creates a mask from an image
     Image mask_from_image_alpha(Image needed_image);
 
+    // Sets a color in an image from a mask
+    Image set_color_from_mask(Image needed_image, Image mask, Color color);
     // Sketchs a mask
     Image sketch_mask(Image mask, int sketch_width);
 }
