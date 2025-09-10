@@ -580,6 +580,107 @@ namespace scls {
         return final_to_return;
     }
 
+    // Points in a line
+    std::vector<scls::Point_2D> line_points(int x_1, int y_1, int x_2, int y_2, unsigned short line_width) {
+        std::vector<scls::Point_2D> to_return;
+        int height = 2000;int width = 2000;
+
+        // Only case which the algorithm does not work correctly
+        if(x_1 == x_2) {
+            // Check the X position
+            if(x_1 + static_cast<int>(line_width) < 0 || x_1 >= width) return std::vector<scls::Point_2D>();
+            if(y_2 < y_1) {
+                y_2 += y_1;
+                y_1 = y_2 - y_1;
+                y_2 = y_2 - y_1;
+            } y_2++;
+            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
+
+            // Get the line
+            for(int i = 0;i<(y_2-y_1)+line_width;i++){
+                for(int j = 0;j<line_width;j++){
+                    to_return.push_back(scls::Point_2D(x_1 + j, y_1 + i));
+                }
+            }
+        }
+        else if(y_1 == y_2) {
+            // Check the Y position
+            if(y_1 < 0 || y_1 >= height) return std::vector<scls::Point_2D>();
+            if(x_2 < x_1) {
+                x_2 += x_1;
+                x_1 = x_2 - x_1;
+                x_2 = x_2 - x_1;
+            } x_2++;
+            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
+
+            // Get the line
+            for(int i = 0;i<(x_2-x_1)+line_width;i++){
+                for(int j = 0;j<line_width;j++){
+                    to_return.push_back(scls::Point_2D(x_1 + i, y_1 + j));
+                }
+            }
+        }
+        else {
+            x_2++; y_2++;
+            double distance_x = static_cast<double>(x_2 - x_1);
+            double distance_y = static_cast<double>(y_2 - y_1);
+
+            double x_y_ratio = distance_x / distance_y;
+
+            if (abs(x_y_ratio) < 1) {
+                // Normalize positions
+                if (y_1 > y_2) {
+                    int temp = y_1;
+                    y_1 = y_2;
+                    y_2 = temp;
+                    temp = x_1;
+                    x_1 = x_2;
+                    x_2 = temp;
+                }
+
+                double actual_x = x_1;
+                double actual_y = y_1;
+
+                // Check the positions
+                if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
+                if(y_2 >= height) y_2 = height - 1;
+                // Draw the line
+                while (actual_y < y_2) {
+                    actual_y++;
+                    actual_x += x_y_ratio;
+                    to_return.push_back(scls::Point_2D(actual_x, actual_y));
+                }
+            }
+            else {
+                // Normalize positions
+                if (x_1 > x_2) {
+                    int temp = x_1;
+                    x_1 = x_2;
+                    x_2 = temp;
+                    temp = y_1;
+                    y_1 = y_2;
+                    y_2 = temp;
+                }
+
+                double actual_x = x_1;
+                double actual_y = y_1;
+
+                // Check the positions
+                double y_x_ratio = distance_y / distance_x;
+                if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
+                if(x_2 >= width) x_2 = width - 1;
+                // Draw the line
+                while (actual_x < x_2) {
+                    actual_y += y_x_ratio;
+                    actual_x++;
+                    to_return.push_back(scls::Point_2D(actual_x, actual_y));
+                }
+            }
+        }
+
+        return to_return;
+    }
+
     //*********
 	//
 	// The __Image_Base class
@@ -1752,7 +1853,7 @@ namespace scls {
             } y_2++;
             // Draw the line
             x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
-            fill_rect(x_1, y_1, line_width, y_2 - y_1, red, green, blue, alpha);
+            fill_rect(x_1, y_1, line_width, (y_2 - y_1) + line_width, red, green, blue, alpha);
         }
         else if(y_1 == y_2) {
             // Check the Y position
@@ -1764,7 +1865,7 @@ namespace scls {
             } x_2++;
             // Draw the line
             x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
-            fill_rect(x_1, y_1, x_2 - x_1, line_width, red, green, blue, alpha);
+            fill_rect(x_1, y_1, (x_2 - x_1) + line_width, line_width, red, green, blue, alpha);
         }
         else {
             x_2++; y_2++;
@@ -1784,8 +1885,11 @@ namespace scls {
                     x_2 = temp;
                 }
 
-                double actual_x = x_1;
-                double actual_y = y_1;
+                // Take the line width in account
+                scls::Point_2D direction = scls::Point_2D(x_2 - x_1, y_2 - y_1).normalized();
+                scls::Point_2D to_add = direction * -1.0 * (line_width / 1.4);
+                x_1 -= to_add.x();y_1 -= to_add.y();
+                double actual_x = x_1;double actual_y = y_1;
 
                 // Check the positions
                 if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
@@ -1808,8 +1912,11 @@ namespace scls {
                     y_2 = temp;
                 }
 
-                double actual_x = x_1;
-                double actual_y = y_1;
+                // Take the line width in account
+                scls::Point_2D direction = scls::Point_2D(x_2 - x_1, y_2 - y_1).normalized();
+                scls::Point_2D to_add = direction * -1.0 * (line_width / 1.4);
+                x_1 -= to_add.x();y_1 -= to_add.y();
+                double actual_x = x_1;double actual_y = y_1;
 
                 // Check the positions
                 double y_x_ratio = distance_y / distance_x;
