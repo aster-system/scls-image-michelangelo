@@ -1885,13 +1885,8 @@ namespace scls {
                     x_2 = temp;
                 }
 
-                // Take the line width in account
-                scls::Point_2D direction = scls::Point_2D(x_2 - x_1, y_2 - y_1).normalized();
-                scls::Point_2D to_add = direction * -1.0 * (line_width / 1.4);
-                x_1 -= to_add.x();y_1 -= to_add.y();
-                double actual_x = x_1;double actual_y = y_1;
-
                 // Check the positions
+                double actual_x = x_1;double actual_y = y_1;
                 if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
                 if(y_2 >= height()) y_2 = height() - 1;
                 // Draw the line
@@ -1912,13 +1907,8 @@ namespace scls {
                     y_2 = temp;
                 }
 
-                // Take the line width in account
-                scls::Point_2D direction = scls::Point_2D(x_2 - x_1, y_2 - y_1).normalized();
-                scls::Point_2D to_add = direction * -1.0 * (line_width / 1.4);
-                x_1 -= to_add.x();y_1 -= to_add.y();
-                double actual_x = x_1;double actual_y = y_1;
-
                 // Check the positions
+                double actual_x = x_1;double actual_y = y_1;
                 double y_x_ratio = distance_y / distance_x;
                 if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
                 if(x_2 >= width()) x_2 = width() - 1;
