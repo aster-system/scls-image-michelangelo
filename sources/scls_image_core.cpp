@@ -55,6 +55,7 @@ namespace scls {
         else if(name == std::string("green")){color = Color(0, 255, 0);}
         else if(name == std::string("light_blue")){color = Color(0, 204, 204);}
         else if(name == std::string("light_gray") || name == std::string("light_grey")){color = Color(160, 160, 160);}
+        else if(name == std::string("light_green")){color = Color(51, 255, 51);}
         else if(name == std::string("orange")){color = Color(204, 102, 0);}
         else if(name == std::string("pink")){color = Color(255, 0, 127);}
         else if(name == std::string("red")){color = Color(255, 0, 0);}

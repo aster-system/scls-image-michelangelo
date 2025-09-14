@@ -201,7 +201,13 @@ namespace scls {
     // Returns if an XML attribute is for a text style
     bool text_style_from_xml_attribute(XML_Attribute* attribute, Text_Style style) {
         // Check attributes
-        if(attribute->name == std::string("color")) {style.set_color(scls::Color::from_std_string(attribute->value));return true;}
+        if(attribute->name == "alignment_horizontal") {
+            Alignment_Horizontal needed_alignment = Alignment_Horizontal::H_Left;
+            if(attribute->value == std::string("center")){needed_alignment = Alignment_Horizontal::H_Center;}
+            style.set_alignment_horizontal(needed_alignment);return true;
+        }
+        else if(attribute->name == "background_color") {style.set_background_color(scls::Color::from_std_string(attribute->value));return true;}
+        else if(attribute->name == std::string("color")) {style.set_color(scls::Color::from_std_string(attribute->value));return true;}
         else if(attribute->name == std::string("max_width")) {style.set_max_width(std::stoi(attribute->value));return true;}
         return false;
     }

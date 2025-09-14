@@ -78,7 +78,7 @@ namespace scls {
 
     //*********
 	//
-	// Text creation
+	// Style handling
 	//
 	//*********
 
