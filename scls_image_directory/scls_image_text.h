@@ -394,6 +394,10 @@ namespace scls {
         // Simple Word_Datas constructor
         Word_Datas(String content, Text_Style style) : a_content(content), a_style(style) {};
 
+        // Special characters
+        bool is_space() const {return a_content == std::string(" ");};
+        bool is_special() const {return is_space();};
+
         // Getters and setters
         inline String content() const {return a_content;};
         inline Text_Style style() const {return a_style;};
@@ -525,27 +529,26 @@ namespace scls {
         //
         //*********
 
-        // Most simple Text_Image_Word constructor to create an empty word
-        Text_Image_Word() : a_datas(Word_Datas(std::string(" "))) {};
-        // Simple Text_Image_Word constructor to create a little text
-        Text_Image_Word(String text) : a_datas(Word_Datas(text)) {};
-        // Simple Text_Image_Word constructor to create a word
-        Text_Image_Word(Word_Datas datas) : a_datas(datas) {};
+        // Text_Image_Word constructors
+        Text_Image_Word() : a_datas(std::make_shared<Word_Datas>(std::string(" "))) {};
+        Text_Image_Word(String text) : a_datas(std::make_shared<Word_Datas>(text)) {};
+        Text_Image_Word(std::shared_ptr<Word_Datas> datas) : a_datas(datas) {};
         // Most simple Text_Image_Word destructor
         virtual ~Text_Image_Word() {};
 
         // Getters and setters
-        inline short bottom_offset() const {return a_datas.bottom_offset();};
-        inline void set_balise_content(std::string new_balise_content){a_datas.set_balise_content(new_balise_content);};
-        inline void set_bottom_offset(short new_bottom_offset) {a_datas.set_bottom_offset(new_bottom_offset); };
-        inline void set_line(int new_line){a_datas.set_line(new_line);};
-        inline void set_top_offset(short new_top_offset) {a_datas.set_top_offset(new_top_offset); };
-        inline void set_width(unsigned int new_width) {a_datas.set_width(new_width);};
-        inline void set_x_position(int new_x_position) {a_datas.set_x_position(new_x_position);}
-        inline Text_Style style() const {return a_datas.style();};
-        inline String text() const {return a_datas.content();};
-        inline short top_offset() const {return a_datas.top_offset();};
-        inline int x_position() const {return a_datas.x_position();};
+        inline short bottom_offset() const {return a_datas.get()->bottom_offset();};
+        inline String content() const {return a_datas.get()->content();};
+        inline void set_balise_content(std::string new_balise_content){a_datas.get()->set_balise_content(new_balise_content);};
+        inline void set_bottom_offset(short new_bottom_offset) {a_datas.get()->set_bottom_offset(new_bottom_offset); };
+        inline void set_line(int new_line){a_datas.get()->set_line(new_line);};
+        inline void set_top_offset(short new_top_offset) {a_datas.get()->set_top_offset(new_top_offset); };
+        inline void set_width(unsigned int new_width) {a_datas.get()->set_width(new_width);};
+        inline void set_x_position(int new_x_position) {a_datas.get()->set_x_position(new_x_position);}
+        inline Text_Style style() const {return a_datas.get()->style();};
+        inline String text() const {return a_datas.get()->content();};
+        inline short top_offset() const {return a_datas.get()->top_offset();};
+        inline int x_position() const {return a_datas.get()->x_position();};
 
         //*********
         //
@@ -559,10 +562,10 @@ namespace scls {
         void __word_letter(__Image_Base* image_to_apply, __Image_Base* image_to_paste, unsigned int x, unsigned int y) {image_to_apply->paste(image_to_paste, x, y);delete image_to_paste; image_to_paste = 0;};
 
         // Getters and setters
-        inline Word_Datas datas() const {return a_datas;};
+        inline Word_Datas* datas() const {return a_datas.get();};
         inline __Image_Base* image() { return a_last_image.get(); };
         std::shared_ptr<__Image_Base> image_shared_pointer() {return a_last_image;};
-        inline void set_balise_parent(std::shared_ptr<__XML_Text_Base> new_balise_parent){a_datas.set_balise_parent(new_balise_parent);};
+        inline void set_balise_parent(std::shared_ptr<__XML_Text_Base> new_balise_parent){a_datas.get()->set_balise_parent(new_balise_parent);};
         inline void set_image_shared_ptr(std::shared_ptr<__Image_Base> img) {a_last_image=img;};
 
     private:
@@ -573,7 +576,7 @@ namespace scls {
         //*********
 
         // Datas in the word
-        Word_Datas a_datas;
+        std::shared_ptr<Word_Datas> a_datas;
 
         //*********
         //
@@ -785,9 +788,10 @@ namespace scls {
         virtual ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
+        inline __XML_Text_Base* content() const {return a_datas.get()->content.get();};
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
         inline Text_Style global_style() {return a_datas.get()->global_style;};
-        inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_line_text();};
+        inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_datas();};
         inline void set_text(String new_text, bool move_cursor = true) {set_text(xml(a_defined_balises, new_text.to_std_string()), move_cursor);};
         inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(to_utf_8_code_point(new_text)), move_cursor);};
         inline String text() const {return a_datas.get()->content.get()->text();};
@@ -819,6 +823,21 @@ namespace scls {
         //
         //*********
 
+        // Creates and returns a block / word for the block
+        virtual std::shared_ptr<Text_Image_Word> __create_word(std::shared_ptr<Word_Datas> needed_datas){return std::make_shared<Text_Image_Word>(needed_datas);};
+
+        // Generate a block / word of the block
+        std::shared_ptr<Text_Image_Word> __generate_word(std::shared_ptr<Word_Datas> datas);
+        std::shared_ptr<Text_Image_Word> generate_next_word(int word_number);
+        std::shared_ptr<Text_Image_Word> generate_next_word();
+
+        // Generates all the blocks / lines
+        void generate_words(bool entirely);
+        void generate_words();
+        void __regenerate_words();
+
+
+
         // Returns the line at a position in pixel
         Text_Image_Line* line_at_position_in_pixel(int x, int y, int& needed_y);
 
@@ -826,7 +845,7 @@ namespace scls {
         inline void _check_modified_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) {if(a_lines[i] != 0) {if(a_lines[i]->is_modified()) {delete a_lines[i]; a_lines[i] = 0;}}}};
         // Clear the memory from the lines
         inline void clear_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) { if(a_lines[i] != 0) delete a_lines[i]; } a_lines.clear(); };
-        // Creates and returns a line for the block
+        // Creates and returns a word / block for the block
         virtual Text_Image_Line* __create_line(Line_Datas& needed_datas){return new Text_Image_Line(a_defined_balises, needed_datas.content);};
         // Delete the useless generated lines
         inline void delete_useless_generated_lines() {for(int i = 0;i<static_cast<int>(a_lines.size()) - static_cast<int>(a_lines_text.size());i++) {delete a_lines[a_lines.size() - 1];a_lines.pop_back();}};
@@ -838,14 +857,14 @@ namespace scls {
         Text_Image_Line* generate_next_line(unsigned int line_number);
         Text_Image_Line* generate_next_line() {Text_Image_Line* to_return = generate_next_line(a_current_line);a_current_line++;return to_return;};
         // Regenerate the lines with a new text
-        inline void _regenerate_lines() {reset_line_generation();for(int i = 0;i<static_cast<int>(a_lines_text.size());i++) {generate_next_line(i);} delete_useless_generated_lines();};
+        inline void _regenerate_lines() {reset_generation();for(int i = 0;i<static_cast<int>(a_lines_text.size());i++) {generate_next_line(i);} delete_useless_generated_lines();};
         // Reset the generation of lines
-        inline void reset_line_generation() {_check_modified_lines();a_current_line = 0;a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;};
+        inline void reset_generation() {_check_modified_lines();a_current_line = 0;a_current_object = 0;a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;};
 
         // Add text to the block
         void add_text(String first_text);
         // Free the memory of the line
-        inline void free_memory() {clear_lines();};
+        inline void free_memory() {clear_lines();a_words.clear();};
         // Generates and returns an image with the block on it
         __Image_Base* image(Image_Generation_Type generation_type);
         inline __Image_Base* image() {return image(Image_Generation_Type::IGT_Full);};
@@ -860,14 +879,14 @@ namespace scls {
         int line_number_at_position_in_plain_text(unsigned int position);
         // Pastes an image on an another image for multi threading
         void __image_paste(__Image_Base* block, __Image_Base* image_2, unsigned int current_x, unsigned int current_y) {block->paste(image_2, current_x, current_y);};
-        // Places the lines in the block
-        void place_lines();
+        // Places the datas in the block
+        void place_datas();
         // Removes a part of the text and returns the number of lines deleted
         int remove_text(unsigned int size_to_delete);
         // Soft reset the block for a line renegeration
         inline void soft_reset() {a_cursor_line = 0;};
         // Update the text in each lines, without others modification
-        void update_line_text();
+        void update_datas();
 
         // Getters and setter
         inline Block_Datas* datas() {return a_datas.get();};
@@ -875,6 +894,8 @@ namespace scls {
         inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
         inline std::vector<Text_Image_Line*>& lines() { return a_lines; };
         inline std::vector<Line_Datas>& lines_datas() { return a_lines_text; };
+        inline std::vector<std::shared_ptr<Text_Image_Word>>& words() { return a_words; };
+        inline std::vector<std::shared_ptr<Word_Datas>>& words_datas() { return a_words_datas; };
     private:
         //*********
         //
@@ -913,6 +934,14 @@ namespace scls {
         // Optimisation system
         //
         //*********
+
+        // Last created sub-blocks / words in the block
+        std::vector<std::shared_ptr<Text_Image_Block>> a_blocks = std::vector<std::shared_ptr<Text_Image_Block>>();
+        std::vector<std::shared_ptr<Text_Image_Word>> a_words = std::vector<std::shared_ptr<Text_Image_Word>>();
+        // Last created sub-blocks / words datas in the block
+        std::vector<std::shared_ptr<Word_Datas>> a_words_datas = std::vector<std::shared_ptr<Word_Datas>>();
+        // Current block / word to be generated
+        unsigned int a_current_object = 0;
 
         // Current line which should be generated
         unsigned int a_current_line = 0;
@@ -1022,7 +1051,7 @@ namespace scls {
         template <typename T = Text_Image_Block> std::shared_ptr<__Image_Base> image_shared_ptr(std::string text, Text_Style style) {std::shared_ptr<T> img = std::make_shared<T>(a_balises, text, style);return img.get()->image_shared_pointer();};
         inline std::shared_ptr<__Image_Base> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
         // Returns a newly created text image
-        inline Text_Image_Block* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {Text_Image_Block *img = new Text_Image_Block(a_balises, text, type);return img;};
+        template <typename T = Text_Image_Block> T* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {T *img = new T(a_balises, text, type);return img;};
         // Returns a newly created text image multi block
         template <typename T = Text_Image_Multi_Block> T* new_text_image_multi_block(std::string text) {T *img = new T(a_balises, text);return img;};
 

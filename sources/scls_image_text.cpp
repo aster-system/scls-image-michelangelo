@@ -433,7 +433,7 @@ namespace scls {
         int to_add_font_size = 0;
         unsigned int total_width = 0;
         std::vector<unsigned int> y_pos;
-        const std::string word = a_datas.content();
+        const std::string word = a_datas.get()->content();
         for(int i = 0;i<static_cast<int>(word.size());i++) {
             // Check the current character
             unsigned char current_character = word.at(i);
@@ -474,10 +474,10 @@ namespace scls {
                 current_character_level = 2;max_current_character_level = 2;
             }
         }
-        a_datas.set_bottom_offset(min_bottom_position);
-        a_datas.set_characters_position(characters_x);
-        a_datas.set_characters_width(characters_width);
-        a_datas.set_top_offset(max_height - style().font_size());
+        a_datas.get()->set_bottom_offset(min_bottom_position);
+        a_datas.get()->set_characters_position(characters_x);
+        a_datas.get()->set_characters_width(characters_width);
+        a_datas.get()->set_top_offset(max_height - style().font_size());
 
         // Inverse each positions
         for(int i = 0;i<static_cast<int>(characters.size());i++) {
@@ -487,7 +487,7 @@ namespace scls {
         }
 
         // Create the final image and clear the memory
-        a_datas.set_width(total_width);
+        a_datas.get()->set_width(total_width);
         a_last_image.reset(new __Image_Base(total_width, max_height - to_add_font_size, Color(0, 0, 0, 0)));
         unsigned char max_thread_number = 0;
         std::vector<unsigned int> positions = std::vector<unsigned int>();
@@ -984,7 +984,7 @@ namespace scls {
             current_position_in_plain_text += word_content.size();
 
             // Add the part
-            if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(text);data_to_add = word_to_add.get()->datas();}
+            if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(text);data_to_add = *word_to_add.get()->datas();}
             a_words.push_back(word_to_add);
             a_words_datas.push_back(data_to_add);
 
@@ -999,7 +999,7 @@ namespace scls {
                 current_position_in_plain_text += word_content.size();
 
                 // Add the part
-                if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(text);data_to_add = word_to_add.get()->datas();}
+                if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(text);data_to_add = *word_to_add.get()->datas();}
                 a_words.push_back(word_to_add);
                 a_words_datas.push_back(data_to_add);
             }
@@ -1018,7 +1018,7 @@ namespace scls {
                 generate_word(cutted.get()->sub_texts()[i], current_position_in_plain_text, needed_style, word_to_add);
 
                 // Add the part
-                if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(cutted.get()->sub_texts()[i]);data_to_add = word_to_add.get()->datas();}
+                if(word_to_add.get() != 0){word_to_add.get()->set_balise_parent(cutted.get()->sub_texts()[i]);data_to_add = *word_to_add.get()->datas();}
                 words.push_back(word_to_add);
                 a_words_datas.push_back(data_to_add);
             }
@@ -1028,7 +1028,7 @@ namespace scls {
     // Generate a simple word
     std::shared_ptr<Text_Image_Word> Text_Image_Line::_generate_word(const std::string& word, Text_Style style, unsigned int start_position_in_plain_text) {
         // Create the word
-        Word_Datas datas = Word_Datas(word, style);
+        std::shared_ptr<Word_Datas> datas = std::make_shared<Word_Datas>(word, style);
         std::shared_ptr<Text_Image_Word> word_to_add = std::make_shared<Text_Image_Word>(datas);
         word_to_add.get()->generate_word();
 
@@ -1076,9 +1076,7 @@ namespace scls {
                             if(local_cursor_position == static_cast<int>(current_word->text().size())) {
                                 a_cursor_x = current_x + current_image->width() - static_cast<double>(cursor_width) / 2.0;
                             }
-                            else {
-                                a_cursor_x = current_x + current_word->datas().characters_position()[local_cursor_position];
-                            }
+                            else {a_cursor_x = current_x + current_word->datas()->characters_position()[local_cursor_position];}
                         }
                     }
 
@@ -1094,7 +1092,7 @@ namespace scls {
 
                     // Check the Y of the image
                     int y = current_y - (static_cast<int>(current_image->height()) + static_cast<int>(current_word->bottom_offset()));
-                    if(balise_name(current_word->datas().balise_content()) == "math"){y = final_image->height() / 2.0 - static_cast<double>(current_image->height()) / 2.0;};
+                    if(balise_name(current_word->datas()->balise_content()) == "math"){y = final_image->height() / 2.0 - static_cast<double>(current_image->height()) / 2.0;};
 
                     // Paste the word
                     final_image->paste(current_image, current_x, y);
@@ -1277,6 +1275,62 @@ namespace scls {
         return current_line;
     }
 
+    // Generate the next block / word of the block
+    std::shared_ptr<Text_Image_Word> Text_Image_Block::generate_next_word(){return generate_next_word(a_current_object++);}
+    std::shared_ptr<Text_Image_Word> Text_Image_Block::generate_next_word(int word_number) {
+        // Cut the text by line and delete useless lines
+        std::vector<std::shared_ptr<Word_Datas>>& needed_word_datas = a_words_datas;
+        std::vector<std::shared_ptr<Text_Image_Word>>& needed_words = a_words;
+
+        // Check if the line is modified or not
+        std::shared_ptr<Text_Image_Word> current_word;
+        if(word_number < static_cast<int>(needed_words.size())) {
+            if(needed_word_datas.at(word_number).get()->is_special()){needed_words[word_number].reset();}
+            else {
+                // Create the new word
+                needed_words[word_number] = __generate_word(needed_word_datas.at(word_number));
+                current_word = needed_words[word_number];
+                current_word.get()->generate_word();
+            }
+        }
+        else {
+            if(needed_word_datas.at(word_number).get()->is_special()){needed_words.push_back(current_word);}
+            else{
+                // Create the new word
+                current_word = __generate_word(needed_word_datas.at(word_number));
+                current_word.get()->generate_word();
+
+                // Add the line
+                needed_words.push_back(current_word);
+            }
+        }
+
+        return current_word;
+    }
+
+    // Generate a block / word of the block
+    std::shared_ptr<Text_Image_Word> Text_Image_Block::__generate_word(std::shared_ptr<Word_Datas> datas) {
+        // Create the line
+        std::shared_ptr<Text_Image_Word> to_return = __create_word(datas);
+
+        /*// Handle the cursor
+        if(use_cursor()) {
+            if(cursor_position_in_plain_text() >= datas.start_position_in_plain_text && cursor_position_in_plain_text() <= datas.start_position_in_plain_text + datas.content_in_plain_text.size()) {
+                to_return->set_cursor_position_in_plain_text(cursor_position_in_plain_text() - datas.start_position_in_plain_text);
+                to_return->set_use_cursor(true);
+
+                a_cursor_line = to_return;
+            }
+        }//*/
+
+        return to_return;
+    }
+
+    // Generates all the blocks / lines
+    void Text_Image_Block::generate_words(bool entirely){if(entirely){free_memory();}__regenerate_words();};;
+    void Text_Image_Block::generate_words(){generate_words(true);};
+    void Text_Image_Block::__regenerate_words() {reset_generation();for(int i = 0;i<static_cast<int>(a_words_datas.size());i++) {generate_next_word(i);}delete_useless_generated_lines();place_datas();};
+
     // Returns the line at a position in pixel
     Text_Image_Line* Text_Image_Block::line_at_position_in_pixel(int x, int y, int& needed_y) {
         int current_y = 0;
@@ -1315,13 +1369,88 @@ namespace scls {
 
     // Generates and returns an image with the block on it
     __Image_Base* Text_Image_Block::image(Image_Generation_Type generation_type) {
-        //if(a_last_image.get() != 0 && generation_type != Image_Generation_Type::IGT_Full) return a_last_image.get();
-
         // Generate the lines
-        if(generation_type == Image_Generation_Type::IGT_Full) {generate_lines();}
-        else if(generation_type == Image_Generation_Type::IGT_Size) {place_lines();}
+        if(generation_type == Image_Generation_Type::IGT_Full) {generate_words();}
+        else if(generation_type == Image_Generation_Type::IGT_Size) {place_datas();}
 
-        // Draw the final image
+        if(content()->only_text()) {
+            // Draw the final image
+            unsigned int current_x = 0;
+            unsigned int current_y = 0;
+            unsigned char a_line_pasting_max_thread_number = 0;
+            int& max_width = a_datas.get()->max_width;
+            std::vector<std::thread*> threads = std::vector<std::thread*>();
+            int& total_height = a_datas.get()->total_height;
+            int image_height = total_height + global_style().border_bottom_width() + global_style().border_top_width();
+            if(image_height < global_style().font_size()){image_height = global_style().font_size();}
+            __Image_Base* to_return = new __Image_Base(max_width + global_style().border_left_width() + global_style().border_right_width(), image_height, global_style().background_color());
+
+            // Draw the border
+            to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
+            to_return->fill_rect(0, to_return->height() - global_style().border_bottom_width(), to_return->width(), global_style().border_bottom_width(), global_style().border_color());
+            to_return->fill_rect(0, 0, to_return->width(), global_style().border_top_width(), global_style().border_color());
+            to_return->fill_rect(to_return->width() - global_style().border_right_width(), 0, global_style().border_right_width(), to_return->height(), global_style().border_color());
+
+            // Draw the words
+            for(int i = 0;i<static_cast<int>(words().size());i++) {
+                Text_Image_Word* current_word = words().at(i).get();
+                if(current_word != 0) {
+                    __Image_Base* current_image = current_word->image();
+                    if(current_image != 0) {
+                        // Alignment
+                        if(global_style().alignment_horizontal() == H_Center){current_x = to_return->width() / 2 - current_image->width() / 2;}
+
+                        if(a_line_pasting_max_thread_number > 0) {
+                            // Check for the number of thread
+                            if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
+                                // Wait to each thread to finish
+                                for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                                    threads[i]->join();
+                                    delete threads[i];
+                                } threads.clear();
+                            }
+
+                            int current_width = current_image->width();
+                            unsigned int height_to_apply = current_image->height();
+                            std::thread* current_thread = new std::thread(&Text_Image_Block::__image_paste, this, to_return, current_image, current_x + global_style().border_left_width(), current_y + global_style().border_top_width());
+                            threads.push_back(current_thread);
+
+                            // Finish the result
+                            current_x += current_width;
+                            current_y += height_to_apply;
+                        }
+                        else {
+                            // Get the datas
+                            Text_Style style_to_apply = current_word->style();
+                            int current_width = current_image->width();
+                            unsigned int height_to_apply = current_image->height();
+                            int y_to_apply = current_y + global_style().border_top_width() - (current_word->top_offset());
+
+                            // Paste the word
+                            Text_Image_Block::__image_paste(to_return, current_image, current_x + global_style().border_left_width(), y_to_apply);
+
+                            // Finish the result
+                            current_x += current_width;
+                        }
+                    }
+                }
+                else {
+                    // Special word
+                    if(words_datas().at(i).get()->is_space()){current_x += words_datas().at(i).get()->style().font_size() / 2;}
+                }
+            }
+
+            // Wait to each thread to finish
+            for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                threads[i]->join();
+                delete threads[i];
+            } threads.clear();
+
+            a_last_image.reset(to_return);
+            return to_return;
+        }
+
+        /*// Draw the final image
         unsigned int current_x = 0;
         unsigned int current_y = 0;
         unsigned char a_line_pasting_max_thread_number = 0;
@@ -1375,7 +1504,7 @@ namespace scls {
         } threads.clear();
 
         a_last_image.reset(to_return);
-        return to_return;
+        return to_return;//*/
     }
 
     // Returns the line number at a plain text position given, or 0
@@ -1391,9 +1520,40 @@ namespace scls {
         return -1;
     };
 
-    // Places the lines in the block
-    void Text_Image_Block::place_lines() {
-        int& max_width = a_datas.get()->max_width; max_width = 0;
+    // Places the datas in the block
+    void Text_Image_Block::place_datas() {
+        // Get the good text
+        __XML_Text_Base* needed_content = content();
+        if(needed_content->only_text()) {
+            // Update the datas
+            int& max_width = a_datas.get()->max_width; max_width = 0;
+            int& total_height = a_datas.get()->total_height; total_height = 0;
+
+            // Set the position
+            unsigned int current_x = 0;
+            unsigned int current_y = 0;
+            int line_height = 0;bool new_line = false;
+            for(int i = 0;i<static_cast<int>(a_words.size());i++) {
+                // Special characters
+                if(a_words_datas.at(i).get()->is_space()){int space_size = a_words_datas.at(i).get()->style().font_size() / 2;current_x += space_size;max_width += space_size;continue;}
+
+                // Creates the image (if not created)
+                scls::__Image_Base* word_image = a_words.at(i).get()->image();
+                if(word_image == 0){continue;}
+
+                // Check the max width and height
+                int current_height = word_image->height();
+                int current_width = word_image->width();
+                line_height = std::max(line_height, current_height);
+                a_words_datas.at(i).get()->set_x_position(current_x);
+                current_x += current_width;max_width += current_width;
+            }
+
+            // Finish the result
+            total_height += line_height;
+        }
+
+        /*int& max_width = a_datas.get()->max_width; max_width = 0;
         int& total_height = a_datas.get()->total_height; total_height = 0;
         for(int i = 0;i<static_cast<int>(a_lines.size());i++) {
             a_lines[i]->set_max_width(global_style().max_width());
@@ -1407,6 +1567,7 @@ namespace scls {
                 max_width = current_width;
             } total_height += current_height;
         }
+        //*/
     };
 
     // Removes a part of the text and returns the number of lines deleted
@@ -1433,9 +1594,36 @@ namespace scls {
         } return deleted_line;
     };
 
-    // Update the text in each lines, without others modification
-    void Text_Image_Block::update_line_text() {
+    // Update the datas, without others modification
+    void Text_Image_Block::update_datas() {
         // Get the good text
+        __XML_Text_Base* needed_content = content();
+
+        if(needed_content->only_text()) {
+            // Get the needed words
+            std::vector<std::string> needed_text = text().cut(" ", false, false);
+            a_words_datas.clear();
+
+            // Start the parsing with words
+            unsigned int current_position = 0;
+            unsigned int current_position_in_plain_text = 0;
+            for(int i = 0;i<static_cast<int>(needed_text.size());i++) {
+                // Create the needed datas
+                scls::Text_Style style = global_style().new_child();
+
+                // Create the datas
+                std::shared_ptr<Word_Datas> current_datas = std::make_shared<Word_Datas>(needed_text.at(i), style);
+                a_words_datas.push_back(current_datas);
+
+                // Update the positions
+                current_position += needed_text.at(i).size();
+
+                // Add the space
+                if(i != static_cast<int>(needed_text.size()) - 1){current_datas = std::make_shared<Word_Datas>(std::string(" "), style);a_words_datas.push_back(current_datas);}
+            }
+        }
+
+        /*// Get the good text
         std::string needed_text = std::string();
         if(datas()->content.get()->balise_datas().is_paragraph){needed_text=scls::replace(text(), std::string("</br>"), std::string("<br>"));}
         else{needed_text=full_text();}
@@ -1471,10 +1659,13 @@ namespace scls {
             datas.start_position_in_plain_text = 0;
             lines_text.push_back(datas);
         }
-
-        // Add the good style
-        for(int i = 0;i<static_cast<int>(lines_text.size());i++) {lines_text[i].a_global_style.set_parent_style(global_style());}
+        //*/
     };
+
+
+
+
+
 
     // Generate each blocks in the multiblocks (and delete the previous ones)
     void Text_Image_Multi_Block::generate_blocks() {a_blocks.clear();for(int i = 0;i<static_cast<int>(a_blocks_datas.size());i++) {generate_next_block(i);}}
@@ -1498,7 +1689,7 @@ namespace scls {
 
         // Returns a pre-existing block
         a_blocks[i].get()->global_style().set_max_width(global_style().max_width());
-        a_blocks[i].get()->reset_line_generation();
+        a_blocks[i].get()->reset_generation();
         return a_blocks[i];
     }
 
