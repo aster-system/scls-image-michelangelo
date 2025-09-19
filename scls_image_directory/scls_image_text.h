@@ -433,9 +433,11 @@ namespace scls {
         inline void set_top_offset(short new_top_offset) {a_top_offset = new_top_offset;};
         inline void set_width(unsigned int new_width) {a_width = new_width;};
         inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
+        inline void set_y_position(int new_y_position) {a_y_position = new_y_position;};
         inline short top_offset() const {return a_top_offset;};
         inline unsigned int width() const {return a_width;};
         inline int x_position() const {return a_x_position;};
+        inline int y_position() const {return a_y_position;};
     private:
         // Content of the balise
         String a_balise_content;
@@ -460,8 +462,9 @@ namespace scls {
         int a_line = 0;
         // Width of the image
         unsigned int a_width = 0;
-        // X position of the word
+        // X / Y position of the word
         int a_x_position = 0;
+        int a_y_position = 0;
 
         // Offsets
         // Offset of the bottom position
@@ -508,6 +511,8 @@ namespace scls {
         // Global style in the block
         Text_Style global_style;
 
+        // Max last line bottom offset
+        int max_last_line_bottom_offset = 0;
         // Max width of the block
         int max_width = 0;
         // Total height of the block
@@ -835,6 +840,11 @@ namespace scls {
         void generate_words(bool entirely);
         void generate_words();
         void __regenerate_words();
+
+        // Height of the block
+        int total_height() const;
+
+
 
 
 

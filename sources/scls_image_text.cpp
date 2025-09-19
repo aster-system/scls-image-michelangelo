@@ -1381,8 +1381,9 @@ namespace scls {
             int& max_width = a_datas.get()->max_width;
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             int& total_height = a_datas.get()->total_height;
-            int image_height = total_height + global_style().border_bottom_width() + global_style().border_top_width();
+            int image_height = total_height;
             if(image_height < global_style().font_size()){image_height = global_style().font_size();}
+            image_height += global_style().border_bottom_width() + global_style().border_top_width() + datas()->max_last_line_bottom_offset;
             __Image_Base* to_return = new __Image_Base(max_width + global_style().border_left_width() + global_style().border_right_width(), image_height, global_style().background_color());
 
             // Draw the border
@@ -1545,8 +1546,15 @@ namespace scls {
                 int current_height = word_image->height();
                 int current_width = word_image->width();
                 line_height = std::max(line_height, current_height);
+
+                // Check the position
                 a_words_datas.at(i).get()->set_x_position(current_x);
                 current_x += current_width;max_width += current_width;
+                int y_to_apply = current_y + global_style().border_top_width() - (a_words_datas.at(i).get()->top_offset());
+                a_words_datas.at(i).get()->set_y_position(y_to_apply);
+
+                // Check the offset
+                if(-a_words.at(i).get()->bottom_offset() > datas()->max_last_line_bottom_offset){datas()->max_last_line_bottom_offset = -a_words.at(i).get()->bottom_offset();}
             }
 
             // Finish the result
@@ -1593,6 +1601,14 @@ namespace scls {
             for(int i = 0;i<deleted_line;i++) {if(static_cast<int>(a_lines.size()) > line_number) a_lines.erase(a_lines.begin() + line_number);}
         } return deleted_line;
     };
+
+    // Height of the block
+    int Text_Image_Block::total_height() const {
+        int image_height = a_datas.get()->total_height;
+        if(image_height < a_datas.get()->global_style.font_size()){image_height = a_datas.get()->global_style.font_size();}
+        image_height += a_datas.get()->global_style.border_bottom_width() + a_datas.get()->global_style.border_top_width() + a_datas.get()->max_last_line_bottom_offset;
+        return image_height;
+    }
 
     // Update the datas, without others modification
     void Text_Image_Block::update_datas() {

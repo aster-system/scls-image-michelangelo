@@ -23,7 +23,7 @@ SCLS_INIT
 using namespace scls;
 
 int main() {
-    std::string text_motor = std::string("End");
+    std::string text_motor = std::string("Algorithme");
     std::string text = std::string("<h1>Le char Leclerc</h1><h2>Motorisation</h2><p>Le char Leclerc est équipé d'une turbine de 1500 chevaux, accéléré par un moteur d'hélicoptère.</p>");
 
     scls::Text_Image_Generator tig;Text_Style needed_style;needed_style.set_font_size(20);needed_style.set_max_width(1000);
