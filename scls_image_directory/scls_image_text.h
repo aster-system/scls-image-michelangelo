@@ -114,7 +114,8 @@ namespace scls {
 
         // Getters and setters
         // Alignment horizontal
-        inline Alignment_Horizontal alignment_horizontal() const {if(a_alignment_horizontal_modified || parent_style() == 0){return a_alignment_horizontal;}else{return parent_style()->alignment_horizontal();}};
+        inline Alignment_Horizontal alignment_horizontal() const {if(a_alignment_horizontal_modified || (parent_style() == 0 && block_style() == 0)){return a_alignment_horizontal;}else if(block_style() != 0){if(block_style()->alignment_horizontal_modified()){return block_style()->alignment_horizontal();}else if(parent_style()==0){return a_alignment_horizontal;}}return parent_style()->alignment_horizontal();};
+        inline bool alignment_horizontal_modified() const {return a_alignment_horizontal_modified;};
         inline void set_alignment_horizontal(Alignment_Horizontal new_alignment_horizontal){a_alignment_horizontal=new_alignment_horizontal;a_alignment_horizontal_modified=true;};
         inline void unset_alignment_horizontal(){a_alignment_horizontal_modified=false;};
         // Background color
@@ -165,6 +166,11 @@ namespace scls {
         inline void set_margin_left(int new_margin_left) {a_margin_left = new_margin_left;a_margin_left_modified=true;};
         inline void set_margin_right(int new_margin_right) {a_margin_right = new_margin_right;a_margin_right_modified=true;};
         inline void set_margin_top(int new_margin_top) {a_margin_top = new_margin_top;a_margin_top_modified=true;};
+        // Max width
+        inline unsigned short max_width() const {if(a_max_width_modified || (parent_style() == 0 && block_style() == 0)){return a_max_width;}else if(block_style()!=0){if(block_style()->max_width_modified()){return block_style()->max_width();}else if(parent_style()==0){return a_max_width;}}return parent_style()->max_width();};
+        inline bool max_width_modified() const {return a_max_width_modified;};
+        inline void set_max_width(unsigned short new_max_width){a_max_width=new_max_width;a_max_width_modified=true;};
+        inline void unset_max_width(){a_max_width_modified=false;};
         // Padding
         inline int padding_bottom() const {return a_padding_bottom;};
         inline int padding_left() const {return a_padding_left;};
@@ -176,8 +182,6 @@ namespace scls {
         inline void set_padding_top(int new_padding_top) {a_padding_top = new_padding_top;};
 
         // TEMPORARY
-        // Max width of the text (only in pixel for now)
-        int max_width = -1;
         // Height / width / x / y pos of the text offset
         double text_offset_height = 0;
         double text_offset_width = 0;
@@ -212,6 +216,9 @@ namespace scls {
         // Margin of the style
         int a_margin_bottom = 0;int a_margin_left = 0;int a_margin_right = 0;int a_margin_top = 0;
         bool a_margin_bottom_modified = false;int a_margin_left_modified = false;int a_margin_right_modified = false;int a_margin_top_modified = false;
+        // Max width of the text
+        int a_max_width = 0;
+        bool a_max_width_modified = false;
         // Padding of the style
         int a_padding_bottom = 0;int a_padding_left = 0;int a_padding_right = 0;int a_padding_top = 0;
 
@@ -293,6 +300,9 @@ namespace scls {
         inline void set_margin_left(int new_margin_left) {a_datas.get()->set_margin_left(new_margin_left);};
         inline void set_margin_right(int new_margin_right) {a_datas.get()->set_margin_right(new_margin_right);};
         inline void set_margin_top(int new_margin_top) {a_datas.get()->set_margin_top(new_margin_top);};
+        // Max width
+        int max_width() const {return a_datas.get()->max_width();};
+        void set_max_width(int new_max_width){a_datas.get()->set_max_width(new_max_width);};
         // Padding
         inline int padding_bottom() const {return a_datas.get()->padding_bottom();};
         inline int padding_left() const {return a_datas.get()->padding_left();};
@@ -305,9 +315,7 @@ namespace scls {
 
         // TEMP
         Color border_color() const {return a_datas.get()->border_color;}
-        int max_width() const {return a_datas.get()->max_width;};
         void set_border_color(Color new_border_color){a_datas.get()->border_color = new_border_color;};
-        void set_max_width(int new_max_width){a_datas.get()->max_width = new_max_width;};
         void set_text_offset_height(int new_text_offset_height){a_datas.get()->text_offset_height = new_text_offset_height;};
         void set_text_offset_width(int new_text_offset_width){a_datas.get()->text_offset_width = new_text_offset_width;};
         void set_text_offset_x(int new_text_offset_x){a_datas.get()->text_offset_x = new_text_offset_x;};
@@ -473,26 +481,6 @@ namespace scls {
         short a_top_offset = 0;
     };
 
-    struct Line_Datas {
-        // Struct containing the datas necessary for a line
-        // Line_Datas constructor
-        Line_Datas(){};
-
-        // Content of the line
-        std::shared_ptr<__XML_Text_Base> content;
-        // Content in plain text of the line
-        String content_in_plain_text;
-        // Global style in the line
-        Text_Style a_global_style;
-
-        // Number of the line (starting by 0)
-        unsigned int line_number = 0;
-        // Start of the text in the parent block in absolute text
-        unsigned int start_position = 0;
-        // Start of the text in the parent block in plain text
-        unsigned int start_position_in_plain_text = 0;
-    };
-
     // Type of Text_Image_Block
     enum Block_Type {BT_Always_Free_Memory,BT_Keep_Block_And_Line_In_Memory};
 
@@ -504,6 +492,14 @@ namespace scls {
 
         // Adds text in the block
         void add_text(std::string text);
+
+        // Getters and setters
+        inline scls::Alignment_Horizontal alignment_horizontal() const {return global_style.alignment_horizontal();};
+        inline Balise_Datas* balise_datas() const {return a_balise_datas.get();};
+        inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
+        inline void set_y_position(int new_y_position) {a_y_position = new_y_position;};
+        inline int x_position() const {return a_x_position;};
+        inline int y_position() const {return a_y_position;};
 
         // Content of the balise
         std::shared_ptr<__XML_Text_Base> content;
@@ -517,6 +513,13 @@ namespace scls {
         int max_width = 0;
         // Total height of the block
         int total_height = 0;
+
+        // Datas about the balise
+        std::shared_ptr<Balise_Datas> a_balise_datas;
+
+        // X / Y position of the word
+        int a_x_position = 0;
+        int a_y_position = 0;
     };
 
     //*********
@@ -554,6 +557,7 @@ namespace scls {
         inline String text() const {return a_datas.get()->content();};
         inline short top_offset() const {return a_datas.get()->top_offset();};
         inline int x_position() const {return a_datas.get()->x_position();};
+        inline int y_position() const {return a_datas.get()->y_position();};
 
         //*********
         //
@@ -617,154 +621,6 @@ namespace scls {
 	// Get an utf-8 symbol from a XML content
 	void utf_8_symbol_xml(std::shared_ptr<__XML_Text_Base> text, bool to_html);
 
-    class Text_Image_Line {
-        // Class containing a single line text
-    public:
-        //*********
-        //
-        // Text_Image_Line mains functions
-        //
-        //*********
-
-        // Most simple Text_Image_Line constructor
-        Text_Image_Line(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<__XML_Text_Base> text) : a_defined_balises(defined_balises) {set_text(text);};
-        // Text_Image_Line destructor
-        virtual ~Text_Image_Line() {free_memory();};
-
-        // Returns the text in plain text
-        inline String plain_text() const { return a_defined_balises.get()->plain_text(text()->full_text()); };
-        // Returns the size of the line in plain text
-        inline unsigned int plain_text_size() const { return plain_text().size(); };
-
-        // Getters and setters
-        inline Line_Datas datas() const {return a_datas;};
-        inline Text_Style global_style() const {return a_datas.a_global_style;};
-        inline bool has_been_modified() const {return a_has_been_modified;};
-        inline bool is_modified() const {return a_modified;};
-        inline unsigned int line_start_position() const {return a_datas.start_position;};
-        inline unsigned int line_start_position_in_plain_text() const {return a_datas.start_position_in_plain_text;};
-        inline void set_datas(Line_Datas new_datas) {a_datas = new_datas;};
-        inline void set_has_been_modified(bool new_has_been_modified) {a_has_been_modified = new_has_been_modified;};
-        inline void set_line_start_position(unsigned int new_line_start_position) {a_datas.start_position = new_line_start_position;};
-        inline void set_line_start_position_in_plain_text(unsigned int new_line_start_position_in_plain_text) {a_datas.start_position_in_plain_text = new_line_start_position_in_plain_text;};
-        inline void set_max_width(int new_max_width) {global_style().set_max_width(new_max_width);if(a_update_at_max_width_modification){generate_words();}};
-        inline void set_modified(bool new_modified) {a_modified = new_modified;};
-        inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {a_datas.content = new_text;a_datas.content_in_plain_text = a_defined_balises.get()->plain_text(new_text.get()->full_text());if(move_cursor){set_cursor_position_in_plain_text(a_datas.content_in_plain_text.size());}};
-        inline __XML_Text_Base* text() const {return a_datas.content.get();};
-        inline std::shared_ptr<__XML_Text_Base> text_shared_ptr() const {return a_datas.content;};
-
-        //*********
-        //
-        // Cursor handling
-        //
-        //*********
-
-        // Returns the position of the cursor in plain text with a X position
-        int cursor_position_in_plain_text_at_x(int x_position);
-        // Returns a word at a position in pixel
-        std::shared_ptr<Text_Image_Word> word_at_position_in_pixel(int x, int y);
-
-        // Getters and setters
-        inline int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
-        inline int cursor_x() const {return a_cursor_x;};
-        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;};
-        inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
-        inline bool use_cursor() const {return a_use_cursor;};
-
-        //*********
-        //
-        // Optimisation system
-        //
-        //*********
-
-        // Clears the memory from the words
-        inline void clear_words() { a_words.clear(); };
-        // Frees the memory of the line
-        inline void free_memory() {clear_words();a_last_image.reset();a_update_at_max_width_modification = false;};
-        // Generates the needed maths for a word
-        std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<__XML_Text_Base> content, Text_Style current_style);
-        inline std::shared_ptr<__Math_Part_Image> generate_maths(std::string content, Text_Style current_style){return generate_maths(xml(a_defined_balises, content), current_style);};
-        // Generates the needed words (and balises)
-        static void __generate_image(std::shared_ptr<Text_Image_Word>& word, std::shared_ptr<__Image_Base> resize_image, unsigned int& current_position_in_plain_text, int& current_width, int height, int width);
-        virtual void generate_word(std::shared_ptr<__XML_Text_Base> current_text, unsigned int& current_position_in_plain_text, Text_Style needed_style, std::shared_ptr<Text_Image_Word>& word_to_add);
-        void __generate_words_without_balise(std::shared_ptr<__XML_Text_Base> text, Text_Style current_style, unsigned int& current_position_in_plain_text);
-        void generate_words(std::shared_ptr<__XML_Text_Base> cutted, unsigned int& current_position_in_plain_text, Text_Style needed_style);
-        inline void generate_words(){free_memory();unsigned int current_position_in_plain_text = 0; generate_words(text_shared_ptr(), current_position_in_plain_text, global_style());};
-        // Generates a word
-        std::shared_ptr<Text_Image_Word> _generate_word(const std::string& word, Text_Style style, unsigned int start_position_in_plain_text);
-        // Generates and returns an image of the line
-        __Image_Base* image(Image_Generation_Type generation_type);
-        inline __Image_Base* image() {return image(Image_Generation_Type::IGT_Full);};
-        std::shared_ptr<__Image_Base> image_shared_ptr(Image_Generation_Type generation_type);
-        // Place the words as needed
-        void place_words();
-        // Returns the shared image
-        std::shared_ptr<__Image_Base> shared_image() {return a_last_image;};
-        // Returns the total height of the line
-        inline unsigned int total_height() {int to_return = 0;for(int i = 0;i<static_cast<int>(a_line_height.size());i++){to_return+=a_line_height[i];}return to_return;};
-        // Paste a letter of a word in an image with thread system
-        void __word_letter(__Image_Base* image_to_apply, __Image_Base* image_to_paste, unsigned int x, unsigned int y) {image_to_apply->paste(image_to_paste, x, y);delete image_to_paste; image_to_paste = 0;};
-
-    protected:
-
-        //*********
-        //
-        // Text_Image_Line mains attributes
-        //
-        //*********
-
-        // Current width of the line
-        int a_current_width = 0;
-
-    private:
-        //*********
-        //
-        // Text_Image_Line mains attributes
-        //
-        //*********
-
-        // Datas about the line
-        Line_Datas a_datas;
-        // Containers of each defined balises
-        std::shared_ptr<_Balise_Style_Container> a_defined_balises;
-        // If the line has been modified or not
-        bool a_has_been_modified = true;
-        // Number of sublines in this line
-        bool a_modified = false;
-        // Needed height of the lines
-        std::vector<int> a_line_height = std::vector<int>();
-        // Y offset of the image
-        short a_y_offset = 0;
-
-        //*********
-        //
-        // Cursor handling
-        //
-        //*********
-
-        // Position of the cursor in plain text position
-        unsigned int a_cursor_position_in_plain_text = 0;
-        // X position of the cursor
-        int a_cursor_x = 0;
-        // If the line is the cursor or not
-        bool a_use_cursor = false;
-
-        //*********
-        //
-        // Optimisation system
-        //
-        //*********
-
-        // Last generated image
-        std::shared_ptr<__Image_Base> a_last_image;
-        // If the line should be update at max-width modification
-        bool a_update_at_max_width_modification = false;
-        // Last created words in the block
-        std::vector<std::shared_ptr<Text_Image_Word>> a_words = std::vector<std::shared_ptr<Text_Image_Word>>();
-        // Datas about the last created words in the block
-        std::vector<Word_Datas> a_words_datas = std::vector<Word_Datas>();
-    };
-
     //*********
 	//
 	// Text classes
@@ -793,6 +649,7 @@ namespace scls {
         virtual ~Text_Image_Block() { free_memory(); };
 
         // Getters and setters
+        inline Balise_Datas* balise_datas() const {return a_datas.get()->balise_datas();};
         inline __XML_Text_Base* content() const {return a_datas.get()->content.get();};
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
         inline Text_Style global_style() {return a_datas.get()->global_style;};
@@ -808,11 +665,7 @@ namespace scls {
         //
         //*********
 
-        // Returns the position of the cursor in plain text with a X position and a line
-        unsigned int cursor_position_in_plain_text_at_line_and_x(unsigned int line, int x_position);
-
         // Getters and setters
-        inline Text_Image_Line* cursor_line() {return a_cursor_line;};
         inline unsigned int cursor_position_in_full_text() const {return defined_balises()->plain_text_position_to_unformatted_text_position(text().to_code_point(), cursor_position_in_plain_text());};
         inline unsigned int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
         inline int cursor_x() const {return a_cursor_x;};
@@ -829,17 +682,29 @@ namespace scls {
         //*********
 
         // Creates and returns a block / word for the block
+        virtual std::shared_ptr<Text_Image_Block> __create_block(std::shared_ptr<Block_Datas> needed_datas){return std::make_shared<Text_Image_Block>(a_defined_balises, needed_datas);};
         virtual std::shared_ptr<Text_Image_Word> __create_word(std::shared_ptr<Word_Datas> needed_datas){return std::make_shared<Text_Image_Word>(needed_datas);};
 
         // Generate a block / word of the block
+        std::shared_ptr<Text_Image_Block> __generate_block(std::shared_ptr<Block_Datas> datas, Image block_image);
+        virtual std::shared_ptr<Text_Image_Block> __generate_block(std::shared_ptr<Block_Datas> datas);
+        std::shared_ptr<Text_Image_Block> generate_next_block(int word_number);
+        std::shared_ptr<Text_Image_Block> generate_next_block();
         std::shared_ptr<Text_Image_Word> __generate_word(std::shared_ptr<Word_Datas> datas);
         std::shared_ptr<Text_Image_Word> generate_next_word(int word_number);
         std::shared_ptr<Text_Image_Word> generate_next_word();
 
+        // Frees the memory of the line
+        void free_memory();
         // Generates all the blocks / lines
+        void generate_blocks(bool entirely);
+        void generate_blocks();
+        void __regenerate_blocks();
         void generate_words(bool entirely);
         void generate_words();
         void __regenerate_words();
+        // Resets the generation of lines
+        void reset_generation();
 
         // Height of the block
         int total_height() const;
@@ -848,43 +713,16 @@ namespace scls {
 
 
 
-        // Returns the line at a position in pixel
-        Text_Image_Line* line_at_position_in_pixel(int x, int y, int& needed_y);
 
-        // Check the modified lines
-        inline void _check_modified_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) {if(a_lines[i] != 0) {if(a_lines[i]->is_modified()) {delete a_lines[i]; a_lines[i] = 0;}}}};
-        // Clear the memory from the lines
-        inline void clear_lines() {for(int i = 0;i<static_cast<int>(a_lines.size());i++) { if(a_lines[i] != 0) delete a_lines[i]; } a_lines.clear(); };
-        // Creates and returns a word / block for the block
-        virtual Text_Image_Line* __create_line(Line_Datas& needed_datas){return new Text_Image_Line(a_defined_balises, needed_datas.content);};
-        // Delete the useless generated lines
-        inline void delete_useless_generated_lines() {for(int i = 0;i<static_cast<int>(a_lines.size()) - static_cast<int>(a_lines_text.size());i++) {delete a_lines[a_lines.size() - 1];a_lines.pop_back();}};
-        // Generate all the lines of the block
-        Text_Image_Line* _generate_line(Line_Datas datas);
-        inline void generate_lines(bool entirely){if(entirely){free_memory();}_regenerate_lines();};;
-        inline void generate_lines(){generate_lines(true);};
-        // Generates the next line to be generated and returns it
-        Text_Image_Line* generate_next_line(unsigned int line_number);
-        Text_Image_Line* generate_next_line() {Text_Image_Line* to_return = generate_next_line(a_current_line);a_current_line++;return to_return;};
-        // Regenerate the lines with a new text
-        inline void _regenerate_lines() {reset_generation();for(int i = 0;i<static_cast<int>(a_lines_text.size());i++) {generate_next_line(i);} delete_useless_generated_lines();};
-        // Reset the generation of lines
-        inline void reset_generation() {_check_modified_lines();a_current_line = 0;a_current_object = 0;a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;};
 
         // Add text to the block
         void add_text(String first_text);
-        // Free the memory of the line
-        inline void free_memory() {clear_lines();a_words.clear();};
         // Generates and returns an image with the block on it
         __Image_Base* image(Image_Generation_Type generation_type);
         inline __Image_Base* image() {return image(Image_Generation_Type::IGT_Full);};
         // Returns the shared pointer of the image and generates it if needed
         inline std::shared_ptr<__Image_Base>& image_shared_pointer(Image_Generation_Type generation_type) {image(generation_type);return a_last_image;};
         inline std::shared_ptr<__Image_Base>& image_shared_pointer() { return image_shared_pointer(Image_Generation_Type::IGT_Full);};
-        // Returns the line at a plain text position given, or 0
-        inline Text_Image_Line* line_at_position_in_plain_text(unsigned int position) {int final_position = line_number_at_position_in_plain_text(position);if(final_position == -1){return 0;}return lines()[final_position];};
-        // Returns the line number at the position given, or 0
-        inline int line_number_at_position(unsigned int position) {for(int i = 1;i<static_cast<int>(lines_datas().size());i++) {if(lines_datas()[i].start_position > position) {return i - 1;}} return lines_datas().size() - 1;};
         // Returns the line number at a plain text position given, or 0
         int line_number_at_position_in_plain_text(unsigned int position);
         // Pastes an image on an another image for multi threading
@@ -893,17 +731,16 @@ namespace scls {
         void place_datas();
         // Removes a part of the text and returns the number of lines deleted
         int remove_text(unsigned int size_to_delete);
-        // Soft reset the block for a line renegeration
-        inline void soft_reset() {a_cursor_line = 0;};
         // Update the text in each lines, without others modification
         void update_datas();
 
         // Getters and setter
+        inline std::vector<std::shared_ptr<Text_Image_Block>>& blocks() {return a_blocks;};
+        inline std::vector<std::shared_ptr<Block_Datas>>& blocks_datas() {return a_blocks_datas;};
         inline Block_Datas* datas() {return a_datas.get();};
         inline _Balise_Style_Container* defined_balises() const {return a_defined_balises.get();};
         inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
-        inline std::vector<Text_Image_Line*>& lines() { return a_lines; };
-        inline std::vector<Line_Datas>& lines_datas() { return a_lines_text; };
+        inline std::vector<scls::Point_2D>& lines_size() {return a_lines_size;};
         inline std::vector<std::shared_ptr<Text_Image_Word>>& words() { return a_words; };
         inline std::vector<std::shared_ptr<Word_Datas>>& words_datas() { return a_words_datas; };
     private:
@@ -928,8 +765,6 @@ namespace scls {
         //
         //*********
 
-        // Last line to have the cursor
-        Text_Image_Line* a_cursor_line = 0;
         // Position of the cursor in plain text position
         unsigned int a_cursor_position_in_plain_text = 0;
         // X position of the cursor
@@ -945,105 +780,21 @@ namespace scls {
         //
         //*********
 
+        // Size of each lines
+        std::vector<scls::Point_2D> a_lines_size = std::vector<scls::Point_2D>();
+
+        // Fixed image
+        std::shared_ptr<__Image_Base> a_fixed_image;
+
         // Last created sub-blocks / words in the block
         std::vector<std::shared_ptr<Text_Image_Block>> a_blocks = std::vector<std::shared_ptr<Text_Image_Block>>();
         std::vector<std::shared_ptr<Text_Image_Word>> a_words = std::vector<std::shared_ptr<Text_Image_Word>>();
         // Last created sub-blocks / words datas in the block
+        std::vector<std::shared_ptr<Block_Datas>> a_blocks_datas = std::vector<std::shared_ptr<Block_Datas>>();
         std::vector<std::shared_ptr<Word_Datas>> a_words_datas = std::vector<std::shared_ptr<Word_Datas>>();
         // Current block / word to be generated
         unsigned int a_current_object = 0;
-
-        // Current line which should be generated
-        unsigned int a_current_line = 0;
-        // Last created lines in the block
-        std::vector<Text_Image_Line*> a_lines = std::vector<Text_Image_Line*>();
-        // Last created lines text in the block
-        std::vector<Line_Datas> a_lines_text = std::vector<Line_Datas>();
-        // Maximum number of line generable in one time
-        unsigned int a_max_line_number_generable = 30;
     };
-
-    class Text_Image_Multi_Block {
-        // Class containing a lot of block text
-    public:
-        // Most simple Text_Image constructor
-        Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text) : a_defined_balises(defined_balises) {set_text(text); };
-        Text_Image_Multi_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::string text, Text_Style style) : a_defined_balises(defined_balises) {a_global_style=style;set_text(text);};
-        // Text_Image destructor
-        virtual ~Text_Image_Multi_Block() {__delete_blocks();};
-
-        // Generates and returns a block
-        Text_Image_Block* _block(std::shared_ptr<Block_Datas> block) { Text_Image_Block* new_block = new Text_Image_Block(a_defined_balises, block); return new_block; };
-        // Creates and returns a Text_Image_Block
-        virtual std::shared_ptr<Text_Image_Block>__create_block(std::shared_ptr<Block_Datas>needed_datas){return std::make_shared<Text_Image_Block>(a_defined_balises, needed_datas);};
-        // Deletes the blocks in the image
-        void __delete_blocks(unsigned int max_size = 0) { a_blocks.clear(); };
-        // Deletes the last blocks in a vector
-        void free_memory() {a_blocks.clear();a_blocks_datas.clear();};
-        // Generates each blocks in the multiblocks (and delete the previous ones)
-        void generate_blocks();
-        inline void generate_blocks(std::string text_to_analyse) {update_blocks_datas(text_to_analyse);generate_blocks();};
-        std::shared_ptr<Text_Image_Block> generate_next_block(int i);
-        // Return the entire text in an image
-        __Image_Base* image(Image_Generation_Type generation_type, const std::string& start_text);
-        __Image_Base* image() {return image(Image_Generation_Type::IGT_Full, text());};
-        // Returns a shared pointer of the image
-        std::shared_ptr<__Image_Base> image_shared_pointer() { return image_shared_pointer(Image_Generation_Type::IGT_Full);};
-        std::shared_ptr<__Image_Base> image_shared_pointer(Image_Generation_Type generation_type) { std::shared_ptr<__Image_Base> to_return;to_return.reset(image(generation_type, text()));return to_return;};
-        // Place the blocks in the multi-block
-        void place_blocks();
-        // Save the image as an image
-        inline void save_image(std::string path) {__Image_Base* img = image();img->save_png(path);delete img;img = 0;};
-        // Update the datas of each blocks
-        void update_blocks_datas(std::shared_ptr<__XML_Text_Base> cutted);
-        inline void update_blocks_datas(String text_to_analyse){update_blocks_datas(xml(a_defined_balises, text_to_analyse));};
-        inline void update_blocks_datas(){return update_blocks_datas(xml(a_defined_balises, text()));};
-
-        // Plain text handling
-        // Returns the plain text of the image
-        inline std::string plain_text() { return defined_balises()->plain_text(text()); };
-        // Returns the size of the plain text in the image
-        inline unsigned int plain_text_size() { return plain_text().size(); };
-
-        // Getters and setters
-        inline std::vector<std::shared_ptr<Text_Image_Block>>& blocks() {return a_blocks;};
-        inline std::vector<std::shared_ptr<Block_Datas>>& blocks_datas() {return a_blocks_datas;};
-        inline _Balise_Style_Container* defined_balises() {return a_defined_balises.get();};
-        inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
-        inline Balise_Style_Datas* defined_balises(std::string balise) {return defined_balises()->defined_balise_style(balise);};
-        inline Text_Style global_style() const {return a_global_style;};
-        inline unsigned char line_pasting_max_thread_number() const {return a_line_pasting_max_thread_number;};
-        inline void set_line_pasting_max_thread_number(unsigned char new_line_pasting_max_thread_number) {a_line_pasting_max_thread_number = new_line_pasting_max_thread_number;};
-        inline void set_text(String new_text) {a_blocks.clear();update_blocks_datas(new_text);};
-        inline void set_use_cursor(bool use_cursor){a_use_cursor = use_cursor;};
-        inline void set_xml_text(std::shared_ptr<__XML_Text_Base> new_text) {a_blocks.clear();update_blocks_datas(new_text);};
-        String text() const;
-    private:
-        // Global style in the text
-        Text_Style a_global_style;
-
-        // Containers of each defined balises
-        std::shared_ptr<_Balise_Style_Container> a_defined_balises;
-
-        //*********
-        //
-        // Optimisation system
-        //
-        //*********
-
-        // Last created blocks
-        std::vector<std::shared_ptr<Text_Image_Block>> a_blocks = std::vector<std::shared_ptr<Text_Image_Block>>();
-        // Last created blocks datas
-        std::vector<std::shared_ptr<Block_Datas>> a_blocks_datas = std::vector<std::shared_ptr<Block_Datas>>();
-        // Max numbers of thread to paste the lines
-        unsigned char a_line_pasting_max_thread_number = 0;
-        // Max width in the image
-        int a_max_width = 0;
-        // Total height of the image
-        int a_total_height = 0;
-        // If the block use cursor or not
-        bool a_use_cursor = false;
-    }; //*/
 
     class Text_Image_Generator {
         // Class simplifying the creation of text image
@@ -1062,8 +813,6 @@ namespace scls {
         inline std::shared_ptr<__Image_Base> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
         // Returns a newly created text image
         template <typename T = Text_Image_Block> T* new_text_image_block(std::string text, Block_Type type = Block_Type::BT_Always_Free_Memory) {T *img = new T(a_balises, text, type);return img;};
-        // Returns a newly created text image multi block
-        template <typename T = Text_Image_Multi_Block> T* new_text_image_multi_block(std::string text) {T *img = new T(a_balises, text);return img;};
 
         // Methods to directly use balises
         inline std::string plain_text(std::string text)const{return a_balises.get()->plain_text(text);};
