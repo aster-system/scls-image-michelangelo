@@ -1186,6 +1186,7 @@ namespace scls {
         else {
             // Get the size of the image
             int current_line_width = 0;
+            int current_line_height = 0;
             unsigned int current_x = 0;
             unsigned int current_y = 0;
             for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
@@ -1196,6 +1197,7 @@ namespace scls {
                 // Check the max width and height
                 int current_height = word_image->height();
                 int current_width = word_image->width();
+                current_line_height = std::max(current_line_height, current_height);
                 current_line_width += current_width;
 
                 // Check the position
@@ -1203,14 +1205,15 @@ namespace scls {
                 a_blocks_datas.at(i).get()->set_y_position(y_to_apply);
 
                 // Update the datas
-                if((a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph)) || i == a_blocks.size() - 1) {
+                if(a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph)) {
                     current_x = 0;
-                    current_y += current_height;
-                    total_height += current_height;
+                    current_y += current_line_height;
+                    total_height += current_line_height;
                     if(current_line_width > max_width){max_width = current_line_width;}
                     current_line_width = 0;
                 }
             }
+            total_height += current_line_height;
             if(current_line_width > max_width){max_width = current_line_width;}
 
             // Set the position
