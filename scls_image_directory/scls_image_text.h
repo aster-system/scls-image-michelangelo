@@ -651,6 +651,7 @@ namespace scls {
         // Getters and setters
         inline Balise_Datas* balise_datas() const {return a_datas.get()->balise_datas();};
         inline __XML_Text_Base* content() const {return a_datas.get()->content.get();};
+        inline std::shared_ptr<__XML_Text_Base> content_shared_ptr() const {return a_datas.get()->content;};
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
         inline Text_Style global_style() {return a_datas.get()->global_style;};
         inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_datas();};
@@ -685,11 +686,15 @@ namespace scls {
         virtual std::shared_ptr<Text_Image_Block> __create_block(std::shared_ptr<Block_Datas> needed_datas){return std::make_shared<Text_Image_Block>(a_defined_balises, needed_datas);};
         virtual std::shared_ptr<Text_Image_Word> __create_word(std::shared_ptr<Word_Datas> needed_datas){return std::make_shared<Text_Image_Word>(needed_datas);};
 
+        // Generates a piece of math in the block
+        std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<__XML_Text_Base> content, Text_Style current_style);
+
         // Generate a block / word of the block
         std::shared_ptr<Text_Image_Block> __generate_block(std::shared_ptr<Block_Datas> datas, Image block_image);
         virtual std::shared_ptr<Text_Image_Block> __generate_block(std::shared_ptr<Block_Datas> datas);
         std::shared_ptr<Text_Image_Block> generate_next_block(int word_number);
         std::shared_ptr<Text_Image_Block> generate_next_block();
+        std::shared_ptr<Text_Image_Word> __generate_word(std::string datas, Text_Style current_style);
         std::shared_ptr<Text_Image_Word> __generate_word(std::shared_ptr<Word_Datas> datas);
         std::shared_ptr<Text_Image_Word> generate_next_word(int word_number);
         std::shared_ptr<Text_Image_Word> generate_next_word();
@@ -786,6 +791,8 @@ namespace scls {
         // Fixed image
         std::shared_ptr<__Image_Base> a_fixed_image;
 
+        // Mathematical part
+        std::shared_ptr<__Math_Part_Image> a_math_datas;
         // Last created sub-blocks / words in the block
         std::vector<std::shared_ptr<Text_Image_Block>> a_blocks = std::vector<std::shared_ptr<Text_Image_Block>>();
         std::vector<std::shared_ptr<Text_Image_Word>> a_words = std::vector<std::shared_ptr<Text_Image_Word>>();
