@@ -522,8 +522,10 @@ namespace scls {
         else if(name == "mdelta") {return 916;}
         else if(name == "mequiv") {return 8801;}
         else if(name == "mequi") {return 8660;}
+        else if(name == "mempty"){return 8709;}
         else if(name == "mexists") {return 8707;}
         else if(name == "mforall"){return 8704;}
+        else if(name == "mimp"){return 8658;}
         else if(name == "min"){return 8712;}
         else if(name == "mint"){return 8747;}
         else if(name == "mlt"){return 60;}
