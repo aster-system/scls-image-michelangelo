@@ -48,7 +48,7 @@ namespace scls {
     }
 
     // Defined colors by name
-    void __defined_color_by_name(std::string name, Color& color){
+    void defined_color_by_name(std::string name, Color& color){
         if(name == std::string("black")){color = Color(0, 0, 0);}
         else if(name == std::string("blue")){color = Color(0, 0, 255);}
         else if(name == std::string("gray") || name == std::string("grey")){color = Color(96, 96, 96);}
@@ -65,27 +65,35 @@ namespace scls {
     }
 
     // Return a color loaded from a text
-    Color Color::from_std_string(std::string source) {
+    std::vector<std::string> Color::from_std_string_parts(std::string source){
         // Format the text
         while(source[0] == ' ' || source[0] == '(') source = source.substr(1, source.size() - 1);
         while(source[source.size() - 1] == ' ' || source[source.size() - 1] == ')') source = source.substr(0, source.size() - 1);
 
         // Get the color
-        Color to_return(255, 255, 255);
         std::vector<std::string> cutted = cut_string(scls::replace(source, std::string(";"), std::string(",")) , ",");
+        for(int i = 0;i<static_cast<int>(cutted.size());i++) {
+            while(cutted[i][0] == ' '){cutted[i] = cutted[i].substr(1, cutted[i].size() - 1);}
+            while(cutted[i][cutted[i].size() - 1] == ' '){cutted[i] = cutted[i].substr(0, cutted[i].size() - 1);}
+        }
+
+        return cutted;
+    };
+    Color Color::from_std_string(std::string source) {
+        // Format the text
+        std::vector<std::string> cutted = from_std_string_parts(source);
+
+        // Get the color
+        Color to_return(255, 255, 255);
         if(cutted.size() > 1) {
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                while(cutted[i][0] == ' ') cutted[i] = cutted[i].substr(1, cutted[i].size() - 1);
-                while(cutted[i][cutted[i].size() - 1] == ' ') cutted[i] = cutted[i].substr(0, cutted[i].size() - 1);
-
-                // Apply the color
                 if(i == 0) to_return.set_red(std::stoi(cutted[i]));
                 else if(i == 1) to_return.set_green(std::stoi(cutted[i]));
                 else if(i == 2) to_return.set_blue(std::stoi(cutted[i]));
                 else if(i == 3) to_return.set_alpha(std::stoi(cutted[i]));
             }
         }
-        else if (cutted.size() == 1) {__defined_color_by_name(cutted.at(0), to_return);}
+        else if (cutted.size() == 1) {defined_color_by_name(cutted.at(0), to_return);}
 
         return to_return;
     };
@@ -98,7 +106,7 @@ namespace scls {
             std::string current_attribute_name = current_attribute.name;
             std::string current_attribute_value = current_attribute.value;
 
-            if(current_attribute_value == std::string()) {__defined_color_by_name(current_attribute_name, color);}
+            if(current_attribute_value == std::string()) {defined_color_by_name(current_attribute_name, color);}
             else {
                 // Precise datas for the color
                 if(current_attribute_name == "red") {color.set_red(std::stoi(current_attribute_value));}

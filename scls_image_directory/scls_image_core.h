@@ -120,6 +120,7 @@ namespace scls {
         Color(const Color& color_copy):a_alpha(color_copy.a_alpha),a_blue(color_copy.a_blue),a_green(color_copy.a_green),a_red(color_copy.a_red){};
 
         // Return a color loaded from a text
+        static std::vector<std::string> from_std_string_parts(std::string source);
         static Color from_std_string(std::string source);
         // Return a color loaded from an XML balise
         static Color from_xml(std::shared_ptr<__XML_Text_Base> source);
@@ -150,6 +151,9 @@ namespace scls {
         double a_green = 0;
         double a_red = 0;
 	};
+
+	// Defined colors by name
+    void defined_color_by_name(std::string name, Color& color);
 
 	class Color_Mixer {
 	    // Class representing a mixer of color

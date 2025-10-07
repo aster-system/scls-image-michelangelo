@@ -519,7 +519,9 @@ namespace scls {
 	int utf_8_symbol_by_name(std::string name) {
         if(name == "epsilon") {return 949;}
         else if(name == "esh") {return 643;}
+        else if(name == "mapprox") {return 8773;}
         else if(name == "mdelta") {return 916;}
+        else if(name == "mequal") {return '=';}
         else if(name == "mequiv") {return 8801;}
         else if(name == "mequi") {return 8660;}
         else if(name == "mempty"){return 8709;}
@@ -532,6 +534,7 @@ namespace scls {
         else if(name == "mgt"){return 62;}
         else if(name == "mnatural"){return 'N';}
         else if(name == "mpartial") {return 948;}
+        else if(name == "mroot"){return 8730;}
         else if(name == "mto"){return 10230;}
         else if(name == "mu") {return 956;}
         else if(name == "nabla") {return 2207;}
@@ -914,12 +917,47 @@ namespace scls {
             return to_add;
         } return std::shared_ptr<__Math_Part_Image>();
     }
+    std::shared_ptr<__Math_Part_Image> __generate_root(std::shared_ptr<__XML_Text_Base> content, Text_Style current_style, Text_Image_Block* needed_block) {
+        // Draw the needed image
+        Text_Style needed_style = current_style.new_child();
+        std::shared_ptr<__Math_Part_Image> needed_part = needed_block->generate_maths(content, needed_style);
+        std::shared_ptr<__Image_Base>& needed_image = needed_part.get()->image;
+
+        // Get the root text
+        int bar_width = current_style.font_size() / 20;
+        std::string temp = std::string();add_utf_8(temp, 8730);
+        std::shared_ptr<__Math_Part_Image> root = __generate_text_for_maths(temp, current_style.new_child(), needed_block);
+        std::shared_ptr<__Image_Base>& root_image = root.get()->image;
+        root_image = root_image.get()->resize_adaptative_height(needed_image.get()->height() + bar_width);
+
+        // Draw the image to return
+        int needed_size = std::max(needed_image.get()->height(), root_image.get()->height());
+        int needed_width = needed_image.get()->width() + root_image.get()->width();
+        std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
+        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+        image = std::make_shared<__Image_Base>(needed_width, needed_size, current_style.background_color());
+        to_return.get()->middle_bottom_offset = root.get()->middle_bottom_offset;
+        // Paste the needed image
+        image.get()->paste(root_image.get(), 0, image.get()->height() - root_image.get()->height());
+        image.get()->paste(needed_image.get(), root_image.get()->width(), image.get()->height() - needed_image.get()->height());
+        to_return.get()->middle_bottom_offset = std::ceil(image.get()->height() / 2);
+        to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
+
+        // Trace the bar
+        if(bar_width < 1){bar_width = 1;}
+        int x = root_image.get()->width();
+        int y = image.get()->height() - root_image.get()->height();
+        image.get()->fill_rect(x, y, needed_image.get()->width(), bar_width, current_style.color());
+
+        return to_return;
+    }
     void __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<__XML_Text_Base> content, Text_Style current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Block* block) {
         std::shared_ptr<__Math_Part_Image> needed_part;
         int potential_symbol = utf_8_symbol_by_name(needed_balise_name);
         if(potential_symbol != -1) {std::string text = std::string(""); add_utf_8(text, potential_symbol);needed_part = __generate_text_for_maths(text, current_style.new_child(), block);}
         else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style.new_child(), block);}
         else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style.new_child());}
+        else if(needed_balise_name == "msqrt" || needed_balise_name == "sqrt") {needed_part = __generate_root(content, current_style.new_child(), block);}
         else if(needed_balise_name == "msub" || needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style.new_child(), block);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style.new_child(), block);}
         else if(needed_balise_name == "msubsup") {needed_part = __generate_subsup(content, current_style.new_child(), block);}
@@ -1179,10 +1217,11 @@ namespace scls {
                     current_y += line_height;
                     total_height += line_height;
                     line_height = 0;
+                    datas()->max_last_line_bottom_offset = 0;
                 }
 
                 // Check the position
-                line_height = std::max(line_height, current_height);
+                line_height = std::max(line_height, current_height - a_words_datas.at(i).get()->top_offset());
                 current_line_width += current_width;
                 a_words_datas.at(i).get()->set_x_position(current_x);
                 current_x += current_width;
