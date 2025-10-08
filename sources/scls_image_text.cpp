@@ -1238,15 +1238,30 @@ namespace scls {
             total_height += line_height;
         }
         else {
+            #define BROKE_LINE_BEFORE (i <= 0 || (a_blocks.at(i - 1).get()->balise_datas() != 0 && (a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph)))
+
             // Get the size of the image
             int current_line_width = 0;
             int current_line_height = 0;
             unsigned int current_x = 0;
             unsigned int current_y = 0;
             for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
+                #define BREAK_LINE current_x = 0;\
+                current_line_height = std::max(current_line_height, static_cast<int>(global_style().font_size()));\
+                current_y += current_line_height;\
+                total_height += current_line_height;\
+                if(current_line_width > max_width){max_width = current_line_width;}\
+                current_line_height = 0;current_line_width = 0;
+
                 // Creates the image (if not created)
                 scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
-                if(word_image == 0){continue;}
+                if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_LINE;continue;}
+                else if(word_image == 0 || word_image->width() <= 0){continue;}
+
+                // Pre-needed break line
+                bool break_line_after = a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph);
+                bool break_line_before = BROKE_LINE_BEFORE;
+                if(!break_line_before) {BREAK_LINE;}
 
                 // Check the max width and height
                 int current_height = word_image->height();
@@ -1254,27 +1269,13 @@ namespace scls {
                 current_line_height = std::max(current_line_height, current_height);
                 current_line_width += current_width;
 
-                // Pre-needed break line
-                if(i > 0 && !(a_blocks.at(i - 1).get()->balise_datas() == 0 || a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph)) {
-                    current_x = 0;
-                    current_y += current_line_height;
-                    total_height += current_line_height;
-                    if(current_line_width > max_width){max_width = current_line_width;}
-                    current_line_width = 0;
-                }
-
                 // Check the position
                 int y_to_apply = current_y;
                 a_blocks_datas.at(i).get()->set_y_position(y_to_apply);
 
                 // Update the datas
-                if(a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph)) {
-                    current_x = 0;
-                    current_y += current_line_height;
-                    total_height += current_line_height;
-                    if(current_line_width > max_width){max_width = current_line_width;}
-                    current_line_width = 0;
-                }
+                if(break_line_after) {BREAK_LINE;}
+                #undef BREAK_LINE
             }
             total_height += current_line_height;
             if(current_line_width > max_width){max_width = current_line_width;}
@@ -1291,7 +1292,8 @@ namespace scls {
                 int current_width = word_image->width();
 
                 // Pre-needed break line
-                if(i > 0 && !(a_blocks.at(i - 1).get()->balise_datas() == 0 || a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph)) {
+                bool broke_line_before = BROKE_LINE_BEFORE;
+                if(!broke_line_before) {
                     current_x = 0;
                     current_y += current_line_height;
                 }
@@ -1310,6 +1312,7 @@ namespace scls {
                     current_x = 0;
                     current_y += current_height;
                 }
+            #undef BROKE_LINE_BEFORE
             }
         }
     };
@@ -1356,9 +1359,7 @@ namespace scls {
         __XML_Text_Base* needed_content = content();
         a_blocks_datas.clear();a_words_datas.clear();
 
-        if(needed_content->xml_balise_name() == std::string("math")) {
-            a_math_datas = generate_maths(content_shared_ptr(), global_style());
-        }
+        if(needed_content->xml_balise_name() == std::string("math")) {a_math_datas = generate_maths(content_shared_ptr(), global_style());}
         else if(needed_content->only_text()) {
             // Get the needed words
             std::vector<std::string> needed_text = text().cut(" ", false, false);
