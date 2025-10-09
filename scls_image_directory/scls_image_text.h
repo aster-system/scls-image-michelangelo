@@ -745,7 +745,10 @@ namespace scls {
         inline Block_Datas* datas() {return a_datas.get();};
         inline _Balise_Style_Container* defined_balises() const {return a_defined_balises.get();};
         inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
+        inline int lines_number() const {return a_lines_size.size();};
         inline std::vector<scls::Point_2D>& lines_size() {return a_lines_size;};
+        inline void set_start_x(int new_start_x){a_start_x = new_start_x;a_fixed_image.reset();};
+        inline int start_x()const{return a_start_x;};
         inline std::vector<std::shared_ptr<Text_Image_Word>>& words() { return a_words; };
         inline std::vector<std::shared_ptr<Word_Datas>>& words_datas() { return a_words_datas; };
     private:
@@ -801,6 +804,8 @@ namespace scls {
         std::vector<std::shared_ptr<Word_Datas>> a_words_datas = std::vector<std::shared_ptr<Word_Datas>>();
         // Current block / word to be generated
         unsigned int a_current_object = 0;
+        // X to start the placement
+        int a_start_x = 0;
     };
 
     class Text_Image_Generator {

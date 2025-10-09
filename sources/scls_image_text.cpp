@@ -1011,7 +1011,13 @@ namespace scls {
             // Update the image
             current_x += needed_parts[i].get()->image.get()->width();
             needed_parts[i].reset();
-        } return to_return;
+        }
+
+        // Handle the size of the image
+        if(image.get()->width() > current_style.max_width()){image = image.get()->resize_adaptative_width(current_style.max_width(), true);}
+
+        // Return the result
+        return to_return;
     }
 
     // Generates and returns an image with the block on it
@@ -1023,11 +1029,7 @@ namespace scls {
         if(generation_type == Image_Generation_Type::IGT_Full) {if(content()->only_text()){generate_words();}else{generate_blocks();}}
         else if(generation_type == Image_Generation_Type::IGT_Size) {place_datas();}
 
-        if(a_math_datas.get() != 0) {
-            // Paste the maths part
-            a_last_image = a_math_datas.get()->image;
-            return a_math_datas.get()->image.get();
-        }
+        if(a_math_datas.get() != 0) {a_last_image = a_math_datas.get()->image;return a_math_datas.get()->image.get();}
         else if(content()->only_text()) {
             // Draw the final image
             unsigned int current_x = 0;
@@ -1110,7 +1112,7 @@ namespace scls {
         }
 
         // Draw the final image
-        unsigned int current_x = 0;
+        unsigned int current_x = a_start_x;
         unsigned int current_y = 0;
         unsigned char a_line_pasting_max_thread_number = 0;
         int& max_width = a_datas.get()->max_width;
@@ -1186,7 +1188,7 @@ namespace scls {
         int& max_width = a_datas.get()->max_width;
         int& total_height = a_datas.get()->total_height;
         // Update the datas
-        int current_line_width = 0;
+        int current_line_width = a_start_x;
         max_width = 0;total_height = 0;
         a_lines_size.clear();
 
@@ -1194,7 +1196,7 @@ namespace scls {
         __XML_Text_Base* needed_content = content();
         if(needed_content->only_text()) {
             // Set the position
-            unsigned int current_x = 0;
+            unsigned int current_x = a_start_x;
             unsigned int current_y = 0;
             int line_height = 0;
             for(int i = 0;i<static_cast<int>(a_words.size());i++) {
@@ -1241,9 +1243,8 @@ namespace scls {
             #define BROKE_LINE_BEFORE (i <= 0 || (a_blocks.at(i - 1).get()->balise_datas() != 0 && (a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph)))
 
             // Get the size of the image
-            int current_line_width = 0;
             int current_line_height = 0;
-            unsigned int current_x = 0;
+            unsigned int current_x = a_start_x;
             unsigned int current_y = 0;
             for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
                 #define BREAK_LINE current_x = 0;\
@@ -1254,6 +1255,7 @@ namespace scls {
                 current_line_height = 0;current_line_width = 0;
 
                 // Creates the image (if not created)
+                //a_blocks.at(i).get()->set_start_x(current_line_width);
                 scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
                 if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_LINE;continue;}
                 else if(word_image == 0 || word_image->width() <= 0){continue;}
@@ -1293,10 +1295,7 @@ namespace scls {
 
                 // Pre-needed break line
                 bool broke_line_before = BROKE_LINE_BEFORE;
-                if(!broke_line_before) {
-                    current_x = 0;
-                    current_y += current_line_height;
-                }
+                if(!broke_line_before) {current_x = 0;current_y += current_line_height;}
 
                 // Check the position
                 int current_line_width = current_width;

@@ -2481,7 +2481,9 @@ namespace scls {
         return new_image;
     };
     // Returns a shared ptr of the image with a new width, adaptated
-    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_width(unsigned short new_width) {
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_width(unsigned short new_width){return resize_adaptative_width(new_width, false);}
+    std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative_width(unsigned short new_width, bool resize_height) {
+        double last_width = width();
         if(new_width < width()) {
             // Create the new image
             std::shared_ptr<__Image_Base> new_image = std::make_shared<__Image_Base>(new_width, height(), Color(0, 0, 0, 0));
@@ -2513,6 +2515,11 @@ namespace scls {
                 }
                 current_x += repartioned_pixels[i];
             }
+
+            // Resize height or not
+            if(resize_height){return new_image.get()->resize_adaptative_height(static_cast<double>(new_image.get()->height()) * (static_cast<double>(new_width) / last_width));}
+
+            // Return the result
             return new_image;
         }
         else if(new_width == width()){return copy_image();}
@@ -2534,6 +2541,9 @@ namespace scls {
             }
             x_normal = 0;
         }
+
+        // Resize height or not
+        if(resize_height){return new_image.get()->resize_adaptative_height(static_cast<double>(new_image.get()->height()) * (static_cast<double>(new_width) / last_width));}
         return new_image;
     };
 

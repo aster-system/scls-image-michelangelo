@@ -518,6 +518,7 @@ namespace scls {
         // Returns a shared ptr of the image with a new height, adaptated
         std::shared_ptr<__Image_Base> resize_adaptative_height(unsigned short new_height);
         // Returns a shared ptr of the image with a new width, adaptated
+        std::shared_ptr<__Image_Base> resize_adaptative_width(unsigned short new_width, bool resize_height);
         std::shared_ptr<__Image_Base> resize_adaptative_width(unsigned short new_width);
 
         // Rotates the image
