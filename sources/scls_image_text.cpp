@@ -852,7 +852,6 @@ namespace scls {
         // Create the block
         std::string balise_name = datas.get()->content.get()->xml_balise_name();
         std::shared_ptr<Text_Image_Block> to_return = __create_block(datas);
-        datas.get()->a_balise_datas = defined_balises()->defined_balise_shared_ptr(balise_name);
         Balise_Style_Datas* needed_balise = defined_balises()->defined_balise_style(balise_name);
         if(needed_balise!= 0){datas.get()->global_style.set_block_style(needed_balise->style);}
 
@@ -1014,7 +1013,7 @@ namespace scls {
         }
 
         // Handle the size of the image
-        if(image.get()->width() > current_style.max_width()){image = image.get()->resize_adaptative_width(current_style.max_width(), true);}
+        if(current_style.max_width() && image.get()->width() > current_style.max_width()){image = image.get()->resize_adaptative_width(current_style.max_width(), true);}
 
         // Return the result
         return to_return;
@@ -1029,7 +1028,7 @@ namespace scls {
         if(generation_type == Image_Generation_Type::IGT_Full) {if(content()->only_text()){generate_words();}else{generate_blocks();}}
         else if(generation_type == Image_Generation_Type::IGT_Size) {place_datas();}
 
-        if(a_math_datas.get() != 0) {a_last_image = a_math_datas.get()->image;return a_math_datas.get()->image.get();}
+        if(a_math_datas.get() != 0) {a_last_image = a_math_datas.get()->image;return a_last_image.get();}
         else if(content()->only_text()) {
             // Draw the final image
             unsigned int current_x = 0;
@@ -1042,6 +1041,9 @@ namespace scls {
             if(image_height < global_style().font_size()){image_height = global_style().font_size();}
             image_height += global_style().border_bottom_width() + global_style().border_top_width() + datas()->max_last_line_bottom_offset;
             __Image_Base* to_return = new __Image_Base(max_width + global_style().border_left_width() + global_style().border_right_width(), image_height, global_style().background_color());
+
+            // Draw the transparent part
+            if(static_cast<int>(lines_size().size()) > 0 && a_start_x > 0){to_return->fill_rect_force(0, 0, a_start_x, lines_size().at(0).y(), 0, 0, 0, 0);}
 
             // Draw the border
             to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
@@ -1083,7 +1085,6 @@ namespace scls {
                             // Get the datas
                             Text_Style style_to_apply = current_word->style();
                             int current_width = current_image->width();
-                            unsigned int height_to_apply = current_image->height();
                             int x_to_apply = current_word->x_position();
                             int y_to_apply = current_word->y_position();
 
@@ -1161,7 +1162,6 @@ namespace scls {
                         // Get the datas
                         Text_Style style_to_apply = current_block->global_style();
                         int current_width = current_image->width();
-                        unsigned int height_to_apply = current_image->height();
                         int x_to_apply = current_block->datas()->x_position();
                         int y_to_apply = current_block->datas()->y_position();
 
@@ -1194,7 +1194,8 @@ namespace scls {
 
         // Get the good text
         __XML_Text_Base* needed_content = content();
-        if(needed_content->only_text()) {
+        if(a_math_datas.get() != 0){a_paste_x = a_start_x;}
+        else if(needed_content->only_text()) {
             // Set the position
             unsigned int current_x = a_start_x;
             unsigned int current_y = 0;
@@ -1214,6 +1215,7 @@ namespace scls {
                 // Line jump
                 if(global_style().max_width() > 0 && current_line_width > 0 && current_line_width + current_width > global_style().max_width()){
                     max_width = std::max(current_line_width, max_width);
+                    a_lines_size.push_back(scls::Point_2D(current_line_width, line_height));
                     current_line_width = 0;
                     current_x = 0;
                     current_y += line_height;
@@ -1236,18 +1238,19 @@ namespace scls {
             }
 
             // Finish the result
+            if(current_line_width > 0){a_lines_size.push_back(scls::Point_2D(current_line_width, line_height));}
             max_width = std::max(current_line_width, max_width);
             total_height += line_height;
         }
         else {
-            #define BROKE_LINE_BEFORE (i <= 0 || (a_blocks.at(i - 1).get()->balise_datas() != 0 && (a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph)))
+            #define BROKE_PARAGRAPH_BEFORE (balise_datas() != 0 || (i <= 0 || (a_blocks.at(i - 1).get()->balise_datas() != 0 && (a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph))))
 
             // Get the size of the image
             int current_line_height = 0;
             unsigned int current_x = a_start_x;
             unsigned int current_y = 0;
             for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
-                #define BREAK_LINE current_x = 0;\
+                #define BREAK_PARAGRAPH current_x = 0;\
                 current_line_height = std::max(current_line_height, static_cast<int>(global_style().font_size()));\
                 current_y += current_line_height;\
                 total_height += current_line_height;\
@@ -1255,15 +1258,17 @@ namespace scls {
                 current_line_height = 0;current_line_width = 0;
 
                 // Creates the image (if not created)
-                //a_blocks.at(i).get()->set_start_x(current_line_width);
+                int temp_current_line_width = current_line_width;
+                if(!BROKE_PARAGRAPH_BEFORE){temp_current_line_width = 0;}
+                a_blocks.at(i).get()->set_start_x(temp_current_line_width);
                 scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
-                if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_LINE;continue;}
+                if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_PARAGRAPH;continue;}
                 else if(word_image == 0 || word_image->width() <= 0){continue;}
 
                 // Pre-needed break line
-                bool break_line_after = a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph);
-                bool break_line_before = BROKE_LINE_BEFORE;
-                if(!break_line_before) {BREAK_LINE;}
+                bool break_paragraph_after = a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph);
+                bool broke_paragraph_before = BROKE_PARAGRAPH_BEFORE;
+                if(!broke_paragraph_before) {BREAK_PARAGRAPH;}
 
                 // Check the max width and height
                 int current_height = word_image->height();
@@ -1276,8 +1281,30 @@ namespace scls {
                 a_blocks_datas.at(i).get()->set_y_position(y_to_apply);
 
                 // Update the datas
-                if(break_line_after) {BREAK_LINE;}
-                #undef BREAK_LINE
+                if(break_paragraph_after) {BREAK_PARAGRAPH;}
+                else if(a_blocks.at(i).get()->lines_size().size() > 0){
+                    if(a_blocks.at(i).get()->lines_size().size() > 1) {
+                        // Reset the line
+                        max_width = std::max(current_line_width, max_width);
+                        current_line_width = 0;
+
+                        for(int j = 0;j<static_cast<int>(a_blocks.at(i).get()->lines_size().size()) - 1;j++) {
+                            // Update the datas
+                            current_line_height = a_blocks.at(i).get()->lines_size().at(j).y();
+                            current_line_width += a_blocks.at(i).get()->lines_size().at(j).x();
+                            current_y += current_line_height;
+                            total_height += current_line_height;
+
+                            // Reset the line
+                            max_width = std::max(current_line_width, max_width);
+                            current_line_width = 0;
+                        }
+
+                        // Finish the result
+                        current_line_width = a_blocks.at(i).get()->lines_size().at(static_cast<int>(a_blocks.at(i).get()->lines_size().size()) - 1).x();
+                    }
+                }
+                #undef BREAK_PARAGRAPH
             }
             total_height += current_line_height;
             if(current_line_width > max_width){max_width = current_line_width;}
@@ -1294,13 +1321,13 @@ namespace scls {
                 int current_width = word_image->width();
 
                 // Pre-needed break line
-                bool broke_line_before = BROKE_LINE_BEFORE;
-                if(!broke_line_before) {current_x = 0;current_y += current_line_height;}
+                bool broke_paragraph_before = BROKE_PARAGRAPH_BEFORE;
+                if(!broke_paragraph_before) {current_x = 0;current_y += current_line_height;}
 
                 // Check the position
                 int current_line_width = current_width;
-                if(a_blocks_datas.at(i).get()->alignment_horizontal() == scls::Alignment_Horizontal::H_Center){a_blocks_datas.at(i).get()->set_x_position((max_width / 2 - current_line_width / 2) + current_x);}
-                else if(a_blocks_datas.at(i).get()->alignment_horizontal() == scls::Alignment_Horizontal::H_Left){a_blocks_datas.at(i).get()->set_x_position(current_x);}
+                if(a_blocks_datas.at(i).get()->alignment_horizontal() == scls::Alignment_Horizontal::H_Center){a_blocks_datas.at(i).get()->set_x_position((max_width / 2 - current_line_width / 2) + a_blocks.at(i).get()->paste_x());}
+                else if(a_blocks_datas.at(i).get()->alignment_horizontal() == scls::Alignment_Horizontal::H_Left){a_blocks_datas.at(i).get()->set_x_position(a_blocks.at(i).get()->paste_x());}
                 current_x += current_width;
 
                 // Check the offset
@@ -1311,7 +1338,7 @@ namespace scls {
                     current_x = 0;
                     current_y += current_height;
                 }
-            #undef BROKE_LINE_BEFORE
+            #undef BROKE_PARAGRAPH_BEFORE
             }
         }
     };
@@ -1342,7 +1369,7 @@ namespace scls {
     };
 
     // Resets the generation of lines
-    void Text_Image_Block::reset_generation() {a_current_object = 0;a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;}
+    void Text_Image_Block::reset_generation() {a_current_object = 0;a_lines_size.clear();a_datas.get()->max_width = 0;a_datas.get()->total_height = 0;}
 
     // Height of the block
     int Text_Image_Block::total_height() const {
@@ -1364,8 +1391,6 @@ namespace scls {
             std::vector<std::string> needed_text = text().cut(" ", false, false);
 
             // Start the parsing with words
-            unsigned int current_position = 0;
-            unsigned int current_position_in_plain_text = 0;
             for(int i = 0;i<static_cast<int>(needed_text.size());i++) {
                 // Create the needed datas
                 scls::Text_Style style = global_style().new_child();
@@ -1373,9 +1398,6 @@ namespace scls {
                 // Create the datas
                 std::shared_ptr<Word_Datas> current_datas = std::make_shared<Word_Datas>(needed_text.at(i), style);
                 a_words_datas.push_back(current_datas);
-
-                // Update the positions
-                current_position += needed_text.at(i).size();
 
                 // Add the space
                 if(i != static_cast<int>(needed_text.size()) - 1){current_datas = std::make_shared<Word_Datas>(std::string(" "), style);a_words_datas.push_back(current_datas);}
@@ -1386,8 +1408,6 @@ namespace scls {
             std::vector<std::shared_ptr<__XML_Text_Base>>& needed_blocks = needed_content->sub_texts();
 
             // Start the parsing with words
-            unsigned int current_position = 0;
-            unsigned int current_position_in_plain_text = 0;
             for(int i = 0;i<static_cast<int>(needed_blocks.size());i++) {
                 // Create the needed datas
                 scls::Text_Style style = global_style().new_child();

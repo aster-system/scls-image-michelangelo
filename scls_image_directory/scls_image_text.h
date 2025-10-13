@@ -495,7 +495,7 @@ namespace scls {
 
         // Getters and setters
         inline scls::Alignment_Horizontal alignment_horizontal() const {return global_style.alignment_horizontal();};
-        inline Balise_Datas* balise_datas() const {return a_balise_datas.get();};
+        inline Balise_Datas* balise_datas() const {return content.get()->balise_datas();};
         inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
         inline void set_y_position(int new_y_position) {a_y_position = new_y_position;};
         inline int x_position() const {return a_x_position;};
@@ -513,9 +513,6 @@ namespace scls {
         int max_width = 0;
         // Total height of the block
         int total_height = 0;
-
-        // Datas about the balise
-        std::shared_ptr<Balise_Datas> a_balise_datas;
 
         // X / Y position of the word
         int a_x_position = 0;
@@ -747,6 +744,7 @@ namespace scls {
         inline std::shared_ptr<_Balise_Style_Container> defined_balises_shared_ptr() {return a_defined_balises;};
         inline int lines_number() const {return a_lines_size.size();};
         inline std::vector<scls::Point_2D>& lines_size() {return a_lines_size;};
+        inline int paste_x()const{return a_paste_x;};
         inline void set_start_x(int new_start_x){a_start_x = new_start_x;a_fixed_image.reset();};
         inline int start_x()const{return a_start_x;};
         inline std::vector<std::shared_ptr<Text_Image_Word>>& words() { return a_words; };
@@ -804,6 +802,8 @@ namespace scls {
         std::vector<std::shared_ptr<Word_Datas>> a_words_datas = std::vector<std::shared_ptr<Word_Datas>>();
         // Current block / word to be generated
         unsigned int a_current_object = 0;
+        // X to paste in the parent block
+        int a_paste_x = 0;
         // X to start the placement
         int a_start_x = 0;
     };

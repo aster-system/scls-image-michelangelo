@@ -581,6 +581,11 @@ namespace scls {
                     }
                 }
             }
+
+            // Finish the result
+            #undef CHECK_ANGLE
+            #undef CHECK_ANGLE_END
+            #undef CHECK_ANGLE_START
         }
 
         // Format the result
