@@ -788,6 +788,8 @@ namespace scls {
 
         // Size of each lines
         std::vector<scls::Point_2D> a_lines_size = std::vector<scls::Point_2D>();
+        // Words in each lines
+        std::vector<std::vector<std::shared_ptr<Text_Image_Word>>> a_lines_words = std::vector<std::vector<std::shared_ptr<Text_Image_Word>>>();
 
         // Fixed image
         std::shared_ptr<__Image_Base> a_fixed_image;

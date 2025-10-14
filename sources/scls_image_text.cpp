@@ -1013,7 +1013,7 @@ namespace scls {
         }
 
         // Handle the size of the image
-        if(current_style.max_width() && image.get()->width() > current_style.max_width()){image = image.get()->resize_adaptative_width(current_style.max_width(), true);}
+        if(current_style.max_width() > 0 && image.get()->width() > current_style.max_width()){image = image.get()->resize_adaptative_width(current_style.max_width(), true);}
 
         // Return the result
         return to_return;
@@ -1191,6 +1191,7 @@ namespace scls {
         int current_line_width = a_start_x;
         max_width = 0;total_height = 0;
         a_lines_size.clear();
+        a_lines_words.clear();
 
         // Get the good text
         __XML_Text_Base* needed_content = content();
@@ -1200,6 +1201,7 @@ namespace scls {
             unsigned int current_x = a_start_x;
             unsigned int current_y = 0;
             int line_height = 0;
+            std::vector<std::shared_ptr<Text_Image_Word>> line_words;
             for(int i = 0;i<static_cast<int>(a_words.size());i++) {
                 // Special characters
                 if(a_words_datas.at(i).get()->is_space()){int space_size = a_words_datas.at(i).get()->style().font_size() / 2;current_x += space_size;current_line_width += space_size;continue;}
@@ -1216,6 +1218,7 @@ namespace scls {
                 if(global_style().max_width() > 0 && current_line_width > 0 && current_line_width + current_width > global_style().max_width()){
                     max_width = std::max(current_line_width, max_width);
                     a_lines_size.push_back(scls::Point_2D(current_line_width, line_height));
+                    a_lines_words.push_back(line_words);line_words.clear();
                     current_line_width = 0;
                     current_x = 0;
                     current_y += line_height;
@@ -1225,8 +1228,9 @@ namespace scls {
                 }
 
                 // Check the position
-                line_height = std::max(line_height, current_height - a_words_datas.at(i).get()->top_offset());
                 current_line_width += current_width;
+                line_height = std::max(line_height, current_height - a_words_datas.at(i).get()->top_offset());
+                line_words.push_back(a_words.at(i));
                 a_words_datas.at(i).get()->set_x_position(current_x);
                 current_x += current_width;
                 // Y position
@@ -1239,13 +1243,14 @@ namespace scls {
 
             // Finish the result
             if(current_line_width > 0){a_lines_size.push_back(scls::Point_2D(current_line_width, line_height));}
+            if(a_lines_words.size() > 0){a_lines_words.push_back(line_words);}
             max_width = std::max(current_line_width, max_width);
             total_height += line_height;
         }
         else {
-            #define BROKE_PARAGRAPH_BEFORE (balise_datas() != 0 || (i <= 0 || (a_blocks.at(i - 1).get()->balise_datas() != 0 && (a_blocks.at(i - 1).get()->balise_datas()->is_break_line || a_blocks.at(i - 1).get()->balise_datas()->is_paragraph))))
-
             // Get the size of the image
+            bool broke_paragraph_before = true;
+            std::vector<bool> broked_paragraph = std::vector<bool>(a_blocks.size(), false);
             int current_line_height = 0;
             unsigned int current_x = a_start_x;
             unsigned int current_y = 0;
@@ -1258,40 +1263,40 @@ namespace scls {
                 current_line_height = 0;current_line_width = 0;
 
                 // Creates the image (if not created)
+                broke_paragraph_before = broke_paragraph_before || !(balise_datas()== 0 || balise_datas()->name == std::string(""));
                 int temp_current_line_width = current_line_width;
-                if(!BROKE_PARAGRAPH_BEFORE){temp_current_line_width = 0;}
+                if(!broke_paragraph_before){temp_current_line_width = 0;}
                 a_blocks.at(i).get()->set_start_x(temp_current_line_width);
                 scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
-                if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_PARAGRAPH;continue;}
-                else if(word_image == 0 || word_image->width() <= 0){continue;}
-
-                // Pre-needed break line
-                bool break_paragraph_after = a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph);
-                bool broke_paragraph_before = BROKE_PARAGRAPH_BEFORE;
-                if(!broke_paragraph_before) {BREAK_PARAGRAPH;}
+                if(word_image == 0 || word_image->width() <= 0){continue;}
+                else if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_PARAGRAPH;continue;}
+                else if(!broke_paragraph_before) {BREAK_PARAGRAPH;}
 
                 // Check the max width and height
                 int current_height = word_image->height();
                 int current_width = word_image->width();
                 current_line_height = std::max(current_line_height, current_height);
-                current_line_width += current_width;
+                if(a_blocks.at(i).get()->paste_x() == 0){current_line_width = current_width;}
+                else{current_line_width += current_width;if(max_width > 0 && current_line_width > max_width){BREAK_PARAGRAPH;}}
 
                 // Check the position
                 int y_to_apply = current_y;
                 a_blocks_datas.at(i).get()->set_y_position(y_to_apply);
 
                 // Update the datas
+                bool break_paragraph_after = a_blocks.at(i).get()->balise_datas() != 0 && (a_blocks.at(i).get()->balise_datas()->is_break_line || a_blocks.at(i).get()->balise_datas()->is_paragraph);
+                broke_paragraph_before = break_paragraph_after;
+                broked_paragraph[i] = broke_paragraph_before;
                 if(break_paragraph_after) {BREAK_PARAGRAPH;}
                 else if(a_blocks.at(i).get()->lines_size().size() > 0){
                     if(a_blocks.at(i).get()->lines_size().size() > 1) {
                         // Reset the line
-                        max_width = std::max(current_line_width, max_width);
                         current_line_width = 0;
 
-                        for(int j = 0;j<static_cast<int>(a_blocks.at(i).get()->lines_size().size()) - 1;j++) {
+                        for(int j = 0;j<static_cast<int>(a_blocks.at(i).get()->lines_size().size() - 1);j++) {
                             // Update the datas
                             current_line_height = a_blocks.at(i).get()->lines_size().at(j).y();
-                            current_line_width += a_blocks.at(i).get()->lines_size().at(j).x();
+                            current_line_width = a_blocks.at(i).get()->lines_size().at(j).x();
                             current_y += current_line_height;
                             total_height += current_line_height;
 
@@ -1301,6 +1306,7 @@ namespace scls {
                         }
 
                         // Finish the result
+                        current_line_height = a_blocks.at(i).get()->lines_size().at(a_blocks.at(i).get()->lines_size().size() - 1).y();
                         current_line_width = a_blocks.at(i).get()->lines_size().at(static_cast<int>(a_blocks.at(i).get()->lines_size().size()) - 1).x();
                     }
                 }
@@ -1310,7 +1316,7 @@ namespace scls {
             if(current_line_width > max_width){max_width = current_line_width;}
 
             // Set the position
-            current_x = 0;current_y = 0;
+            broke_paragraph_before = true;current_x = 0;current_y = 0;
             for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
                 // Creates the image (if not created)
                 scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
@@ -1321,8 +1327,7 @@ namespace scls {
                 int current_width = word_image->width();
 
                 // Pre-needed break line
-                bool broke_paragraph_before = BROKE_PARAGRAPH_BEFORE;
-                if(!broke_paragraph_before) {current_x = 0;current_y += current_line_height;}
+                if(!broked_paragraph[i]) {current_x = 0;current_y += current_line_height;}
 
                 // Check the position
                 int current_line_width = current_width;
@@ -1338,7 +1343,6 @@ namespace scls {
                     current_x = 0;
                     current_y += current_height;
                 }
-            #undef BROKE_PARAGRAPH_BEFORE
             }
         }
     };
