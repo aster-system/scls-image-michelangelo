@@ -846,6 +846,7 @@ namespace scls {
         // Create the block
         std::shared_ptr<Text_Image_Block> to_return = Text_Image_Block::__generate_block(datas);
         to_return.get()->a_fixed_image = block_image.image_shared_ptr();
+        to_return.get()->a_last_image = to_return.get()->a_fixed_image;
         return to_return;
     }
     std::shared_ptr<Text_Image_Block> Text_Image_Block::__generate_block(std::shared_ptr<Block_Datas> datas) {
@@ -1019,7 +1020,144 @@ namespace scls {
         return to_return;
     }
 
+    // Draw the elements on an image
+    void Text_Image_Block::__image_draw_blocks(__Image_Base* to_return) {
+        // Draw the final image
+        unsigned int current_x = a_start_x;
+        unsigned int current_y = 0;
+        unsigned char a_line_pasting_max_thread_number = 0;
+        int& max_width = a_datas.get()->max_width;
+        std::vector<std::thread*> threads = std::vector<std::thread*>();
+        int& total_height = a_datas.get()->total_height;
+
+        // Draw the border
+        to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
+        to_return->fill_rect(0, to_return->height() - global_style().border_bottom_width(), to_return->width(), global_style().border_bottom_width(), global_style().border_color());
+        to_return->fill_rect(0, 0, to_return->width(), global_style().border_top_width(), global_style().border_color());
+        to_return->fill_rect(to_return->width() - global_style().border_right_width(), 0, global_style().border_right_width(), to_return->height(), global_style().border_color());
+
+        // Draw the blocks
+        for(int i = 0;i<static_cast<int>(blocks().size());i++) {
+            Text_Image_Block* current_block = blocks().at(i).get();
+            if(current_block != 0) {
+                __Image_Base* current_image = current_block->image();
+                if(current_image != 0) {
+                    // Alignment
+                    if(global_style().alignment_horizontal() == H_Center){current_x = to_return->width() / 2 - current_image->width() / 2;}
+
+                    if(a_line_pasting_max_thread_number > 0) {
+                        // Check for the number of thread
+                        if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
+                            // Wait to each thread to finish
+                            for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                                threads[i]->join();
+                                delete threads[i];
+                            } threads.clear();
+                        }
+
+                        int current_width = current_image->width();
+                        unsigned int height_to_apply = current_image->height();
+                        std::thread* current_thread = new std::thread(&Text_Image_Block::__image_paste, this, to_return, current_image, current_x + global_style().border_left_width(), current_y + global_style().border_top_width());
+                        threads.push_back(current_thread);
+
+                        // Finish the result
+                        current_x += current_width;
+                        current_y += height_to_apply;
+                    }
+                    else {
+                        // Get the datas
+                        Text_Style style_to_apply = current_block->global_style();
+                        int current_width = current_image->width();
+                        int x_to_apply = current_block->datas()->x_position();
+                        int y_to_apply = current_block->datas()->y_position();
+
+                        // Paste the word
+                        Text_Image_Block::__image_paste(to_return, current_image, x_to_apply, y_to_apply);
+
+                        // Finish the result
+                        current_x += current_width;
+                    }
+                }
+            }
+        }
+
+        // Wait to each thread to finish
+        for(int i = 0;i<static_cast<int>(threads.size());i++) {threads[i]->join();delete threads[i];} threads.clear();
+    }
+    void Text_Image_Block::__image_draw_words(__Image_Base* to_return) {
+        // Draw the final image
+        unsigned int current_x = 0;
+        unsigned int current_y = 0;
+        unsigned char a_line_pasting_max_thread_number = 0;
+        int& max_width = a_datas.get()->max_width;
+        std::vector<std::thread*> threads = std::vector<std::thread*>();
+        int& total_height = a_datas.get()->total_height;
+
+        // Draw the border
+        to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
+        to_return->fill_rect(0, to_return->height() - global_style().border_bottom_width(), to_return->width(), global_style().border_bottom_width(), global_style().border_color());
+        to_return->fill_rect(0, 0, to_return->width(), global_style().border_top_width(), global_style().border_color());
+        to_return->fill_rect(to_return->width() - global_style().border_right_width(), 0, global_style().border_right_width(), to_return->height(), global_style().border_color());
+
+        // Draw the words
+        for(int i = 0;i<static_cast<int>(words().size());i++) {
+            Text_Image_Word* current_word = words().at(i).get();
+            if(current_word != 0) {
+                __Image_Base* current_image = current_word->image();
+                if(current_image != 0) {
+                    // Alignment
+                    //if(global_style().alignment_horizontal() == H_Center){current_x = to_return->width() / 2 - current_image->width() / 2;}
+
+                    if(a_line_pasting_max_thread_number > 0) {
+                        // Check for the number of thread
+                        if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
+                            // Wait to each thread to finish
+                            for(int i = 0;i<static_cast<int>(threads.size());i++) {
+                                threads[i]->join();
+                                delete threads[i];
+                            } threads.clear();
+                        }
+
+                        int current_width = current_image->width();
+                        unsigned int height_to_apply = current_image->height();
+                        int x_to_apply = current_word->x_position();
+                        int y_to_apply = current_word->y_position();
+                        std::thread* current_thread = new std::thread(&Text_Image_Block::__image_paste, this, to_return, current_image, x_to_apply, y_to_apply);
+                        threads.push_back(current_thread);
+
+                        // Finish the result
+                        current_x += current_width;
+                        current_y += height_to_apply;
+                    }
+                    else {
+                        // Get the datas
+                        Text_Style style_to_apply = current_word->style();
+                        int current_width = current_image->width();
+                        int x_to_apply = current_word->x_position();
+                        int y_to_apply = current_word->y_position();
+
+                        // Paste the word
+                        Text_Image_Block::__image_paste(to_return, current_image, x_to_apply, y_to_apply);
+
+                        // Finish the result
+                        current_x += current_width;
+                    }
+                }
+            }
+            else {
+                // Special word
+                if(words_datas().at(i).get()->is_space()){current_x += words_datas().at(i).get()->style().font_size() / 2;}
+            }
+        }
+
+        // Wait to each thread to finish
+        for(int i = 0;i<static_cast<int>(threads.size());i++) {
+            threads[i]->join();
+            delete threads[i];
+        } threads.clear();
+    }
     // Generates and returns an image with the block on it
+    __Image_Base* Text_Image_Block::image() {return image(Image_Generation_Type::IGT_Full);};
     __Image_Base* Text_Image_Block::image(Image_Generation_Type generation_type) {
         // Fixed image
         if(a_fixed_image.get() != 0){a_last_image = a_fixed_image;return a_fixed_image.get();}
@@ -1045,69 +1183,10 @@ namespace scls {
             // Draw the transparent part
             if(static_cast<int>(lines_size().size()) > 0 && a_start_x > 0){to_return->fill_rect_force(0, 0, a_start_x, lines_size().at(0).y(), 0, 0, 0, 0);}
 
-            // Draw the border
-            to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
-            to_return->fill_rect(0, to_return->height() - global_style().border_bottom_width(), to_return->width(), global_style().border_bottom_width(), global_style().border_color());
-            to_return->fill_rect(0, 0, to_return->width(), global_style().border_top_width(), global_style().border_color());
-            to_return->fill_rect(to_return->width() - global_style().border_right_width(), 0, global_style().border_right_width(), to_return->height(), global_style().border_color());
-
             // Draw the words
-            for(int i = 0;i<static_cast<int>(words().size());i++) {
-                Text_Image_Word* current_word = words().at(i).get();
-                if(current_word != 0) {
-                    __Image_Base* current_image = current_word->image();
-                    if(current_image != 0) {
-                        // Alignment
-                        //if(global_style().alignment_horizontal() == H_Center){current_x = to_return->width() / 2 - current_image->width() / 2;}
+            __image_draw_words(to_return);
 
-                        if(a_line_pasting_max_thread_number > 0) {
-                            // Check for the number of thread
-                            if(static_cast<int>(threads.size()) > a_line_pasting_max_thread_number) {
-                                // Wait to each thread to finish
-                                for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                                    threads[i]->join();
-                                    delete threads[i];
-                                } threads.clear();
-                            }
-
-                            int current_width = current_image->width();
-                            unsigned int height_to_apply = current_image->height();
-                            int x_to_apply = current_word->x_position();
-                            int y_to_apply = current_word->y_position();
-                            std::thread* current_thread = new std::thread(&Text_Image_Block::__image_paste, this, to_return, current_image, x_to_apply, y_to_apply);
-                            threads.push_back(current_thread);
-
-                            // Finish the result
-                            current_x += current_width;
-                            current_y += height_to_apply;
-                        }
-                        else {
-                            // Get the datas
-                            Text_Style style_to_apply = current_word->style();
-                            int current_width = current_image->width();
-                            int x_to_apply = current_word->x_position();
-                            int y_to_apply = current_word->y_position();
-
-                            // Paste the word
-                            Text_Image_Block::__image_paste(to_return, current_image, x_to_apply, y_to_apply);
-
-                            // Finish the result
-                            current_x += current_width;
-                        }
-                    }
-                }
-                else {
-                    // Special word
-                    if(words_datas().at(i).get()->is_space()){current_x += words_datas().at(i).get()->style().font_size() / 2;}
-                }
-            }
-
-            // Wait to each thread to finish
-            for(int i = 0;i<static_cast<int>(threads.size());i++) {
-                threads[i]->join();
-                delete threads[i];
-            } threads.clear();
-
+            // Returns the result
             a_last_image.reset(to_return);
             return to_return;
         }
@@ -1268,6 +1347,7 @@ namespace scls {
                 if(!broke_paragraph_before){temp_current_line_width = 0;}
                 a_blocks.at(i).get()->set_start_x(temp_current_line_width);
                 scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
+
                 if(word_image == 0 || word_image->width() <= 0){continue;}
                 else if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_PARAGRAPH;continue;}
                 else if(!broke_paragraph_before) {BREAK_PARAGRAPH;}

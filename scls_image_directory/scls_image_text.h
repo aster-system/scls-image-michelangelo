@@ -708,6 +708,13 @@ namespace scls {
         // Resets the generation of lines
         void reset_generation();
 
+        // Draw the elements on an image
+        void __image_draw_blocks(__Image_Base* needed_image);
+        void __image_draw_words(__Image_Base* needed_image);
+        // Generates and returns an image with the block on it
+        __Image_Base* image(Image_Generation_Type generation_type);
+        __Image_Base* image();
+
         // Height of the block
         int total_height() const;
 
@@ -719,9 +726,6 @@ namespace scls {
 
         // Add text to the block
         void add_text(String first_text);
-        // Generates and returns an image with the block on it
-        __Image_Base* image(Image_Generation_Type generation_type);
-        inline __Image_Base* image() {return image(Image_Generation_Type::IGT_Full);};
         // Returns the shared pointer of the image and generates it if needed
         inline std::shared_ptr<__Image_Base>& image_shared_pointer(Image_Generation_Type generation_type) {image(generation_type);return a_last_image;};
         inline std::shared_ptr<__Image_Base>& image_shared_pointer() { return image_shared_pointer(Image_Generation_Type::IGT_Full);};
@@ -745,7 +749,7 @@ namespace scls {
         inline int lines_number() const {return a_lines_size.size();};
         inline std::vector<scls::Point_2D>& lines_size() {return a_lines_size;};
         inline int paste_x()const{return a_paste_x;};
-        inline void set_start_x(int new_start_x){a_start_x = new_start_x;a_fixed_image.reset();};
+        inline void set_start_x(int new_start_x){a_start_x = new_start_x;a_last_image.reset();};
         inline int start_x()const{return a_start_x;};
         inline std::vector<std::shared_ptr<Text_Image_Word>>& words() { return a_words; };
         inline std::vector<std::shared_ptr<Word_Datas>>& words_datas() { return a_words_datas; };
