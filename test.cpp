@@ -18,7 +18,7 @@
 #define SCLS_MATH_PATH "../scls-math-carl/scls_math.h"
 #include "scls_image.h"
 
-SCLS_INIT
+SCLS_INIT;
 
 using namespace scls;
 

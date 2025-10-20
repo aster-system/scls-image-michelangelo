@@ -261,7 +261,7 @@ namespace scls {
         current_balise.get()->has_content = true;
         current_balise.get()->is_paragraph = true;
         current_balise.get()->style.set_alignment_horizontal(Alignment_Horizontal::H_Center);
-        current_balise.get()->style.set_color(Color(255, 0, 0));current_balise.get()->style.set_font_size(50);current_balise.get()->style.set_font(get_system_font(__default_font));
+        current_balise.get()->style.set_color(Color(255, 0, 0));current_balise.get()->style.set_font_size(50);
         current_balise.get()->style.set_margin_bottom(16);current_balise.get()->style.set_margin_bottom(8);
         set_defined_balise<Balise_Style_Datas>("h1", current_balise);
         // Create the <h2> style

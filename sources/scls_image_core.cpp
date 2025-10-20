@@ -125,7 +125,8 @@ namespace scls {
     }
 
     // Operator
-    bool Color::operator==(const Color& color) const {return color.a_red == a_red && color.a_green == a_green && color.a_blue == a_blue && color.a_alpha == a_alpha;}
+    bool Color::operator==(Color color) const {return color.a_red == a_red && color.a_green == a_green && color.a_blue == a_blue && color.a_alpha == a_alpha;}
+    bool Color::operator!=(Color color) const {return !operator==(color);}
     Color Color::operator+(const Color& color) const {return Color((a_red + color.a_red) * 255.0, (a_green + color.a_green) * 255.0, (a_blue + color.a_blue) * 255.0, (a_alpha + color.a_alpha) * 255.0);}
     Color Color::operator-(const Color& color) const {return Color((a_red - color.a_red) * 255.0, (a_green - color.a_green) * 255.0, (a_blue - color.a_blue) * 255.0, (a_alpha - color.a_alpha) * 255.0);}
     Color Color::operator*(double proportion) const {return Color(a_red * 255.0 * proportion, a_green * 255.0 * proportion, a_blue * 255.0 * proportion);}
@@ -2186,10 +2187,12 @@ namespace scls {
         }
         // Create the second line
         actual_y_added = distance_y_1_2; iter = 0;
+        if(static_cast<int>(all_x_2_3.size()) > 0){actual_y_added = distance_y_1_2 - all_x_2_3[0];}
         while(actual_x < x_3) {
+            actual_y_added += all_x_2_3[iter];
             draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
             actual_x++; total_added_y += all_x_1_3[iter_total];
-            iter++; iter_total++; actual_y_added += all_x_2_3[iter];
+            iter++; iter_total++;
         }
     }
 

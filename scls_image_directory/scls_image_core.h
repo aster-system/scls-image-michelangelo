@@ -33,7 +33,7 @@
 // Avoid some errors with libraries path
 // ZLib
 #ifndef SCLS_ZLIB_PATH
-#define SCLS_ZLIB_PATH <zlib/zlib.h>
+#define SCLS_ZLIB_PATH <zlib.h>
 #endif // SCLS_ZLIB_PATH
 // Freetype
 #ifndef SCLS_FREETYPE_PATH
@@ -140,7 +140,8 @@ namespace scls {
         inline void set_rgba(unsigned char new_red, unsigned char new_green, unsigned char new_blue, unsigned char new_alpha) { set_rgb(new_red, new_green, new_blue); set_alpha(new_alpha); };
 
         // Operator
-        bool operator==(const Color& color) const;
+        bool operator==(Color color) const;
+        bool operator!=(Color color) const;
         Color operator+(const Color& color) const;
         Color operator-(const Color& color) const;
         Color operator*(double proportion) const;
