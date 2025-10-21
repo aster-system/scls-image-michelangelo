@@ -517,7 +517,7 @@ namespace scls {
 
     // Get an utf-8 symbol from a text
 	int utf_8_symbol_by_name(std::string name) {
-        if(name == "epsilon") {return 949;}
+        if(name == "mepsilon" || name == "epsilon") {return 949;}
         else if(name == "esh") {return 643;}
         else if(name == "mapprox") {return 8773;}
         else if(name == "mdelta") {return 916;}
