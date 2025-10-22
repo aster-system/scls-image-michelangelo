@@ -684,6 +684,7 @@ namespace scls {
         virtual std::shared_ptr<Text_Image_Word> __create_word(std::shared_ptr<Word_Datas> needed_datas){return std::make_shared<Text_Image_Word>(needed_datas);};
 
         // Generates a piece of math in the block
+        virtual std::shared_ptr<__Math_Part_Image> __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<__XML_Text_Base> content, Text_Style current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Block* block);
         std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<__XML_Text_Base> content, Text_Style current_style);
 
         // Generate a block / word of the block
