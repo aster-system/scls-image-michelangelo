@@ -634,7 +634,7 @@ namespace scls {
         //*********
 
         // Text_Image_Block constructor with a Block_Datas and an user defined type
-        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) { set_text(a_datas.get()->content); };
+        Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) {__set_text(a_datas.get()->content);};
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas) : Text_Image_Block(defined_balises, datas, Block_Type::BT_Always_Free_Memory) {  };
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, Block_Type type) : Text_Image_Block(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text)), type) {};
         Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text) : Text_Image_Block(defined_balises, text, Block_Type::BT_Always_Free_Memory) { };
@@ -651,7 +651,8 @@ namespace scls {
         inline std::shared_ptr<__XML_Text_Base> content_shared_ptr() const {return a_datas.get()->content;};
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
         inline Text_Style global_style() {return a_datas.get()->global_style;};
-        inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {a_datas.get()->content = new_text;update_datas();};
+        inline void __set_text(std::shared_ptr<__XML_Text_Base> new_text){a_datas.get()->content = new_text;};
+        inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {__set_text(new_text);update_datas();};
         inline void set_text(String new_text, bool move_cursor = true) {set_text(xml(a_defined_balises, new_text.to_std_string()), move_cursor);};
         inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(to_utf_8_code_point(new_text)), move_cursor);};
         inline String text() const {return a_datas.get()->content.get()->text();};
