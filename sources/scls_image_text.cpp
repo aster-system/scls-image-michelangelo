@@ -34,7 +34,13 @@ namespace scls {
 	std::map<std::string, Font> __system_fonts = std::map<std::string, Font>();
 
 	// Returns if a certain system font is stored in the program or not
-    bool contains_system_font(std::string font) {for(std::map<std::string, Font>::iterator it = __system_fonts.begin();it!=__system_fonts.end();it++) {if(it->first == font) return true;}return false;};
+    bool contains_system_font(std::string font) {
+        // Assert
+        if(__system_fonts.size() <= 0){load_system_font();}
+
+        for(std::map<std::string, Font>::iterator it = __system_fonts.begin();it!=__system_fonts.end();it++) {if(it->first == font) return true;}
+        return false;
+    };
 
     // Load all the fonts system fonts
     void load_system_font() {
@@ -44,15 +50,13 @@ namespace scls {
 
         for(int i = 0;i<static_cast<int>(subpaths.size());i++){if(file_extension(subpaths[i]) == "ttf"){font_files.push_back(subpaths[i]);}}
 
-        for(int i = 0;i<static_cast<int>(font_files.size());i++)
-        {
+        for(int i = 0;i<static_cast<int>(font_files.size());i++) {
             Font font; font.font_path = font_files[i];
             std::string font_name = "";
             std::string font_full_name = file_name(font_files[i]);
             std::vector<std::string> cutted = cut_string(font_full_name, "-");
             std::string last_name = "";
-            if(cutted.size() > 0)
-            {
+            if(cutted.size() > 0) {
                 std::string descriptor = cutted[cutted.size() - 1];
                 if(contains_string(descriptor, "Bold"))
                 {
@@ -305,7 +309,8 @@ namespace scls {
         // Create the <math> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
-        current_balise.get()->style.set_font(get_system_font("DejaVuMathTeXGyre"));
+        if(contains_system_font("DejaVuMathTeXGyre")){current_balise.get()->style.set_font(get_system_font("DejaVuMathTeXGyre"));}
+        else if(contains_system_font("seguisym")){current_balise.get()->style.set_font(get_system_font("seguisym"));}
         set_defined_balise<Balise_Style_Datas>("math", current_balise);
         // Create the <frac> style
         current_balise = std::make_shared<Balise_Style_Datas>();
