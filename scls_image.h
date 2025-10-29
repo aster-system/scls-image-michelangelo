@@ -72,11 +72,6 @@
 #include "scls_image_directory/scls_image_effects.h"
 #include "scls_image_directory/scls_image_text.h"
 
-// Include some others SCLS Images files (in development)
-#ifdef __ASTER_DEV
-#include "./scls_image_directory/scls_image_fractal.h"
-#endif // __ASTER_DEV
-
 namespace scls {
 
     // Make the logo of Aster System

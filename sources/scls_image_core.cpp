@@ -1904,9 +1904,15 @@ namespace scls {
                 y_1 = y_2 - y_1;
                 y_2 = y_2 - y_1;
             } y_2++;
+
             // Draw the line
-            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
-            fill_rect(x_1, y_1, line_width, (y_2 - y_1) + line_width, red, green, blue, alpha);
+            x_1 -= line_width / 2;x_2 -= line_width / 2;
+            fill_rect(x_1, y_1, line_width, (y_2 - y_1), red, green, blue, alpha);
+
+            // Draw the extremity
+            y_1 -= line_width / 2;y_2 -= std::floor(static_cast<double>(line_width) / 2.0) + 1;
+            fill_rect(x_1, y_1, line_width, line_width, red, green, blue, alpha);
+            fill_rect(x_1, y_2, line_width, line_width, red, green, blue, alpha);
         }
         else if(y_1 == y_2) {
             // Check the Y position
@@ -1916,9 +1922,15 @@ namespace scls {
                 x_1 = x_2 - x_1;
                 x_2 = x_2 - x_1;
             } x_2++;
+
             // Draw the line
-            x_1 -= line_width / 2; y_1 -= line_width / 2; x_2 -= line_width / 2; y_2 -= line_width / 2;
-            fill_rect(x_1, y_1, (x_2 - x_1) + line_width, line_width, red, green, blue, alpha);
+            y_1 -= line_width / 2;y_2 -= line_width / 2;
+            fill_rect(x_1, y_1, x_2 - x_1, line_width, red, green, blue, alpha);
+
+            // Draw the extremity
+            x_1 -= line_width / 2;x_2 -= std::floor(static_cast<double>(line_width) / 2.0) + 1;
+            fill_rect(x_1, y_1, line_width, line_width, red, green, blue, alpha);
+            fill_rect(x_2, y_1, line_width, line_width, red, green, blue, alpha);
         }
         else {
             x_2++; y_2++;
@@ -2136,7 +2148,8 @@ namespace scls {
             temp = y_1;
             y_1 = y_3;
             y_3 = temp;
-        } if (x_2 > x_3) {
+        }
+        if (x_2 > x_3) {
             short temp = x_2;
             x_2 = x_3;
             x_3 = temp;
@@ -2146,7 +2159,8 @@ namespace scls {
         }
 
         // 2 should be the point with the largest X value of 1 and 2
-        if (x_1 > x_2) {
+        if (x_1 > x_2)
+            {
             short temp = x_2;
             x_2 = x_1;
             x_1 = temp;
@@ -2318,8 +2332,8 @@ namespace scls {
             int needed_width = to_paste->width();
             if(x < 0){needed_width+=x;start_x=-x;x=0;}
             if(y < 0){needed_height+=y;start_y=-y;y=0;}
-            if(start_x + needed_width > width()){needed_width = (width() - start_x);}
-            if(start_y + needed_height > height()){needed_height = (height() - start_y);}
+            if(needed_width > width()){needed_width -= (needed_width - width());}
+            if(needed_height > height()){needed_height -= (needed_height - height());}
             if(start_x < to_paste->width() && start_y < to_paste->height()) {__paste_part_of_image(to_paste, x, y, start_x, start_y, (needed_width * needed_height), opacity);}
         }
     }

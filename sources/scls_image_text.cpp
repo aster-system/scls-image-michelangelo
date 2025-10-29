@@ -198,6 +198,8 @@ namespace scls {
         if(to_merge->a_margin_right_modified){set_margin_right(to_merge->a_margin_right);}
         if(to_merge->a_margin_top_modified){set_margin_top(to_merge->a_margin_top);}
         if(to_merge->a_max_width_modified){set_max_width(to_merge->a_max_width);}
+
+        to_merge->a_fixed_height = a_fixed_height;to_merge->a_fixed_width = a_fixed_width;
     }
     void Text_Style::merge_style(Text_Style to_merge){a_datas.get()->merge_style(to_merge.a_datas.get());}
 
@@ -790,7 +792,10 @@ namespace scls {
 	//
 	//*********
 
-	// Generate the next block / word of the block
+	// Text_Image_Block constructor with a Block_Datas and an user defined type
+    Text_Image_Block::Text_Image_Block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type) : a_defined_balises(defined_balises), a_datas(datas), a_type(type) {__set_text(a_datas.get()->content);};
+
+    // Generate the next block / word of the block
     std::shared_ptr<Text_Image_Block> Text_Image_Block::generate_next_block(){return generate_next_block(a_current_object++);}
     std::shared_ptr<Text_Image_Block> Text_Image_Block::generate_next_block(int block_number) {
         // Cut the text by line and delete useless lines
@@ -1333,7 +1338,17 @@ namespace scls {
             if(current_line_width > 0){a_lines_size.push_back(scls::Point_2D(current_line_width, line_height));}
             if(a_lines_words.size() > 0){a_lines_words.push_back(line_words);}
             max_width = std::max(current_line_width, max_width);
+            int final_width = max_width;
+            if(global_style().fixed_width() > 0 && global_style().fixed_width() > final_width){final_width = global_style().fixed_width();}
             total_height += line_height;
+
+            // Set the final position
+            int x_offset = 0;
+            if(global_style().alignment_horizontal() == Alignment_Horizontal::H_Center){x_offset = (final_width / 2 - max_width / 2);}
+            for(int i = 0;i<static_cast<int>(a_words.size());i++) {
+                // Check the position
+                a_words_datas.at(i).get()->set_x_position(a_words_datas.at(i).get()->x_position() + x_offset);
+            }
         }
         else {
             // Get the size of the image
@@ -1403,6 +1418,7 @@ namespace scls {
             }
             total_height += current_line_height;
             if(current_line_width > max_width){max_width = current_line_width;}
+            if(global_style().fixed_width() > 0 && max_width < global_style().fixed_width()){max_width = global_style().fixed_width();}
 
             // Set the position
             broke_paragraph_before = true;current_x = 0;current_y = 0;
