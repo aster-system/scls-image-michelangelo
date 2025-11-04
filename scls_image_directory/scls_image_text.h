@@ -537,6 +537,19 @@ namespace scls {
         int a_y_position = 0;
     };
 
+    class Text_Environment : public Math_Environment {
+	    // Class representating an environment for text in SCLS
+    public:
+
+        // Text_Environment constructor
+        Text_Environment();
+
+        // Returns a color value
+        scls::Color value_color(std::string base) const;
+        // Returns a list color value
+        std::vector<scls::Color> value_color_list(std::string base) const;
+	};
+
     //*********
 	//
 	// Hidden classes to handle text

@@ -264,6 +264,8 @@ namespace scls {
             void fill(int red, int green, int blue);
 
             // Drawing methods
+            // Draws a circle on the image
+            void draw_circle(int x_center, int y_center, double radius, Color color, double border_radius);
             // Fills a circle on the image
             void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
             void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);

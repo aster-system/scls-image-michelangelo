@@ -23,14 +23,11 @@ SCLS_INIT;
 using namespace scls;
 
 int main() {
-    scls::Image c = scls::Image("C:/Users/mmatt/Pictures/roche_xbox.png");
-    scls::Image i = scls::Image(c.width() * 10, c.height() * 10, scls::Color(0, 0, 0));
-    for(int j = 0;j<10;j++) {
-        for(int k = 0;k<10;k++) {
-            i.paste(c, j * c.width(), k * c.height());
-        }
-    }
-    i.save_png("test.png");
+    scls::Image c = scls::Image(200, 400, scls::Color(255, 255, 255));
+    c.draw_circle(100, 99, 100, scls::Color(0, 0, 0), 15);c.fill_rect(92, 195, 16, 205, scls::Color(0, 0, 0));
+    scls::Image i = scls::Image(c.width(), c.height() * 20, scls::Color(0, 0, 0));
+    for(int j = 0;j<20;j++) {i.paste(c, 0, j * c.height());}
+    i.save_png("tests/test.png");
 
     return 0;
 }

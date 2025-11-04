@@ -300,6 +300,8 @@ namespace scls {
     void __Image_Base::Image::fill(int red, int green, int blue){a_image.get()->fill(red, green, blue);}
 
     // Drawing methods
+    // Draws a circle on the image
+    void __Image_Base::Image::draw_circle(int x_center, int y_center, double radius, Color color, double border_radius){a_image.get()->draw_circle(x_center, y_center, radius, color, border_radius);}
     // Fill a circle on the image
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {a_image.get()->fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius_x, radius_y, 0, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
