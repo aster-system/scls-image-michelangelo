@@ -87,10 +87,10 @@ namespace scls {
         Color to_return(255, 255, 255);
         if(cutted.size() > 1) {
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                if(i == 0) to_return.set_red(string_to_formula(cutted[i]).value_to_double(0));
-                else if(i == 1) to_return.set_green(string_to_formula(cutted[i]).value_to_double(0));
-                else if(i == 2) to_return.set_blue(string_to_formula(cutted[i]).value_to_double(0));
-                else if(i == 3) to_return.set_alpha(string_to_formula(cutted[i]).value_to_double(0));
+                if(i == 0) to_return.set_red(string_to_formula(cutted[i]).get()->value_to_double(0));
+                else if(i == 1) to_return.set_green(string_to_formula(cutted[i]).get()->value_to_double(0));
+                else if(i == 2) to_return.set_blue(string_to_formula(cutted[i]).get()->value_to_double(0));
+                else if(i == 3) to_return.set_alpha(string_to_formula(cutted[i]).get()->value_to_double(0));
             }
         }
         else if (cutted.size() == 1) {defined_color_by_name(cutted.at(0), to_return);}

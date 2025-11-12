@@ -560,6 +560,7 @@ namespace scls {
 	int utf_8_symbol_by_name(std::string name) {
         if(name == "mepsilon" || name == "epsilon") {return 949;}
         else if(name == "esh") {return 643;}
+        else if(name == "mand"){return 8743;}
         else if(name == "mapprox") {return 8773;}
         else if(name == "mdelta") {return 916;}
         else if(name == "mequal") {return '=';}
@@ -574,6 +575,8 @@ namespace scls {
         else if(name == "mlt"){return 60;}
         else if(name == "mgt"){return 62;}
         else if(name == "mnatural"){return 'N';}
+        else if(name == "mno"){return 172;}
+        else if(name == "mor"){return 8744;}
         else if(name == "mpartial") {return 948;}
         else if(name == "mroot"){return 8730;}
         else if(name == "mto"){return 10230;}
@@ -595,11 +598,13 @@ namespace scls {
                 if(to_html) {
                     char* c = new char[8];std::to_chars(c, c + 5, potential_symbol, 16);std::string symbol_to_str = c;delete[] c;c=0;
                     std::string needed_text = std::string("&#x") + symbol_to_str.substr(0, std::ceil(std::log(potential_symbol) / std::log(16))) + std::string(";");
+                    if(text.get()->balise_in_hierarchy(std::string("math"))){needed_text = std::string("<mo>") + needed_text + std::string("</mo>");}
                     text.get()->sub_texts().at(i).get()->parse_text(needed_text);
                 }
                 else {
                     std::string needed_text = std::string("");
                     add_utf_8(needed_text, potential_symbol);
+                    if(text.get()->balise_in_hierarchy(std::string("math"))){needed_text = std::string("<mo>") + needed_text + std::string("</mo>");}
                     text.get()->sub_texts().at(i).get()->parse_text(needed_text);
                 }
             }
