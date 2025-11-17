@@ -566,16 +566,19 @@ namespace scls {
         else if(name == "mequal") {return '=';}
         else if(name == "mequiv") {return 8801;}
         else if(name == "mequi") {return 8660;}
-        else if(name == "mempty"){return 8709;}
+        else if(name == "mempty" || name == "mempty_set"){return 8709;}
         else if(name == "mexists") {return 8707;}
         else if(name == "mforall"){return 8704;}
         else if(name == "mimp"){return 8658;}
         else if(name == "min"){return 8712;}
+        else if(name == "mincluded"){return 8838;}
+        else if(name == "mincluded_strict"){return 8834;}
         else if(name == "mint"){return 8747;}
         else if(name == "mlt"){return 60;}
         else if(name == "mgt"){return 62;}
         else if(name == "mnatural"){return 'N';}
         else if(name == "mno"){return 172;}
+        else if(name == "mnotin"){return 8713;}
         else if(name == "mor"){return 8744;}
         else if(name == "mpartial") {return 948;}
         else if(name == "mroot"){return 8730;}
