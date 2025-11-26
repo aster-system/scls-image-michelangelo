@@ -346,7 +346,9 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         if(contains_system_font("DejaVuMathTeXGyre")){current_balise.get()->style.set_font(get_system_font("DejaVuMathTeXGyre"));}
+        else if(contains_system_font("NotoSansMath")){current_balise.get()->style.set_font(get_system_font("NotoSansMath"));}
         else if(contains_system_font("seguisym")){current_balise.get()->style.set_font(get_system_font("seguisym"));}
+        else{print("Warning", "SCLS Image Michelangelo", "No mathematical police found");print_system_fonts();}
         set_defined_balise<Balise_Style_Datas>("math", current_balise);
         // Create the <frac> style
         current_balise = std::make_shared<Balise_Style_Datas>();
@@ -574,6 +576,7 @@ namespace scls {
         else if(name == "mincluded"){return 8838;}
         else if(name == "mincluded_strict"){return 8834;}
         else if(name == "mint"){return 8747;}
+        else if(name == "minter"){return 8745;}
         else if(name == "mlt"){return 60;}
         else if(name == "mgt"){return 62;}
         else if(name == "mnatural"){return 'N';}
@@ -584,6 +587,7 @@ namespace scls {
         else if(name == "mroot"){return 8730;}
         else if(name == "mto"){return 10230;}
         else if(name == "mu") {return 956;}
+        else if(name == "munion") {return 8746;}
         else if(name == "nabla") {return 2207;}
         else if(name == "mphi" || name == "phi") {return 632;}
         else if(name == "mpi" || name == "pi") {return 960;}

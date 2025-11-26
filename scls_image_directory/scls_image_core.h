@@ -37,7 +37,11 @@
 #endif // SCLS_ZLIB_PATH
 // Freetype
 #ifndef SCLS_FREETYPE_PATH
+#if __has_include("ft2build.h")
 #define SCLS_FREETYPE_PATH <ft2build.h>
+#elif __has_include("freetype/ft2build.h")
+#define SCLS_FREETYPE_PATH <freetype/ft2build.h>
+#endif // __has_included
 #endif // SCLS_FREETYPE_PATH
 
 // Include ZLib

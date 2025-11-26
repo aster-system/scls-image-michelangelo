@@ -34,10 +34,10 @@
 #endif
 #ifdef __linux__ // With Linux
 #ifndef BASE_FONT_PATH
-#define BASE_FONT_PATH std::string("/usr/share/fonts/truetype/")
+#define BASE_FONT_PATH std::string("/usr/share/fonts/")
 #endif // BASE_FONT_PATH
 #ifndef DEFAULT_FONT
-#define DEFAULT_FONT std::string("FreeSans")
+#define DEFAULT_FONT std::string("OpenSans")
 #endif // DEFAULT_FONT
 #endif
 
