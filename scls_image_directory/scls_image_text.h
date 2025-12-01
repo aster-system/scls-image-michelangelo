@@ -644,6 +644,9 @@ namespace scls {
     // Type of possible image generation
 	enum Image_Generation_Type {IGT_Full, IGT_Size};
 
+	// Formats an unformatted <math> balise
+    void format_math(std::shared_ptr<__XML_Text_Base> text);
+
 	// Get an utf-8 symbol from a text
 	int utf_8_symbol_by_name(std::string name);
 	// Get an utf-8 symbol from a XML content

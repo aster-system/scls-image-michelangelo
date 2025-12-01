@@ -558,10 +558,55 @@ namespace scls {
         FT_Done_Face(face);
     };
 
+    // Formats an unformatted <math> balise
+    bool __is_math_mo(std::string to_test){
+        if(to_test == std::string("+")){return true;}
+        else if(to_test == std::string("=")){return true;}
+        else if(to_test == std::string(",")){return true;}
+        return false;
+    }
+    bool __is_math_mo(char to_test){std::string temp;temp+=to_test;return __is_math_mo(temp);}
+    void __format_math_in_balise(std::shared_ptr<__XML_Text_Base> text){
+        // Create the needed datas
+        std::string current = std::string();
+        int current_sub_balise = 0;
+        std::string full_text = text.get()->text();
+
+        #define ADD_CONTENT if(current != std::string()){text.get()->insert_sub_balise(current_sub_balise, std::string("<mi>") + current + std::string("</mi>"));current_sub_balise++;current=std::string();}
+
+        // Browse the string
+        for(int j = 0;j<static_cast<int>(full_text.size());j++){
+            if(__is_math_mo(full_text.at(j))){
+                ADD_CONTENT
+
+                // Operator
+                std::string op;op += full_text.at(j);
+                text.get()->insert_sub_balise(current_sub_balise, std::string("<mo>") + op + std::string("</mo>"));
+                current_sub_balise++;
+            }
+            else{current+=full_text.at(j);}
+        }
+        ADD_CONTENT
+
+        // Undefine macro
+        #undef ADD_CONTENT
+    }
+    void format_math(std::shared_ptr<__XML_Text_Base> text){
+        if(text.get()->only_text()){__format_math_in_balise(text);}
+        else{
+            // Browse the text (after that the text become a mother balise)
+            for(int i = 0;i<static_cast<int>(text.get()->sub_texts().size());i++) {
+                // Blank text
+                if(text.get()->sub_texts().at(i).get()->xml_balise_name() == std::string()) {__format_math_in_balise(text.get()->sub_texts().at(i));}
+            }
+        }
+    }
+
     // Get an utf-8 symbol from a text
 	int utf_8_symbol_by_name(std::string name) {
         if(name == "mepsilon" || name == "epsilon") {return 949;}
         else if(name == "esh") {return 643;}
+        else if(name == "maleph"){return 1488;}
         else if(name == "mand"){return 8743;}
         else if(name == "mapprox") {return 8773;}
         else if(name == "mdelta") {return 916;}
@@ -581,6 +626,7 @@ namespace scls {
         else if(name == "mgt"){return 62;}
         else if(name == "mnatural"){return 'N';}
         else if(name == "mno"){return 172;}
+        else if(name == "mnotequal"){return 8800;}
         else if(name == "mnotin"){return 8713;}
         else if(name == "mor"){return 8744;}
         else if(name == "mpartial") {return 948;}
@@ -605,13 +651,13 @@ namespace scls {
                 if(to_html) {
                     char* c = new char[8];std::to_chars(c, c + 5, potential_symbol, 16);std::string symbol_to_str = c;delete[] c;c=0;
                     std::string needed_text = std::string("&#x") + symbol_to_str.substr(0, std::ceil(std::log(potential_symbol) / std::log(16))) + std::string(";");
-                    if(text.get()->balise_in_hierarchy(std::string("math"))){needed_text = std::string("<mo>") + needed_text + std::string("</mo>");}
+                    if(text.get()->balise_in_hierarchy(std::string("math"))){text.get()->sub_texts().at(i).get()->set_xml_balise_name(std::string("mo"));}
                     text.get()->sub_texts().at(i).get()->parse_text(needed_text);
                 }
                 else {
                     std::string needed_text = std::string("");
                     add_utf_8(needed_text, potential_symbol);
-                    if(text.get()->balise_in_hierarchy(std::string("math"))){needed_text = std::string("<mo>") + needed_text + std::string("</mo>");}
+                    if(text.get()->balise_in_hierarchy(std::string("math"))){text.get()->sub_texts().at(i).get()->set_xml_balise_name(std::string("mo"));}
                     text.get()->sub_texts().at(i).get()->parse_text(needed_text);
                 }
             }
@@ -1411,22 +1457,25 @@ namespace scls {
                 if(current_line_width > max_width){max_width = current_line_width;}\
                 current_line_height = 0;current_line_width = 0;
 
+                // Get the needed datas
+                Text_Image_Block* needed_block = a_blocks.at(i).get();
+
                 // Creates the image (if not created)
                 broke_paragraph_before = broke_paragraph_before || !(balise_datas()== 0 || balise_datas()->name == std::string(""));
                 int temp_current_line_width = current_line_width;
                 if(!broke_paragraph_before){temp_current_line_width = 0;}
-                a_blocks.at(i).get()->set_start_x(temp_current_line_width);
-                scls::__Image_Base* word_image = a_blocks.at(i).get()->image();
+                needed_block->set_start_x(temp_current_line_width);
+                scls::__Image_Base* word_image = needed_block->image();
 
                 if(word_image == 0 || word_image->width() <= 0){continue;}
-                else if(a_blocks.at(i).get()->balise_datas() != 0 && a_blocks.at(i).get()->balise_datas()->is_break_line){BREAK_PARAGRAPH;continue;}
+                else if(needed_block->balise_datas() != 0 && needed_block->balise_datas()->is_break_line){BREAK_PARAGRAPH;continue;}
                 else if(!broke_paragraph_before) {BREAK_PARAGRAPH;}
 
                 // Check the max width and height
                 int current_height = word_image->height();
                 int current_width = word_image->width();
-                current_line_height = std::max(current_line_height, current_height);
-                if(a_blocks.at(i).get()->paste_x() == 0){current_line_width = current_width;}
+                current_line_height = std::max(current_line_height, current_height) + (needed_block->global_style().margin_bottom() - needed_block->datas()->max_last_line_bottom_offset);
+                if(needed_block->paste_x() == 0){current_line_width = current_width;}
                 else{current_line_width += current_width;if(max_width > 0 && current_line_width > max_width){BREAK_PARAGRAPH;}}
 
                 // Check the position
