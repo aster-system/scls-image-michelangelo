@@ -874,7 +874,7 @@ namespace scls {
         // Create an image from a text and return it
         template <typename T = Text_Image_Block> std::shared_ptr<__Image_Base> image_shared_ptr(std::shared_ptr<__XML_Text_Base> text, Text_Style style) {std::shared_ptr<Text_Image_Block> img = Text_Image_Block::new_text_image_block<Text_Image_Block>(a_balises, text, style);return img.get()->image_shared_pointer();};
         template <typename T = Text_Image_Block> std::shared_ptr<__Image_Base> image_shared_ptr(std::string text, Text_Style style) {return image_shared_ptr<T>(xml(a_balises, text), style);};
-        inline std::shared_ptr<__Image_Base> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(), style);};
+        inline std::shared_ptr<__Image_Base> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(0), style);};
         // Returns a newly created text image
         template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::shared_ptr<__XML_Text_Base> text, Text_Style style) {return Text_Image_Block::new_text_image_block<T>(a_balises, text, style);};
         template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::string text) {return Text_Image_Block::new_text_image_block<T>(a_balises, text);};

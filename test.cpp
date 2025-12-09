@@ -23,11 +23,8 @@ SCLS_INIT;
 using namespace scls;
 
 int main() {
-    scls::Image c = scls::Image(200, 400, scls::Color(255, 255, 255));
-    c.draw_circle(100, 99, 100, scls::Color(0, 0, 0), 15);c.fill_rect(92, 195, 16, 205, scls::Color(0, 0, 0));
-    scls::Image i = scls::Image(c.width(), c.height() * 20, scls::Color(0, 0, 0));
-    for(int j = 0;j<20;j++) {i.paste(c, 0, j * c.height());}
-    i.save_png("tests/test.png");
+	std::shared_ptr<scls::__Formula> f = scls::string_to_formula("(3x*x*x+4x-8)(5x*x*x*x+8x*x*x+2x)+ln(3x*x+2x-4)");
+	std::cout << f.get()->to_std_string(0) << std::endl;
 
     return 0;
 }
