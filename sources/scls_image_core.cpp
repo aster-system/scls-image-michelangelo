@@ -2131,8 +2131,8 @@ namespace scls {
         unsigned int needed_components = components();
         unsigned int current_position = (y * width() + x) * needed_components;
         unsigned int to_add_line = (width() - rect_width) * needed_components;
-        for (int i = 0; i < rect_height; i++) {
-            for (int j = 0; j < rect_width; j++) {
+        for (unsigned short i = 0; i < rect_height; i++) {
+            for (unsigned short j = 0; j < rect_width; j++) {
                 paste_pixel_rgba_directly(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
                 current_position+=needed_components;
             } current_position += to_add_line;
@@ -2384,12 +2384,20 @@ namespace scls {
 
     // Paste datas to a specific pixel
     void __Image_Base::paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
-        double alpha_double = static_cast<double>(static_cast<unsigned char>(alpha)) / 255.0;
-        double multiple = (static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 3 * multiplier))) / 255.0) * (1.0 - alpha_double);
-        a_pixels->set_data_at_directly(position, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(red)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position))) * multiple));
-        a_pixels->set_data_at_directly(position + multiplier, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(green)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + multiplier))) * multiple));
-        a_pixels->set_data_at_directly(position + 2 * multiplier, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(blue)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 2 * multiplier))) * multiple));
-        a_pixels->set_data_at_directly(position + 3 * multiplier, static_cast<unsigned int>((alpha_double + multiple) * 255.0));
+        if(alpha == 255 && static_cast<unsigned char>(a_pixels->data_at_directly(position + 3 * multiplier)) == 255){
+            // No need to hard calculation
+            a_pixels->set_data_at_directly(position, red);
+            a_pixels->set_data_at_directly(position + multiplier, green);
+            a_pixels->set_data_at_directly(position + 2 * multiplier, blue);
+        }
+        else{
+            double alpha_double = static_cast<double>(static_cast<unsigned char>(alpha)) / 255.0;
+            double multiple = (static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 3 * multiplier))) / 255.0) * (1.0 - alpha_double);
+            a_pixels->set_data_at_directly(position, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(red)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position))) * multiple));
+            a_pixels->set_data_at_directly(position + multiplier, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(green)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + multiplier))) * multiple));
+            a_pixels->set_data_at_directly(position + 2 * multiplier, static_cast<unsigned int>(static_cast<double>(static_cast<unsigned char>(blue)) * alpha_double + static_cast<double>(static_cast<unsigned char>(a_pixels->data_at_directly(position + 2 * multiplier))) * multiple));
+            a_pixels->set_data_at_directly(position + 3 * multiplier, static_cast<unsigned int>((alpha_double + multiple) * 255.0));
+        }
     };
 
     // Apply a more complex horizontal gradient from the left to the right in the image
