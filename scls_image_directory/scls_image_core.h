@@ -263,6 +263,9 @@ namespace scls {
             Image(unsigned short width, unsigned short height);
             Image(std::shared_ptr<__Image_Base> new_image);
 
+            // Extracts a part of the image
+            Image extract(int x, int y, int width, int height);
+
             // Fills the image with one color
             void fill(Color color);
             void fill(int red, int green, int blue);
@@ -518,6 +521,9 @@ namespace scls {
         // __Image_Base adaptative resize
         //
         //*********
+
+        // Extracts a part of the image
+        std::shared_ptr<__Image_Base> extract(int x, int y, int width, int height);
 
         // Returns a shared ptr of the image with a new size, adaptated
         std::shared_ptr<__Image_Base> resize_adaptative(unsigned short new_width, unsigned short new_height);

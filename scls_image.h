@@ -74,6 +74,77 @@
 
 namespace scls {
 
+    // Make the logo of One Thousand Lines
+    inline std::shared_ptr<__Image_Base> otl_logo(unsigned int image_width) {
+        double total_width = static_cast<double>(image_width);
+
+        // Datas about the branchs V
+        scls::Color color_b = Color(100, 0, 0);
+        scls::Color color_v = Color(155, 0, 0);
+        double branch_v_height = round(total_width/10.0);
+        double branch_v_width = round(total_width/4.0);
+        double branch_v_x = round((total_width * 3.0)/4.0);
+        double branch_v_y = round((total_width * 2.0)/3.0);
+        double branch_vh_width = branch_v_height;
+
+        // Border
+        double border = round(branch_vh_width / 6.0);
+
+        // Datas about the middle branch
+        scls::Color color_m = color_v;
+        double branch_m_height = round((total_width * 2.0)/3.0);
+        double branch_m_width = round(total_width/10.0);
+        double branch_m_x = round(total_width/2.0 - branch_m_width / 2.0);
+        double branch_m_y = round(total_width/3.0);
+
+        // Create the image
+        __Image_Base* img = new __Image_Base(static_cast<short>(total_width), static_cast<short>(total_width), scls::Color(0, 0, 0), SCLS_IMAGE_RGBA);
+
+        // V branch
+        img->fill_rect(0, branch_v_y, branch_v_width, branch_v_height, color_v);
+        img->fill_rect(branch_v_x, branch_v_y, branch_v_width, branch_v_height, color_v);
+        // Border
+        img->fill_rect(0, branch_v_y, (branch_v_width + border) - branch_vh_width, border, color_b);
+        img->fill_rect(branch_v_x + (branch_vh_width - border) , branch_v_y, (branch_v_width + border) - branch_vh_width, border, color_b);
+
+        // Middle branch
+        img->fill_rect(branch_m_x, branch_m_y, branch_m_width, branch_m_height, color_m);
+
+        // V-h branch
+        img->fill_rect(branch_v_width - branch_vh_width, branch_m_y, branch_vh_width, branch_v_y - branch_m_y, color_v);
+        img->fill_rect(branch_v_x, branch_m_y, branch_vh_width, branch_v_y - branch_m_y, color_v);
+        // Border
+        img->fill_rect(branch_v_width - branch_vh_width, branch_m_y, border, branch_v_y - branch_m_y, color_b);
+        img->fill_rect(branch_v_x + (branch_vh_width - border), branch_m_y, border, branch_v_y - branch_m_y, color_b);
+        img->fill_rect(branch_v_width - branch_vh_width, branch_m_y, branch_vh_width, border, color_b);
+        img->fill_rect(branch_v_x, branch_m_y, branch_vh_width, border, color_b);
+
+        // Top branch
+        img->fill_rect(branch_v_width, branch_m_y - branch_vh_width, branch_m_x - branch_v_width, branch_vh_width, color_v);
+        img->fill_rect(branch_m_x + branch_m_width, branch_m_y - branch_vh_width, branch_v_x - (branch_m_width + branch_m_x), branch_vh_width, color_v);
+        // Border
+        img->fill_rect(branch_v_width, branch_m_y - branch_vh_width, branch_m_x - branch_v_width, border, color_b);
+        img->fill_rect(branch_m_x + branch_m_width, branch_m_y - branch_vh_width, branch_v_x - (branch_m_width + branch_m_x), border, color_b);
+
+        // Border
+        double to_add = round(1.4 * border);
+        img->fill_triangle(branch_v_width - branch_vh_width, branch_m_y, branch_v_width, branch_m_y, branch_v_width, branch_m_y - branch_vh_width, color_b);
+        img->fill_triangle(branch_v_x, branch_m_y, branch_v_x + branch_vh_width, branch_m_y, branch_v_x, branch_m_y - branch_vh_width, color_b);
+        img->fill_triangle(branch_v_width, (branch_m_y - branch_vh_width) + to_add - 1, branch_v_width + to_add - 1, branch_m_y - branch_vh_width, branch_v_width, branch_m_y - branch_vh_width, color_b);
+        img->fill_triangle(branch_v_x - (to_add - 1), branch_m_y - branch_vh_width, branch_v_x, branch_m_y - branch_vh_width, branch_v_x, (branch_m_y - branch_vh_width) + (to_add - 1), color_b);
+        img->fill_triangle(branch_m_x, branch_m_y, branch_m_x + branch_m_width, branch_m_y, branch_m_x, branch_m_y - branch_vh_width, color_b);
+        img->fill_triangle(branch_m_x, branch_m_y, branch_m_x + branch_m_width, branch_m_y, branch_m_x + branch_m_width, branch_m_y - branch_vh_width, color_b);
+        img->fill_triangle(branch_m_x - (to_add - 1), (branch_m_y - branch_vh_width), branch_m_x, (branch_m_y - branch_vh_width), branch_m_x, (branch_m_y - branch_vh_width) + (to_add - 1), color_b);
+        img->fill_triangle(branch_m_x + branch_m_width, (branch_m_y - branch_vh_width), branch_m_x + branch_m_width + (to_add - 1), (branch_m_y - branch_vh_width), branch_m_x + branch_m_width, (branch_m_y - branch_vh_width) + (to_add - 1), color_b);
+        // Hat
+        img->fill_triangle((branch_v_width - branch_vh_width) + to_add, branch_m_y, branch_v_width, branch_m_y, branch_v_width, (branch_m_y - branch_vh_width) + to_add, color_v);
+        img->fill_triangle(branch_v_x, branch_m_y, (branch_v_x + branch_vh_width) - to_add, branch_m_y, branch_v_x, (branch_m_y - branch_vh_width) + to_add, color_v);
+        img->fill_triangle(branch_m_x, branch_m_y, (branch_m_x + branch_m_width) - to_add, branch_m_y, branch_m_x, (branch_m_y - branch_vh_width) + to_add, color_v);
+        img->fill_triangle(branch_m_x + to_add, branch_m_y, branch_m_x + branch_m_width, branch_m_y, branch_m_x + branch_m_width, (branch_m_y - branch_vh_width) + to_add, color_v);
+
+        return std::shared_ptr<__Image_Base>(img);
+    }
+
     // Make the logo of Aster System
     inline std::shared_ptr<__Image_Base> aster_system_logo(Color branch_1_color, Color branch_2_color, unsigned int image_width, std::string text_top, std::string text_bottom) {
         double total_width = static_cast<double>(image_width);

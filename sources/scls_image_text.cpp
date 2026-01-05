@@ -318,6 +318,13 @@ namespace scls {
         current_balise.get()->style.set_font_size(30);
         current_balise.get()->style.set_margin_bottom(16);current_balise.get()->style.set_margin_bottom(8);
         set_defined_balise<Balise_Style_Datas>("h3", current_balise);
+        // Create the <h4> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        current_balise.get()->is_paragraph = true;
+        current_balise.get()->style.set_font_size(24);
+        current_balise.get()->style.set_margin_bottom(16);current_balise.get()->style.set_margin_bottom(8);
+        set_defined_balise<Balise_Style_Datas>("h4", current_balise);
         // Create the <html> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -358,10 +365,10 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("mi", current_balise);
-        // Create the <mmat> style
+        // Create the <mn> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
-        set_defined_balise("mmat", current_balise);
+        set_defined_balise("mn", current_balise);
         // Create the <mo> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -390,6 +397,18 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("msup", current_balise);
+        // Create the <mtable> style
+		current_balise = std::make_shared<Balise_Style_Datas>();
+		current_balise.get()->has_content = true;
+		set_defined_balise("mtable", current_balise);
+		// Create the <mtable> style
+		current_balise = std::make_shared<Balise_Style_Datas>();
+		current_balise.get()->has_content = true;
+		set_defined_balise("mtd", current_balise);
+		// Create the <mtable> style
+		current_balise = std::make_shared<Balise_Style_Datas>();
+		current_balise.get()->has_content = true;
+		set_defined_balise("mtr", current_balise);
         // Create the <munder> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -547,9 +566,7 @@ namespace scls {
                     std::thread* current_thread = new std::thread(&Text_Image_Word::__word_letter, this, a_last_image.get(), characters[i], cursor_pos[i], y_pos[i]);
                     threads.push_back(current_thread);
                 }
-                else {
-                    __word_letter(a_last_image.get(), characters[i], cursor_pos[i], y_pos[i]);
-                }
+                else {__word_letter(a_last_image.get(), characters[i], cursor_pos[i], y_pos[i]);}
             }
         }
 
@@ -608,7 +625,8 @@ namespace scls {
         else if(name == "esh") {return 643;}
         else if(name == "maleph"){return 1488;}
         else if(name == "mand"){return 8743;}
-        else if(name == "mapprox") {return 8773;}
+        else if(name == "mapprox" || name == "mapproximatively") {return 8776;}
+        else if(name == "mcomp") {return 8728;}
         else if(name == "mdelta") {return 916;}
         else if(name == "mequal") {return '=';}
         else if(name == "mequiv") {return 8801;}
@@ -616,14 +634,16 @@ namespace scls {
         else if(name == "mempty" || name == "mempty_set"){return 8709;}
         else if(name == "mexists") {return 8707;}
         else if(name == "mforall"){return 8704;}
-        else if(name == "mimp"){return 8658;}
+        else if(name == "mimp" || name == "mimplies"){return 8658;}
         else if(name == "min"){return 8712;}
         else if(name == "mincluded"){return 8838;}
         else if(name == "mincluded_strict"){return 8834;}
         else if(name == "mint"){return 8747;}
         else if(name == "minter"){return 8745;}
         else if(name == "mlt"){return 60;}
+        else if(name == "mltequal"){return 8804;}
         else if(name == "mgt"){return 62;}
+        else if(name == "mgtequal"){return 8805;}
         else if(name == "mnatural"){return 'N';}
         else if(name == "mno"){return 172;}
         else if(name == "mnotequal"){return 8800;}
@@ -689,97 +709,6 @@ namespace scls {
         image.get()->paste(numerator.get()->image.get(), image.get()->width() / 2 - numerator.get()->image.get()->width() / 2, 0);
         to_return.get()->middle_bottom_offset = denominator.get()->image.get()->height() + bar_width + std::ceil(bar_width / 2);
         to_return.get()->middle_top_offset = numerator.get()->image.get()->height() + bar_width + std::floor(bar_width / 2);
-        return to_return;
-    }
-    std::shared_ptr<__Math_Part_Image> __generate_matrice(std::shared_ptr<__XML_Text_Base> xml_content, Text_Style current_style) {
-        // Load the needed datas
-        std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
-        std::shared_ptr<__Image_Base>& image = to_return.get()->image;
-        // Get the needed datas
-        int dimension_x = 0; int dimension_y = 0;
-        for(int i = 0;i<static_cast<int>(xml_content.get()->xml_balise_attributes().size());i++) {
-            std::string current_attribute_content = xml_content.get()->xml_balise_attributes()[i].value;
-            std::string current_attribute_name = xml_content.get()->xml_balise_attributes()[i].name;
-            if(current_attribute_name == "x"){dimension_y = std::stoi(current_attribute_content);}
-            else if(current_attribute_name == "y"){dimension_x = std::stoi(current_attribute_content);}
-        }
-        // Fill the matrice
-        std::vector<std::vector<Fraction>> content = std::vector<std::vector<Fraction>>(dimension_y, std::vector<Fraction>(dimension_x, 0));
-        for(int i = 0;i<dimension_x;i++) {
-            if(i >= static_cast<int>(xml_content.get()->sub_texts().size())) {break;}
-            // Get the datas
-            std::shared_ptr<__XML_Text_Base> current_xml_content = xml_content.get()->sub_texts()[i];
-            if(current_xml_content.get()->xml_balise_name() == "mmat") {
-                for(int j = 0;j<dimension_y;j++) {
-                    if(j >= static_cast<int>(current_xml_content.get()->sub_texts().size())) {break;}
-                    std::shared_ptr<__XML_Text_Base> used_xml_content = current_xml_content.get()->sub_texts()[j];
-                    content[j][i] = Fraction::from_std_string(used_xml_content.get()->text());
-                }
-            }
-            else {
-                content[0][i] = Fraction::from_std_string(current_xml_content.get()->text());
-            }
-        }
-
-        // Draw the matrice
-        Text_Image_Generator gen;Text_Image_Generator* generator = &gen;
-        std::vector<std::vector<std::shared_ptr<__Image_Base>>> images = std::vector<std::vector<std::shared_ptr<__Image_Base>>>();
-        // Create each images
-        std::vector<int> max_height = std::vector<int>(dimension_x);
-        std::vector<int> max_width = std::vector<int>(dimension_y);
-        for(int i = 0;i<dimension_x;i++) {
-            // Get each sub-matrices
-            std::vector<std::shared_ptr<__Image_Base>> current_matrice;
-            for(int j = 0;j<dimension_y;j++) {
-                // Get each images
-                int x = j; int y = i;
-                std::shared_ptr<__Image_Base> current_image = generator->image_shared_ptr(content[x][y].to_std_string(0), current_style);
-                if(max_height[y] < current_image.get()->height()){max_height[y] = current_image.get()->height();}
-                if(max_width[x] < current_image.get()->width()){max_width[x] = current_image.get()->width();}
-                current_matrice.push_back(current_image);
-            }
-            images.push_back(current_matrice);
-        }
-
-        // Create the formating
-        int end_start_limit_width = max_width[0] / 2;
-        int end_width = 2;
-        int separation_width = current_style.font_size();
-        int start_width = 2;
-
-        // Create the final image
-        int total_height = 0; for(int i = 0;i<static_cast<int>(max_height.size());i++){total_height+=max_height[i];}
-        total_height += start_width * 4;
-        int total_width = 0; for(int i = 0;i<static_cast<int>(max_width.size());i++){total_width+=max_width[i];}
-        total_width += (static_cast<int>(max_width.size()) - 1) * separation_width + (end_width + start_width) * 2;
-        int current_x = 0; int current_y = start_width * 2;
-        image = std::make_shared<__Image_Base>(total_width, total_height, current_style.background_color());
-        image.get()->fill_rect(0, 0, start_width, image.get()->height(), current_style.color());
-        image.get()->fill_rect(0, 0,end_start_limit_width, start_width, current_style.color());
-        image.get()->fill_rect(0, image.get()->height() - start_width, end_start_limit_width, start_width, current_style.color());
-        current_x += start_width * 2;
-        // Draw each fractions
-        for(int i = 0;i<static_cast<int>(images.size());i++){
-            for(int j = 0;j<static_cast<int>(images[i].size());j++){
-                int needed_x = current_x + ((max_width[j] / 2) - (images[i][j].get()->width() / 2));
-                image.get()->paste(images[i][j].get(), needed_x, current_y);
-                current_x += max_width[j];
-                // Draw the separation
-                if(j < static_cast<int>(images[i].size()) - 1) {
-                    current_x += separation_width;
-                }
-            }
-            current_x = start_width * 2;
-            current_y += max_height[i];
-        }
-        image.get()->fill_rect(image.get()->width() - end_width, 0, end_width, image.get()->height(), current_style.color());
-        image.get()->fill_rect(image.get()->width() - end_start_limit_width, 0, end_start_limit_width, start_width, current_style.color());
-        image.get()->fill_rect(image.get()->width() - end_start_limit_width, image.get()->height() - start_width, end_start_limit_width, start_width, current_style.color());
-        current_x += end_width;
-
-        // Return the result
-        to_return.get()->middle_bottom_offset = std::ceil(image.get()->height() / 2);
-        to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
         return to_return;
     }
     std::shared_ptr<__Math_Part_Image> __generate_nabla(Text_Style current_style) {
@@ -922,7 +851,7 @@ namespace scls {
         // Check if the line is modified or not
         std::shared_ptr<Text_Image_Word> current_word;
         if(word_number < static_cast<int>(needed_words.size())) {
-            if(needed_word_datas.at(word_number).get()->is_special()){needed_words[word_number].reset();}
+            if(needed_word_datas.at(word_number).get()->is_special()){needed_words[word_number].reset();int space_size = a_words_datas.at(word_number).get()->style().font_size() / 2;needed_word_datas.at(word_number).get()->characters_width().clear();needed_word_datas.at(word_number).get()->characters_width().push_back(space_size);}
             else {
                 // Create the new word
                 needed_words[word_number] = __generate_word(needed_word_datas.at(word_number));
@@ -930,7 +859,7 @@ namespace scls {
             }
         }
         else {
-            if(needed_word_datas.at(word_number).get()->is_special()){needed_words.push_back(current_word);}
+            if(needed_word_datas.at(word_number).get()->is_special()){needed_words.push_back(current_word);int space_size = a_words_datas.at(word_number).get()->style().font_size() / 2;needed_word_datas.at(word_number).get()->characters_width().clear();needed_word_datas.at(word_number).get()->characters_width().push_back(space_size);}
             else{
                 // Create the new word
                 current_word = __generate_word(needed_word_datas.at(word_number));
@@ -966,12 +895,7 @@ namespace scls {
         to_return.get()->generate_word();
         return to_return;
     }
-    std::shared_ptr<Text_Image_Word> Text_Image_Block::__generate_word(std::string datas, Text_Style current_style) {
-        // Create the word
-        std::shared_ptr<Text_Image_Word> to_return = __create_word(std::make_shared<Word_Datas>(datas, current_style));
-        to_return.get()->generate_word();
-        return to_return;
-    }
+    std::shared_ptr<Text_Image_Word> Text_Image_Block::__generate_word(std::string datas, Text_Style current_style) {return __generate_word(std::make_shared<Word_Datas>(datas, current_style));}
 
     // Generates all the blocks / lines
     void Text_Image_Block::generate_blocks(bool entirely){if(entirely){free_memory();}__regenerate_blocks();};;
@@ -984,13 +908,14 @@ namespace scls {
     // Add text to the block
     void Text_Image_Block::add_text(String first_text) {
         // Modify the text
+        String text_plain = defined_balises()->to_plain_text(first_text);
         String text_to_modify = text();
         int cursor_position = cursor_position_in_full_text();
         if(cursor_position > static_cast<int>(text_to_modify.size())) cursor_position = text_to_modify.size();
         String final_text = text_to_modify.substr(0, cursor_position) + first_text + text_to_modify.substr(cursor_position, text_to_modify.size() - cursor_position);
         set_text(final_text);
+
         // Move the cursor
-        String text_plain = defined_balises()->plain_text(first_text);
         set_cursor_position_in_plain_text(cursor_position_in_plain_text() + text_plain.size());
 
         /*// Modify the image
@@ -1005,10 +930,151 @@ namespace scls {
         }//*/
     };
 
+    // Calculate the new position of the cursor
+    void Text_Image_Block::calculate_cursor_position() {
+        // Get some needed datas
+        __XML_Text_Base* needed_content = content();
+        int needed_position = cursor_position_in_plain_text();
+
+        if(needed_content->only_text()) {
+            int current_pos = 0;int current_x = 0;int current_y = 0;
+            for(int i = 0;i<static_cast<int>(a_words.size());i++) {
+                if(a_words_datas.at(i).get()->is_space()) {
+                    int space_size = a_words_datas.at(i).get()->style().font_size() / 2;
+                    current_x = a_words_datas.at(i).get()->x_position() + space_size;
+                    current_y = a_words_datas.at(i).get()->y_position();
+
+                    if(current_pos + 1 >= needed_position){break;}
+                    else{current_pos++;}
+                }
+                else{
+                    // Actual word
+                    int current_size = a_words_datas.at(i).get()->content().size();
+                    current_x = a_words_datas.at(i).get()->x_position();
+                    current_y = a_words_datas.at(i).get()->y_position() + a_words_datas.at(i).get()->bottom_offset();
+                    if(current_pos + current_size >= needed_position){
+                        if(a_words_datas.at(i).get()->characters_width().size() > 0) {
+                            // Handle the X
+                            int j = 0;
+                            while(current_pos < needed_position){
+                                current_x += a_words_datas.at(i).get()->characters_width().at(j);
+                                current_pos++;
+                                j++;
+                            }
+                        }
+                        break;
+                    }
+                    else{current_pos += current_size;}
+                }
+            }
+
+            // Set the result
+            a_cursor_x = current_x;
+            a_cursor_y = current_y;
+        }
+        else {
+            int current_pos = 0;int current_x = 0;int current_y = 0;
+            for(int i = 0;i<static_cast<int>(a_blocks.size());i++) {
+                // Actual block
+                int current_size = a_blocks_datas.at(i).get()->text().size();
+                current_x = a_blocks_datas.at(i).get()->x_position();
+                current_y = a_blocks_datas.at(i).get()->y_position();
+
+                // Correction
+                if(i > 0 && (a_blocks_datas.at(i - 1).get()->balise_datas()->is_paragraph || a_blocks_datas.at(i - 1).get()->balise_datas()->is_break_line)){current_pos++;}
+                if(current_pos + current_size >= needed_position - 1){
+                    // Base value
+                    a_blocks.at(i).get()->set_cursor_position_in_plain_text(needed_position - current_pos);
+                    current_x += a_blocks.at(i).get()->cursor_x();
+                    current_y += a_blocks.at(i).get()->cursor_y();
+                    break;
+                }
+                else{current_pos += current_size;}
+            }
+
+            // Set the result
+            a_cursor_x = current_x;
+            a_cursor_y = current_y;
+        }
+    }
+
     // Free the memory of the line
     void Text_Image_Block::free_memory() {a_blocks.clear();a_words.clear();}
 
     // Generates a piece of math in the block
+    std::shared_ptr<__Math_Part_Image> __generate_table(std::shared_ptr<__XML_Text_Base> xml_content, Text_Style current_style) {
+		// Load the needed datas
+		std::shared_ptr<__Math_Part_Image> to_return = std::make_shared<__Math_Part_Image>();
+		std::shared_ptr<__Image_Base>& image = to_return.get()->image;
+
+		// Get the needed datas
+		int dimension_x = 0; int dimension_y = xml_content.get()->sub_texts().size();
+		for(int i = 0;i<static_cast<int>(xml_content.get()->sub_texts().size());i++) {
+			int current_dimension = xml_content.get()->sub_texts().at(i).get()->sub_texts().size();
+			if(current_dimension > dimension_x){dimension_x = current_dimension;}
+		}
+
+// Draw the matrice
+		Text_Image_Generator gen;Text_Image_Generator* generator = &gen;
+		std::vector<std::vector<std::shared_ptr<__Image_Base>>> images = std::vector<std::vector<std::shared_ptr<__Image_Base>>>();
+		// Create each images
+		std::vector<int> max_height = std::vector<int>(dimension_x);
+		std::vector<int> max_width = std::vector<int>(dimension_y);
+		for(int i = 0;i<dimension_x;i++) {
+			// Get each sub-matrices
+			std::vector<std::shared_ptr<__Image_Base>> current_matrice;
+			for(int j = 0;j<dimension_y;j++) {
+				// Get each images
+				int x = i; int y = j;
+				std::shared_ptr<__Image_Base> current_image = generator->image_shared_ptr(xml_content.get()->sub_texts().at(x).get()->sub_texts().at(y), current_style);
+				if(max_height[y] < current_image.get()->height()){max_height[y] = current_image.get()->height();}
+				if(max_width[x] < current_image.get()->width()){max_width[x] = current_image.get()->width();}
+				current_matrice.push_back(current_image);
+			}
+			images.push_back(current_matrice);
+		}
+
+		// Create the formating
+		int end_start_limit_width = max_width[0] / 2;
+		int end_width = 2;
+		int separation_width = current_style.font_size();
+		int start_width = 2;
+
+		// Create the final image
+		int total_height = 0; for(int i = 0;i<static_cast<int>(max_height.size());i++){total_height+=max_height[i];}
+		total_height += start_width * 4;
+		int total_width = 0; for(int i = 0;i<static_cast<int>(max_width.size());i++){total_width+=max_width[i];}
+		total_width += (static_cast<int>(max_width.size()) - 1) * separation_width + (end_width + start_width) * 2;
+		int current_x = 0; int current_y = start_width * 2;
+		image = std::make_shared<__Image_Base>(total_width, total_height, current_style.background_color());
+		image.get()->fill_rect(0, 0, start_width, image.get()->height(), current_style.color());
+		image.get()->fill_rect(0, 0,end_start_limit_width, start_width, current_style.color());
+		image.get()->fill_rect(0, image.get()->height() - start_width, end_start_limit_width, start_width, current_style.color());
+		current_x += start_width * 2;
+		// Draw each fractions
+		for(int i = 0;i<static_cast<int>(images.size());i++){
+			for(int j = 0;j<static_cast<int>(images[i].size());j++){
+				int needed_x = current_x + ((max_width[j] / 2) - (images[i][j].get()->width() / 2));
+				image.get()->paste(images[i][j].get(), needed_x, current_y);
+				current_x += max_width[j];
+				// Draw the separation
+				if(j < static_cast<int>(images[i].size()) - 1) {
+					current_x += separation_width;
+				}
+			}
+			current_x = start_width * 2;
+			current_y += max_height[i];
+		}
+		image.get()->fill_rect(image.get()->width() - end_width, 0, end_width, image.get()->height(), current_style.color());
+		image.get()->fill_rect(image.get()->width() - end_start_limit_width, 0, end_start_limit_width, start_width, current_style.color());
+		image.get()->fill_rect(image.get()->width() - end_start_limit_width, image.get()->height() - start_width, end_start_limit_width, start_width, current_style.color());
+		current_x += end_width;
+
+		// Return the result
+		to_return.get()->middle_bottom_offset = std::ceil(image.get()->height() / 2);
+		to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
+		return to_return;
+	}
     std::shared_ptr<__Math_Part_Image> __generate_text_for_maths(std::string text, Text_Style current_style, Text_Image_Block* block) {
         std::shared_ptr<Text_Image_Word> needed_word = block->__generate_word(text, current_style);
         if(needed_word.get() != 0){
@@ -1058,11 +1124,11 @@ namespace scls {
         int potential_symbol = utf_8_symbol_by_name(needed_balise_name);
         if(potential_symbol != -1) {std::string text = std::string(""); add_utf_8(text, potential_symbol);needed_part = __generate_text_for_maths(text, current_style.new_child(), block);}
         else if(needed_balise_name == "mfrac" || needed_balise_name == "frac") {needed_part = __generate_frac(content, current_style.new_child(), block);}
-        else if(needed_balise_name == "mmat") {needed_part = __generate_matrice(content, current_style.new_child());}
         else if(needed_balise_name == "msqrt" || needed_balise_name == "sqrt") {needed_part = __generate_root(content, current_style.new_child(), block);}
         else if(needed_balise_name == "msub" || needed_balise_name == "sub") {needed_part = __generate_sub(content, current_style.new_child(), block);}
         else if(needed_balise_name == "msup") {needed_part = __generate_sup(content, current_style.new_child(), block);}
         else if(needed_balise_name == "msubsup") {needed_part = __generate_subsup(content, current_style.new_child(), block);}
+        else if(needed_balise_name == "mtable") {needed_part = __generate_table(content, current_style.new_child());}
         else if(needed_balise_name == "mvec" || needed_balise_name == "vec") {needed_part = __generate_vector(block->generate_maths(content, current_style.new_child()), current_style);}
         else {
             needed_part = block->__generate_maths_one_balise(needed_balise_name, bottom_offset, content, current_style, needed_height, needed_middle_bottom_offset, needed_middle_top_offset, needed_parts, needed_width, top_offset, block);
@@ -1132,9 +1198,7 @@ namespace scls {
         unsigned int current_x = a_start_x;
         unsigned int current_y = 0;
         unsigned char a_line_pasting_max_thread_number = 0;
-        int& max_width = a_datas.get()->max_width;
         std::vector<std::thread*> threads = std::vector<std::thread*>();
-        int& total_height = a_datas.get()->total_height;
 
         // Draw the border
         to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
@@ -1195,9 +1259,7 @@ namespace scls {
         unsigned int current_x = 0;
         unsigned int current_y = 0;
         unsigned char a_line_pasting_max_thread_number = 0;
-        int& max_width = a_datas.get()->max_width;
         std::vector<std::thread*> threads = std::vector<std::thread*>();
-        int& total_height = a_datas.get()->total_height;
 
         // Draw the border
         to_return->fill_rect(0, 0, global_style().border_left_width(), to_return->height(), global_style().border_color());
@@ -1275,9 +1337,6 @@ namespace scls {
         if(a_math_datas.get() != 0) {a_last_image = a_math_datas.get()->image;return a_last_image.get();}
         else if(content()->only_text()) {
             // Draw the final image
-            unsigned int current_x = 0;
-            unsigned int current_y = 0;
-            unsigned char a_line_pasting_max_thread_number = 0;
             int& max_width = a_datas.get()->max_width;
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             int& total_height = a_datas.get()->total_height;
@@ -1389,7 +1448,17 @@ namespace scls {
             std::vector<std::shared_ptr<Text_Image_Word>> line_words;
             for(int i = 0;i<static_cast<int>(a_words.size());i++) {
                 // Special characters
-                if(a_words_datas.at(i).get()->is_space()){int space_size = a_words_datas.at(i).get()->style().font_size() / 2;current_x += space_size;current_line_width += space_size;continue;}
+                if(a_words_datas.at(i).get()->is_space()){
+                    int space_size = a_words_datas.at(i).get()->style().font_size() / 2;
+                    a_words_datas.at(i).get()->set_x_position(current_x);
+                    int y_to_apply = current_y + global_style().border_top_width() - (a_words_datas.at(i).get()->top_offset());
+                    a_words_datas.at(i).get()->set_y_position(y_to_apply);
+
+                    // Needed modifications
+                    current_x += space_size;
+                    current_line_width += space_size;
+                    continue;
+                }
 
                 // Creates the image (if not created)
                 scls::__Image_Base* word_image = a_words.at(i).get()->image();
@@ -1545,6 +1614,9 @@ namespace scls {
                 }
             }
         }
+
+        // Update the cursor
+        calculate_cursor_position();
     };
 
     // Removes a part of the text and returns the number of lines deleted
@@ -1600,7 +1672,8 @@ namespace scls {
                 scls::Text_Style style = global_style().new_child();
 
                 // Create the datas
-                std::shared_ptr<Word_Datas> current_datas = std::make_shared<Word_Datas>(needed_text.at(i), style);
+                std::string current_text = format_string_as_plain_text(needed_text.at(i));
+                std::shared_ptr<Word_Datas> current_datas = std::make_shared<Word_Datas>(current_text, style);
                 a_words_datas.push_back(current_datas);
 
                 // Add the space

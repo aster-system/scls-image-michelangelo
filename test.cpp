@@ -23,8 +23,20 @@ SCLS_INIT;
 using namespace scls;
 
 int main() {
-	std::shared_ptr<scls::__Formula> f = scls::string_to_formula("(3x*x*x+4x-8)(5x*x*x*x+8x*x*x+2x)+ln(3x*x+2x-4)");
-	std::cout << f.get()->to_std_string(0) << std::endl;
+	int width = 128;
+	Matrix m(width, width);
+	for(int i = 0;i<width;i++) {
+		for(int j = 0;j<width;j++) {
+			(*m.element_at(i, j)) = random_int_between_included(0, 100000) - 50000;
+		}
+	}
+
+	Matrix n = m;
+	for(int i = 0;i<1;i++) {n = n.product(&m);}
+
+	Textual_Math_Settings s;
+	s.set_hide_if_0(false);
+	to_image("<math><mi>X</mi><mo>=</mo>" + m.to_mathml(&s) +  "</math></br>""<math><mi>X</mi><msup>2</msup><mo>=</mo>" + n.to_mathml(&s) +  "</math>")->save_png("tests/matrix.png");
 
     return 0;
 }

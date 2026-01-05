@@ -50,12 +50,14 @@ namespace scls {
     // Defined colors by name
     void defined_color_by_name(std::string name, Color& color){
         if(name == std::string("black")){color = Color(0, 0, 0);}
+        else if(name == std::string("dark_green")){color = Color(0, 100, 0);}
         else if(name == std::string("blue")){color = Color(0, 0, 255);}
         else if(name == std::string("gray") || name == std::string("grey")){color = Color(96, 96, 96);}
         else if(name == std::string("green")){color = Color(0, 255, 0);}
         else if(name == std::string("light_blue")){color = Color(0, 204, 204);}
         else if(name == std::string("light_gray") || name == std::string("light_grey")){color = Color(160, 160, 160);}
         else if(name == std::string("light_green")){color = Color(51, 255, 51);}
+        else if(name == std::string("light_red")){color = Color(255, 102, 102);}
         else if(name == std::string("orange")){color = Color(204, 102, 0);}
         else if(name == std::string("pink")){color = Color(255, 0, 127);}
         else if(name == std::string("red")){color = Color(255, 0, 0);}
@@ -294,6 +296,9 @@ namespace scls {
     __Image_Base::Image::Image(unsigned short width, unsigned short height, Color color):__Image_Base::Image::Image(std::make_shared<__Image_Base>(width, height, color, SCLS_IMAGE_RGBA)){}
     __Image_Base::Image::Image(unsigned short width, unsigned short height):__Image_Base::Image::Image(std::make_shared<__Image_Base>(width, height)){}
     __Image_Base::Image::Image(std::shared_ptr<__Image_Base> new_image):a_image(new_image){}
+
+    // Extracts a part of the image
+    __Image_Base::Image __Image_Base::Image::extract(int x, int y, int width, int height){return a_image.get()->extract(x, y, width, height);}
 
     // Fills the image with one color
     void __Image_Base::Image::fill(Color color){a_image.get()->fill(color);}
@@ -2299,14 +2304,15 @@ namespace scls {
         // Assertsg
         if(to_paste == 0){print(std::string("SCLS Image"), std::string("Can't print an empty pointer (at x = ") + std::to_string(x) + std::string(" and y = ") + std::to_string(x) + std::string(")."));return;}
 
-        unsigned int current_thread_position = 0;
-        unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
-
         // Asserts
         if(x >= width() || y >= height()){return;}
 
         // Create each threads
         if(a_thread_number_for_pasting > 1) {
+            // Needed tools
+            unsigned int current_thread_position = 0;
+            unsigned int pixel_by_thread = floor((static_cast<double>(to_paste->width()) * static_cast<double>(to_paste->height())) / static_cast<double>(a_thread_number_for_pasting));
+
             std::vector<std::thread*> threads = std::vector<std::thread*>();
             for(unsigned short i = 0;i<a_thread_number_for_pasting - 1;i++) {
                 unsigned int start_x = floor(current_thread_position % to_paste->width());
@@ -2361,9 +2367,9 @@ namespace scls {
                 // Check the size
                 current_position += needed_component;
                 current_position_paste += needed_component_paste;
-                current_x++;
-                if((start_x + (current_x - x_offset)) >= needed_width_paste || current_x >= needed_width) {
-                    current_x = x_offset;
+                current_x++;current_x_to_paste++;
+                if(current_x_to_paste >= needed_width_paste || current_x >= needed_width) {
+                    current_x = x_offset;current_x_to_paste = start_x;
                     current_y++;current_y_to_paste++;
                     if(current_y - y_offset >= needed_height_paste || current_y >= needed_height || current_y_to_paste >= to_paste->height()){break;}
                     current_position = ((current_y) * needed_width + (current_x)) * needed_component;
@@ -2454,6 +2460,24 @@ namespace scls {
         }
     };
 
+    // Extracts a part of the image
+    std::shared_ptr<__Image_Base> __Image_Base::extract(int x, int y, int image_width, int image_height) {
+        // Creates the image
+        std::shared_ptr<__Image_Base> img = std::make_shared<__Image_Base>(image_width, image_height, scls::Color(0, 0, 0));
+
+        // Extract the image
+        for(int i = 0;i<image_width;i++) {
+            for(int j = 0;j<image_height;j++) {
+                Color c = pixel_rgba_directly(((y + j) * width() + (x + i)) * 4, 1);
+                img.get()->set_pixel_rgba_directly((i + j * image_width) * 4, c.red(), c.green(), c.blue(), c.alpha(), 1);
+            }
+        }
+
+        // Return the result
+        img.get()->save_png("tests/cobble.png");
+        return img;
+    }
+
     // Returns a shared ptr of the image with a new size, adaptated
     std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(unsigned short new_width, unsigned short new_height) {if(new_width == width() && new_height == height()){return copy_image();} std::shared_ptr<__Image_Base> current_image = resize_adaptative_width(new_width);if(current_image.get() == 0) return resize_adaptative_height(new_height);return current_image.get()->resize_adaptative_height(new_height); };
     std::shared_ptr<__Image_Base> __Image_Base::resize_adaptative(scls::Point_2D new_size) {return resize_adaptative(new_size.x(), new_size.y()); };
@@ -2474,7 +2498,7 @@ namespace scls {
                     float green_value = 0;
                     float red_value = 0;
                     for(int k = 0;k<repartioned_pixels[i];k++) {
-                        Color current_color = pixel(j, current_y + k);
+                        Color current_color = pixel_rgba_directly((j + (current_y + k) * width()) * components(), 1);
                         alpha_value += current_color.alpha();
                         blue_value += current_color.blue();
                         green_value += current_color.green();
@@ -2503,7 +2527,7 @@ namespace scls {
         for(int i = 0;i<height();i++) {
             for(int j = 0;j<width();j++) {
                 // Calculate the color
-                Color current_color = pixel(j, i);
+                Color current_color = pixel_rgba_directly((j + i * width() * components()), 1);
 
                 // Apply the color
                 for(int k = 0;k<repartioned_pixels.at(i);k++){new_image.get()->set_pixel_rgba_directly((j + (y_normal + k) * new_image->width()) * new_image->components(), current_color.red(), current_color.green(), current_color.blue(), current_color.alpha(), 1);}

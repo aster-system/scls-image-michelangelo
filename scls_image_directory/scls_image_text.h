@@ -516,11 +516,15 @@ namespace scls {
         inline Balise_Datas* balise_datas() const {return content.get()->balise_datas();};
         inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
         inline void set_y_position(int new_y_position) {a_y_position = new_y_position;};
+        inline String text() const {return content.get()->text();};
         inline int x_position() const {return a_x_position;};
         inline int y_position() const {return a_y_position;};
 
         // Content of the balise
         std::shared_ptr<__XML_Text_Base> content;
+
+        // Cursor handling
+        int cursor_position = -1;
 
         // Global style in the block
         Text_Style global_style;
@@ -686,7 +690,7 @@ namespace scls {
         inline void __set_text(std::shared_ptr<__XML_Text_Base> new_text){a_datas.get()->content = new_text;};
         inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {__set_text(new_text);update_datas();};
         inline void set_text(String new_text, bool move_cursor = true) {set_text(xml(a_defined_balises, new_text.to_std_string()), move_cursor);};
-        inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(to_utf_8_code_point(new_text)), move_cursor);};
+        inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(new_text), move_cursor);};
         inline String text() const {return a_datas.get()->content.get()->text();};
         inline Block_Type type() const {return a_type;};
 
@@ -696,12 +700,15 @@ namespace scls {
         //
         //*********
 
+        // Calculate the new position of the cursor
+        void calculate_cursor_position();
+
         // Getters and setters
         inline unsigned int cursor_position_in_full_text() const {return defined_balises()->plain_text_position_to_unformatted_text_position(text().to_code_point(), cursor_position_in_plain_text());};
         inline unsigned int cursor_position_in_plain_text() const {return a_cursor_position_in_plain_text;};
         inline int cursor_x() const {return a_cursor_x;};
         inline int cursor_y() const {return a_cursor_y;};
-        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;};
+        inline void set_cursor_position_in_plain_text(unsigned int new_cursor_position_in_plain_text) {a_cursor_position_in_plain_text = new_cursor_position_in_plain_text;calculate_cursor_position();};
         inline void set_max_width(int new_max_width) {global_style().set_max_width(new_max_width);};
         inline void set_use_cursor(bool new_use_cursor) {a_use_cursor = new_use_cursor;};
         inline bool use_cursor() const {return a_use_cursor;};
@@ -711,6 +718,9 @@ namespace scls {
         // Optimisation system
         //
         //*********
+
+        // Adds text to the block
+        void add_text(String first_text);
 
         // Creates and returns a block / word for the block
         virtual std::shared_ptr<Text_Image_Block> __create_block(std::shared_ptr<Block_Datas> needed_datas){return new_text_image_block<Text_Image_Block>(a_defined_balises, needed_datas);};
@@ -758,8 +768,6 @@ namespace scls {
 
 
 
-        // Add text to the block
-        void add_text(String first_text);
         // Returns the shared pointer of the image and generates it if needed
         inline std::shared_ptr<__Image_Base>& image_shared_pointer(Image_Generation_Type generation_type) {image(generation_type);return a_last_image;};
         inline std::shared_ptr<__Image_Base>& image_shared_pointer() { return image_shared_pointer(Image_Generation_Type::IGT_Full);};
@@ -880,7 +888,7 @@ namespace scls {
         template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::string text) {return Text_Image_Block::new_text_image_block<T>(a_balises, text);};
 
         // Methods to directly use balises
-        inline std::string plain_text(std::string text)const{return a_balises.get()->plain_text(text);};
+        inline std::string plain_text(std::string text)const{return a_balises.get()->to_plain_text(text);};
         inline int plain_text_position_to_unformatted_text_position(std::string text, int cursor_position)const{return a_balises.get()->plain_text_position_to_unformatted_text_position(text, cursor_position);}
 
         // Getters and setters
