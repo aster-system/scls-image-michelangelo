@@ -640,6 +640,7 @@ namespace scls {
         else if(name == "mincluded_strict"){return 8834;}
         else if(name == "mint"){return 8747;}
         else if(name == "minter"){return 8745;}
+        else if(name == "mlang"){return 10216;}
         else if(name == "mlt"){return 60;}
         else if(name == "mltequal"){return 8804;}
         else if(name == "mgt"){return 62;}
@@ -650,6 +651,7 @@ namespace scls {
         else if(name == "mnotin"){return 8713;}
         else if(name == "mor"){return 8744;}
         else if(name == "mpartial") {return 948;}
+        else if(name == "mrang"){return 10217;}
         else if(name == "mroot"){return 8730;}
         else if(name == "mto"){return 10230;}
         else if(name == "mu") {return 956;}
