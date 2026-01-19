@@ -56,6 +56,7 @@
 #include <memory>
 #include <stack>
 #include <thread>
+#include <vector>
 
 // ZLib mandatory stuff
 #if defined(WIN32) || defined(__CYGWIN__)
