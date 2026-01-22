@@ -638,6 +638,7 @@ namespace scls {
         else if(name == "min"){return 8712;}
         else if(name == "mincluded"){return 8838;}
         else if(name == "mincluded_strict"){return 8834;}
+        else if(name == "minfinity" || name == "minf"){return 8734;}
         else if(name == "mint"){return 8747;}
         else if(name == "minter"){return 8745;}
         else if(name == "mlang"){return 10216;}
