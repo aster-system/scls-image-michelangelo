@@ -46,6 +46,9 @@
 #define TEXT_IMAGE_BLOCK_CHILD_CONSTRUCTOR(Class_Name, Instructions) friend class scls::Text_Image_Block;Class_Name(std::shared_ptr<scls::_Balise_Style_Container> defined_balises, std::shared_ptr<scls::Block_Datas> datas, scls::Block_Type type):scls::Text_Image_Block(defined_balises,datas, type){Instructions};
 #endif // TEXT_IMAGE_BLOCK_CHILD_CONSTRUCTOR
 
+// Include SCLS Math
+#include "../scls_image.h"
+
 // The namespace "scls" is used to simplify the all.
 namespace scls {
     //*********

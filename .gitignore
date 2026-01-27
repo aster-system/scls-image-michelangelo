@@ -410,6 +410,7 @@ tests/
 *.vcxproj.user
 *.dll
 *.cbp
+*.cscope_file_list
 *.depend
 *.layout
 *.mp4

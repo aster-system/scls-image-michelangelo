@@ -71,6 +71,8 @@
 #include "scls_image_directory/scls_image_core.h"
 #include "scls_image_directory/scls_image_effects.h"
 #include "scls_image_directory/scls_image_text.h"
+// Other tools
+#include "scls_image_directory/scls_image_statistic.h"
 
 namespace scls {
 
@@ -206,12 +208,12 @@ namespace scls {
         if(text_top != ""){text_number++;}
 
         // Create the text
-        std::shared_ptr<scls::Text_Image_Generator> tig = std::make_shared<scls::Text_Image_Generator>();
+        std::shared_ptr<Text_Image_Generator> tig = std::make_shared<Text_Image_Generator>();
         std::shared_ptr<__Image_Base> text_bottom_image;
         std::shared_ptr<__Image_Base> text_top_image;
         if(text_number > 0) {
             // Paste the text at the top
-            scls::Text_Style style;
+            Text_Style style;
             style.set_color(color_text); style.set_font_path(LOGO_FONT_PATH); style.set_font_size(font_size);
             text_top_image = tig.get()->image_shared_ptr(text_top, style);
             if(text_number > 1) {

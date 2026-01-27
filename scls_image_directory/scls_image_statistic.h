@@ -1,6 +1,6 @@
 //******************
 //
-// scls_image_effects.h
+// scls_image_statistic.h
 //
 //******************
 // Presentation :
@@ -11,7 +11,7 @@
 // The Image "Michelangelo" part represents a lot of usefull datas manipulation for images.
 // It is named after one of the greatest painter of all time, Michelangelo.
 //
-// This file contains some tools to use images more efficienly.
+// This file contains some tools to handle statistics on image..
 //
 //******************
 //
@@ -24,30 +24,15 @@
 // You should have received a copy of the GNU General Public License along with SCLS. If not, see <https://www.gnu.org/licenses/>.
 //
 
-#ifndef SCLS_IMAGE_EFFECTS
-#define SCLS_IMAGE_EFFECTS
+#ifndef SCLS_IMAGE_STATISTIC
+#define SCLS_IMAGE_STATISTIC
 
-// Include the good header file
-#include "scls_image_core.h"
+#include "../scls_image.h"
 
 // The namespace "scls" is used to simplify the all.
 namespace scls {
-
-    //*********
-	//
-	// Mask system
-	//
-	//*********
-
-	// Gets the limit of a mask and returns it
-	Image limit_from_mask_alpha(Image needed_image);
-    // Creates a mask from an image
-    Image mask_from_image_alpha(Image needed_image);
-
-    // Sets a color in an image from a mask
-    Image set_color_from_mask(Image needed_image, Image mask, Color color);
-    // Sketchs a mask
-    Image sketch_mask(Image mask, int sketch_width);
+    // Creates an histogram from statistics
+    Image histogram(Statistics* statistics);
 }
 
-#endif // SCLS_IMAGE_EFFECTS
+#endif // SCLS_IMAGE_STATISTIC
