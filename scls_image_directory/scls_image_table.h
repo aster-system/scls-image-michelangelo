@@ -124,7 +124,7 @@ namespace scls {
         inline int total_width_in_pixel() const {int to_return = 0;int needed_width = column_number();for(int i = 0;i<static_cast<int>(needed_width);i++){to_return += column_width(i);};return to_return;};
 
         // Loads cases in the table
-        virtual void load_cases(std::shared_ptr<__XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig);
+        virtual void load_cases(std::shared_ptr<XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig);
 
         // Merges cases
         void merge_cases(int x, int y, int width, int height);
@@ -165,8 +165,8 @@ namespace scls {
     };
 
     // Creates and returns a table from an std::string
-	std::shared_ptr<__Table_Case> table_from_xml(std::shared_ptr<__Table_Case> table, std::shared_ptr<scls::__XML_Text_Base> xml, scls::Text_Style needed_style);
-	template <typename T = __Table_Case> std::shared_ptr<T> table_from_xml(std::shared_ptr<scls::__XML_Text_Base> xml, scls::Text_Style needed_style){std::shared_ptr<T> to_return = __Table_Case::new_table<T>();table_from_xml(to_return, xml, needed_style);return to_return;}
+	std::shared_ptr<__Table_Case> table_from_xml(std::shared_ptr<__Table_Case> table, std::shared_ptr<scls::XML_Text_Base> xml, scls::Text_Style needed_style);
+	template <typename T = __Table_Case> std::shared_ptr<T> table_from_xml(std::shared_ptr<scls::XML_Text_Base> xml, scls::Text_Style needed_style){std::shared_ptr<T> to_return = __Table_Case::new_table<T>();table_from_xml(to_return, xml, needed_style);return to_return;}
 
 	// Creates a table from a precise object
 	std::shared_ptr<__Table_Case> table_from_boolean(Boolean* boolean);

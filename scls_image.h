@@ -72,7 +72,9 @@
 #include "scls_image_directory/scls_image_effects.h"
 #include "scls_image_directory/scls_image_text.h"
 // Other tools
+#include "scls_image_directory/scls_image_graph.h"
 #include "scls_image_directory/scls_image_statistic.h"
+#include "scls_image_directory/scls_image_table.h"
 
 namespace scls {
 

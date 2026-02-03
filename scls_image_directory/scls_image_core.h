@@ -128,7 +128,7 @@ namespace scls {
         static std::vector<std::string> from_std_string_parts(std::string source);
         static Color from_std_string(std::string source);
         // Return a color loaded from an XML balise
-        static Color from_xml(std::shared_ptr<__XML_Text_Base> source);
+        static Color from_xml(std::shared_ptr<XML_Text_Base> source);
         // Returns the color to an std::string
         std::string to_std_string(Textual_Math_Settings* settings);
 

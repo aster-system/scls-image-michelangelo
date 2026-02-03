@@ -149,7 +149,7 @@ namespace scls {
     };
 
     // Loads cases in the table
-    void __Table_Case::load_cases(std::shared_ptr<scls::__XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig) {
+    void __Table_Case::load_cases(std::shared_ptr<XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig) {
         // Get the needed datas
         std::vector<scls::XML_Attribute>& attributes = cases.get()->xml_balise_attributes();
         int height = 0;int width = 0;int x = 0;int y = 0;std::string to_load = std::string();
@@ -314,7 +314,7 @@ namespace scls {
     }
 
     // Creates and returns a table from an std::string
-	std::shared_ptr<__Table_Case> table_from_xml(std::shared_ptr<__Table_Case> to_return, std::shared_ptr<scls::__XML_Text_Base> xml, scls::Text_Style needed_style) {
+	std::shared_ptr<__Table_Case> table_from_xml(std::shared_ptr<__Table_Case> to_return, std::shared_ptr<XML_Text_Base> xml, scls::Text_Style needed_style) {
 	    scls::Text_Image_Generator tig;
 
 	    // Handle the attributes

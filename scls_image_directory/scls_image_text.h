@@ -354,7 +354,7 @@ namespace scls {
     // Returns if an XML attribute is for a text style
     bool text_style_from_xml_attribute(XML_Attribute* attribute, Text_Style style);
     // Handle a text style from XML
-    void text_style_from_xml(std::shared_ptr<__XML_Text_Base> content, Text_Style style);
+    void text_style_from_xml(std::shared_ptr<XML_Text_Base> content, Text_Style style);
 
     //*********
 	//
@@ -448,13 +448,13 @@ namespace scls {
 
         // Getters and setters
         inline String balise_content()const{return a_balise_content;};
-        inline std::shared_ptr<__XML_Text_Base> balise_parent()const{return a_balise_parent;};
+        inline std::shared_ptr<XML_Text_Base> balise_parent()const{return a_balise_parent;};
         inline short bottom_offset() const {return a_bottom_offset;};
         inline std::vector<int>& characters_position() {return a_characters_position;};
         inline std::vector<unsigned int>& characters_width() {return a_characters_width;};
         inline int line() const {return a_line;};
         inline void set_balise_content(std::string new_balise_content){a_balise_content=new_balise_content;};
-        inline void set_balise_parent(std::shared_ptr<__XML_Text_Base> new_balise_parent){a_balise_parent=new_balise_parent;};
+        inline void set_balise_parent(std::shared_ptr<XML_Text_Base> new_balise_parent){a_balise_parent=new_balise_parent;};
         inline void set_bottom_offset(short new_bottom_offset) {a_bottom_offset = new_bottom_offset;};
         inline void set_characters_position(std::vector<int> new_characters_position) {a_characters_position = new_characters_position;};
         inline void set_characters_width(std::vector<unsigned int> new_characters_width) {a_characters_width = new_characters_width;};
@@ -471,7 +471,7 @@ namespace scls {
         // Content of the balise
         String a_balise_content;
         // Parent XML balise of this word
-        std::shared_ptr<__XML_Text_Base> a_balise_parent;
+        std::shared_ptr<XML_Text_Base> a_balise_parent;
         // Content of the line
         String a_content;
         // Style of the text
@@ -508,8 +508,8 @@ namespace scls {
     struct Block_Datas {
         // Struct containing the datas necessary for a block
         // Block_Datas constructor
-        Block_Datas(std::shared_ptr<__XML_Text_Base> block_content, Text_Style new_global_style) : content(block_content),global_style(new_global_style) {}
-        Block_Datas(std::shared_ptr<__XML_Text_Base> block_content) : content(block_content) {}
+        Block_Datas(std::shared_ptr<XML_Text_Base> block_content, Text_Style new_global_style) : content(block_content),global_style(new_global_style) {}
+        Block_Datas(std::shared_ptr<XML_Text_Base> block_content) : content(block_content) {}
 
         // Adds text in the block
         void add_text(std::string text);
@@ -517,6 +517,9 @@ namespace scls {
         // Getters and setters
         inline scls::Alignment_Horizontal alignment_horizontal() const {return global_style.alignment_horizontal();};
         inline Balise_Datas* balise_datas() const {return content.get()->balise_datas();};
+        inline int font_size() const {return global_style.font_size();};
+        inline String full_text() const {return content.get()->text();};
+        inline String plain_text() const {return scls::format_string_as_plain_text(content.get()->text());};
         inline void set_x_position(int new_x_position) {a_x_position = new_x_position;};
         inline void set_y_position(int new_y_position) {a_y_position = new_y_position;};
         inline String text() const {return content.get()->text();};
@@ -524,7 +527,7 @@ namespace scls {
         inline int y_position() const {return a_y_position;};
 
         // Content of the balise
-        std::shared_ptr<__XML_Text_Base> content;
+        std::shared_ptr<XML_Text_Base> content;
 
         // Cursor handling
         int cursor_position = -1;
@@ -609,7 +612,7 @@ namespace scls {
         inline Word_Datas* datas() const {return a_datas.get();};
         inline __Image_Base* image() { return a_last_image.get(); };
         std::shared_ptr<__Image_Base> image_shared_pointer() {return a_last_image;};
-        inline void set_balise_parent(std::shared_ptr<__XML_Text_Base> new_balise_parent){a_datas.get()->set_balise_parent(new_balise_parent);};
+        inline void set_balise_parent(std::shared_ptr<XML_Text_Base> new_balise_parent){a_datas.get()->set_balise_parent(new_balise_parent);};
         inline void set_image_shared_ptr(std::shared_ptr<__Image_Base> img) {a_last_image=img;};
 
     private:
@@ -652,12 +655,12 @@ namespace scls {
 	enum Image_Generation_Type {IGT_Full, IGT_Size};
 
 	// Formats an unformatted <math> balise
-    void format_math(std::shared_ptr<__XML_Text_Base> text);
+    void format_math(std::shared_ptr<XML_Text_Base> text);
 
 	// Get an utf-8 symbol from a text
 	int utf_8_symbol_by_name(std::string name);
 	// Get an utf-8 symbol from a XML content
-	void utf_8_symbol_xml(std::shared_ptr<__XML_Text_Base> text, bool to_html);
+	void utf_8_symbol_xml(std::shared_ptr<XML_Text_Base> text, bool to_html);
 
     //*********
 	//
@@ -677,7 +680,7 @@ namespace scls {
         // Creates and return a new text image block
         template<typename T> static std::shared_ptr<T> new_text_image_block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas, Block_Type type){std::shared_ptr<T> to_return = std::shared_ptr<T>(new T(defined_balises, datas, type));to_return.get()->update_datas();return to_return;};
         template<typename T> static std::shared_ptr<T> new_text_image_block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<Block_Datas> datas){std::shared_ptr<T> to_return = std::shared_ptr<T>(new T(defined_balises, datas, Block_Type::BT_Always_Free_Memory));to_return.get()->update_datas();return to_return;};
-        template<typename T> static std::shared_ptr<T> new_text_image_block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<__XML_Text_Base> text, Text_Style style){std::shared_ptr<T> to_return = std::shared_ptr<T>(new T(defined_balises, std::make_shared<Block_Datas>(text, style), Block_Type::BT_Always_Free_Memory));to_return.get()->update_datas();return to_return;};
+        template<typename T> static std::shared_ptr<T> new_text_image_block(std::shared_ptr<_Balise_Style_Container> defined_balises, std::shared_ptr<XML_Text_Base> text, Text_Style style){std::shared_ptr<T> to_return = std::shared_ptr<T>(new T(defined_balises, std::make_shared<Block_Datas>(text, style), Block_Type::BT_Always_Free_Memory));to_return.get()->update_datas();return to_return;};
         template<typename T> static std::shared_ptr<T> new_text_image_block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text, Text_Style style){std::shared_ptr<T> to_return = std::shared_ptr<T>(new T(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text), style), Block_Type::BT_Always_Free_Memory));to_return.get()->update_datas();return to_return;};
         template<typename T> static std::shared_ptr<T> new_text_image_block(std::shared_ptr<_Balise_Style_Container> defined_balises, String text){std::shared_ptr<T> to_return = std::shared_ptr<T>(new T(defined_balises, std::make_shared<Block_Datas>(xml(defined_balises, text)), Block_Type::BT_Always_Free_Memory));to_return.get()->update_datas();return to_return;};
 
@@ -686,12 +689,12 @@ namespace scls {
 
         // Getters and setters
         inline Balise_Datas* balise_datas() const {return a_datas.get()->balise_datas();};
-        inline __XML_Text_Base* content() const {return a_datas.get()->content.get();};
-        inline std::shared_ptr<__XML_Text_Base> content_shared_ptr() const {return a_datas.get()->content;};
+        inline XML_Text_Base* content() const {return a_datas.get()->content.get();};
+        inline std::shared_ptr<XML_Text_Base> content_shared_ptr() const {return a_datas.get()->content;};
         inline String full_text() const {return a_datas.get()->content.get()->full_text();};
         inline Text_Style global_style() {return a_datas.get()->global_style;};
-        inline void __set_text(std::shared_ptr<__XML_Text_Base> new_text){a_datas.get()->content = new_text;};
-        inline void set_text(std::shared_ptr<__XML_Text_Base> new_text, bool move_cursor = true) {__set_text(new_text);update_datas();};
+        inline void __set_text(std::shared_ptr<XML_Text_Base> new_text){a_datas.get()->content = new_text;};
+        inline void set_text(std::shared_ptr<XML_Text_Base> new_text, bool move_cursor = true) {__set_text(new_text);update_datas();};
         inline void set_text(String new_text, bool move_cursor = true) {set_text(xml(a_defined_balises, new_text.to_std_string()), move_cursor);};
         inline void set_text(std::string new_text, bool move_cursor = true) {set_text(String(new_text), move_cursor);};
         inline String text() const {return a_datas.get()->content.get()->text();};
@@ -730,8 +733,8 @@ namespace scls {
         virtual std::shared_ptr<Text_Image_Word> __create_word(std::shared_ptr<Word_Datas> needed_datas){return std::make_shared<Text_Image_Word>(needed_datas);};
 
         // Generates a piece of math in the block
-        virtual std::shared_ptr<__Math_Part_Image> __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<__XML_Text_Base> content, Text_Style current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Block* block);
-        std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<__XML_Text_Base> content, Text_Style current_style);
+        virtual std::shared_ptr<__Math_Part_Image> __generate_maths_one_balise(std::string needed_balise_name, int& bottom_offset, std::shared_ptr<XML_Text_Base> content, Text_Style current_style, int& needed_height, int& needed_middle_bottom_offset, int& needed_middle_top_offset, std::vector<std::shared_ptr<__Math_Part_Image>>& needed_parts, int& needed_width, int& top_offset, Text_Image_Block* block);
+        std::shared_ptr<__Math_Part_Image> generate_maths(std::shared_ptr<XML_Text_Base> content, Text_Style current_style);
 
         // Generate a block / word of the block
         std::shared_ptr<Text_Image_Block> __generate_block(std::shared_ptr<Block_Datas> datas, Image block_image);
@@ -883,11 +886,11 @@ namespace scls {
         inline Image image(std::string text) {std::shared_ptr<Text_Image_Block> img = Text_Image_Block::new_text_image_block<Text_Image_Block>(a_balises, text);Image to_return=img.get()->image_shared_pointer();return to_return;};
         inline Image image(std::string text, Text_Style style) {return image_shared_ptr(text, style);};
         // Create an image from a text and return it
-        template <typename T = Text_Image_Block> std::shared_ptr<__Image_Base> image_shared_ptr(std::shared_ptr<__XML_Text_Base> text, Text_Style style) {std::shared_ptr<Text_Image_Block> img = Text_Image_Block::new_text_image_block<Text_Image_Block>(a_balises, text, style);return img.get()->image_shared_pointer();};
+        template <typename T = Text_Image_Block> std::shared_ptr<__Image_Base> image_shared_ptr(std::shared_ptr<XML_Text_Base> text, Text_Style style) {std::shared_ptr<Text_Image_Block> img = Text_Image_Block::new_text_image_block<T>(a_balises, text, style);return img.get()->image_shared_pointer();};
         template <typename T = Text_Image_Block> std::shared_ptr<__Image_Base> image_shared_ptr(std::string text, Text_Style style) {return image_shared_ptr<T>(xml(a_balises, text), style);};
         inline std::shared_ptr<__Image_Base> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(0), style);};
         // Returns a newly created text image
-        template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::shared_ptr<__XML_Text_Base> text, Text_Style style) {return Text_Image_Block::new_text_image_block<T>(a_balises, text, style);};
+        template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::shared_ptr<XML_Text_Base> text, Text_Style style) {return Text_Image_Block::new_text_image_block<T>(a_balises, text, style);};
         template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::string text) {return Text_Image_Block::new_text_image_block<T>(a_balises, text);};
 
         // Methods to directly use balises
@@ -942,6 +945,7 @@ namespace scls {
     };
 
     // Converts some well-known types into image
+    std::shared_ptr<__Image_Base> string_to_image(std::string value, scls::Text_Style style);
     std::shared_ptr<__Image_Base> to_image(std::string* value, scls::Text_Style style);
     std::shared_ptr<__Image_Base> to_image(std::string value, scls::Text_Style style);
     std::shared_ptr<__Image_Base> to_image(std::string* value);

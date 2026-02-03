@@ -18,6 +18,7 @@
 #define SCLS_MATH_PATH "../scls-math-carl/scls_math.h"
 #include "scls_image.h"
 #include "../scls-math-carl/scls_math_directory/scls_math_string.h"
+#include "scls_image_directory/scls_image_tree.h"
 #include "scls_image_directory/scls_image_statistic.h"
 
 SCLS_INIT;
@@ -89,8 +90,16 @@ private:
 };
 
 int main() {
-	std::shared_ptr<__Formula> formula = scls::string_to_algebra_element<__Formula>("(3 * x + 2 + 7 * x) ^ (4 * x)");
-	std::cout << formula.get()->to_std_string(0) << std::endl;
+	//std::shared_ptr<__Formula> formula = scls::string_to_algebra_element<__Formula>("(3 * x + 2 + 7 * x) ^ (4 * x)");
+	//std::cout << formula.get()->to_std_string(0) << std::endl;
+
+	scls::Tree g = scls::Tree();
+	g.set_image("Mathématiques");
+	scls::Tree* c = g.add_node(std::string("Algèbre"));
+	c = g.add_node(std::string("Analyse"));
+	c= g.add_node(std::string("Logique"));
+	c= g.add_node(std::string("Géométrie"));
+	g.to_image().get()->save_png("tests/g.png");
 
     return 0;
 }

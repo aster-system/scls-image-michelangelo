@@ -49,21 +49,22 @@ namespace scls {
 
     // Defined colors by name
     void defined_color_by_name(std::string name, Color& color){
-        if(name == std::string("black")){color = Color(0, 0, 0);}
-        else if(name == std::string("dark_green")){color = Color(0, 100, 0);}
-        else if(name == std::string("blue")){color = Color(0, 0, 255);}
-        else if(name == std::string("gray") || name == std::string("grey")){color = Color(96, 96, 96);}
-        else if(name == std::string("green")){color = Color(0, 255, 0);}
-        else if(name == std::string("light_blue")){color = Color(0, 204, 204);}
-        else if(name == std::string("light_gray") || name == std::string("light_grey")){color = Color(160, 160, 160);}
-        else if(name == std::string("light_green")){color = Color(51, 255, 51);}
-        else if(name == std::string("light_red")){color = Color(255, 102, 102);}
-        else if(name == std::string("orange")){color = Color(204, 102, 0);}
-        else if(name == std::string("pink")){color = Color(255, 0, 127);}
-        else if(name == std::string("red")){color = Color(255, 0, 0);}
-        else if(name == std::string("yellow")){color = Color(255, 255, 0);}
-        else if(name == std::string("transparent")){color = Color(0, 0, 0, 0);}
-        else if(name == std::string("white")){color = Color(255, 255, 255);}
+        if(name == std::string_view("black")){color = Color(0, 0, 0);}
+        else if(name == std::string_view("dark_green")){color = Color(0, 100, 0);}
+        else if(name == std::string_view("blue")){color = Color(0, 0, 255);}
+        else if(name == std::string_view("gray") || name == std::string_view("grey")){color = Color(96, 96, 96);}
+        else if(name == std::string_view("green")){color = Color(0, 255, 0);}
+        else if(name == std::string_view("light_blue")){color = Color(0, 204, 204);}
+        else if(name == std::string_view("light_gray") || name == std::string_view("light_grey")){color = Color(160, 160, 160);}
+        else if(name == std::string_view("light_green")){color = Color(51, 255, 51);}
+        else if(name == std::string_view("light_red")){color = Color(255, 102, 102);}
+        else if(name == std::string_view("orange")){color = Color(204, 102, 0);}
+        else if(name == std::string_view("pink")){color = Color(255, 0, 127);}
+        else if(name == std::string_view("purple") || name == std::string_view("violet")){color = Color(51, 0, 102);}
+        else if(name == std::string_view("red")){color = Color(255, 0, 0);}
+        else if(name == std::string_view("yellow")){color = Color(255, 255, 0);}
+        else if(name == std::string_view("transparent")){color = Color(0, 0, 0, 0);}
+        else if(name == std::string_view("white")){color = Color(255, 255, 255);}
     }
 
     // Return a color loaded from a text
@@ -101,7 +102,7 @@ namespace scls {
     };
 
     // Return a color loaded from an XML balise
-    Color Color::from_xml(std::shared_ptr<__XML_Text_Base> source) {
+    Color Color::from_xml(std::shared_ptr<XML_Text_Base> source) {
         Color color(0, 0, 0, 255);
         for(int j = 0;j<static_cast<int>(source.get()->xml_balise_attributes().size());j++) {
             XML_Attribute& current_attribute = source.get()->xml_balise_attributes()[j];
