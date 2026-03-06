@@ -308,6 +308,9 @@ namespace scls {
     // Drawing methods
     // Draws a circle on the image
     void __Image_Base::Image::draw_circle(int x_center, int y_center, double radius, Color color, double border_radius){a_image.get()->draw_circle(x_center, y_center, radius, color, border_radius);}
+    // Draws a line between two points
+    void __Image_Base::Image::draw_line(int x_1, int y_1, int x_2, int y_2, Color color){a_image.get()->draw_line(x_1, y_1, x_2, y_2, color);}
+    void __Image_Base::Image::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width){a_image.get()->draw_line(x_1, y_1, x_2, y_2, color, width);}
     // Fill a circle on the image
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {a_image.get()->fill_circle(x_center, y_center, radius, red, green, blue, alpha, 0, 0, 0, 0, 0);}
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius_x, radius_y, 0, angle_start, angle_end, red, green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
@@ -317,9 +320,12 @@ namespace scls {
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,angle,angle_start,angle_end,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,0,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
+    void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color){a_image.get()->fill_circle(x_center,y_center,radius_x,radius_y,0,0,360,color.red(),color.green(),color.blue(),color.alpha(), 0, 0, 0, 0, 0);};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, Color color){a_image.get()->fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius_x, radius_y, angle, angle_start, angle_end, red ,green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    // Fills a form of points in the image
+    void __Image_Base::Image::fill_form(std::vector<Point_2D> points, Color color){a_image.get()->fill_form(points, color);}
     // Fills a rectangle on the image
     void __Image_Base::Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){a_image.get()->fill_rect(x,y,rect_width,rect_height,red,green,blue,alpha);}
     void __Image_Base::Image::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, Color color){a_image.get()->fill_rect(x,y,rect_width,rect_height,color.red(),color.green(),color.blue(),color.alpha());}
@@ -1221,6 +1227,69 @@ namespace scls {
         return Color(0, 0, 0);
     }
     // Load a IDAT chunk grom a path
+    void __Image_Base::_load_png_IDAT_from_file_rgb(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data) {
+        if (a_filter_type == 1) { // Apply sub filtering
+            for (int i = 1; i < width(); i++){
+                Color color = pixel_directly(current_line_start_position + i * component_size, multiplier);
+                Color current_color = pixel_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+                set_pixel_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                        current_color.green() + color.green(),
+                                        current_color.blue() + color.blue(), multiplier);
+            }
+        }
+        else if (a_filter_type == 2 && processed_data > width()) { // Apply up filtering
+            for (int i = 0; i < width(); i++){
+                Color color = pixel_directly(last_line_start_position + i * component_size, multiplier);
+                Color current_color = pixel_directly(current_line_start_position + i * component_size, multiplier);
+                set_pixel_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                             current_color.green() + color.green(),
+                                             current_color.blue() + color.blue(), multiplier);
+            }
+        }
+        else if (a_filter_type == 3) {
+            // Apply average filtering
+            if (processed_data > width()){
+                for (int i = 0; i < width(); i++){
+                    Color pixel1 = Color(0, 0, 0);
+                    if (i == 0) {
+                        pixel1.set_red(0);
+                        pixel1.set_green(0);
+                        pixel1.set_blue(0);
+                        pixel1.set_alpha(0);
+                    }
+                    else {
+                        pixel1 = pixel_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+                    }
+                    Color pixel2 = pixel_directly(last_line_start_position + i * component_size, multiplier);
+                    Color current_color = pixel_directly(current_line_start_position + i * component_size, multiplier);
+                    set_pixel_directly(current_line_start_position + i * component_size, current_color.red() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.red()) + static_cast<double>(pixel2.red())) / 2.0)),
+                                                     current_color.green() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.green()) + static_cast<double>(pixel2.green())) / 2.0)),
+                                                     current_color.blue() + static_cast<unsigned char>(floor((static_cast<double>(pixel1.blue()) + static_cast<double>(pixel2.blue())) / 2.0)), multiplier);
+                }
+            }
+        }
+        else if (a_filter_type == 4 && processed_data > width()) {
+            // Apply paeth filtering
+            for (int i = 0; i < width(); i++) {
+                if (i == 0) {
+                    Color color = pixel_directly(last_line_start_position + i * component_size, multiplier);
+                    Color current_color = pixel_directly(current_line_start_position + i * component_size, multiplier);
+                    set_pixel_directly(current_line_start_position + i * component_size, current_color.red() + color.red(),
+                                                 current_color.green() + color.green(),
+                                                 current_color.blue() + color.blue(), multiplier);
+                }
+                else {
+                    Color pixel2 = pixel_directly(current_line_start_position + (i - 1) * component_size, multiplier);
+                    Color pixel3 = pixel_directly(last_line_start_position + (i - 1) * component_size, multiplier);
+                    Color pixel1 = pixel_directly(last_line_start_position + i * component_size, multiplier);
+                    Color current_color = pixel_directly(current_line_start_position + i * component_size, multiplier);
+                    set_pixel_directly(current_line_start_position + i * component_size, current_color.red() + static_cast<unsigned char>(paeth_function(pixel1.red(), pixel2.red(), pixel3.red())),
+                                                 current_color.green() + static_cast<unsigned char>(paeth_function(pixel1.green(), pixel2.green(), pixel3.green())),
+                                                 current_color.blue() + static_cast<unsigned char>(paeth_function(pixel1.blue(), pixel2.blue(), pixel3.blue())), multiplier);
+                }
+            }
+        }
+    }
     void __Image_Base::_load_png_IDAT_from_file_rgba(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data){
         if (a_filter_type == 1) { // Apply sub filtering
             for (int i = 1; i < width(); i++){
@@ -1344,7 +1413,8 @@ namespace scls {
                 }
                 else {
                     // Handle the untreated datas
-                    _load_png_IDAT_from_file_rgba(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);
+                    if(color_type() == 6){_load_png_IDAT_from_file_rgba(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);}
+                    else{_load_png_IDAT_from_file_rgb(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);}
 
                     // Update the needed datas
                     a_filter_type = out[i];
@@ -1356,7 +1426,10 @@ namespace scls {
             }
 
             // Handle last untreated datas
-            if (processed_data > 0) {_load_png_IDAT_from_file_rgba(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);}
+            if (processed_data > 0) {
+                if(color_type() == 6){_load_png_IDAT_from_file_rgba(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);}
+                else{_load_png_IDAT_from_file_rgb(component_size, current_line_start_position, last_line_start_position, multiplier, processed_data);}
+            }
 
             // Free memory
             delete[] out;
@@ -1387,8 +1460,8 @@ namespace scls {
         a_interlace_method = file->data_at(28);
 
         // Not implemented yet
-        if(bit_depht() != 8) { error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_BIT_DEPHT);; }
-        else _load_all_chunks_from_png_file(file, error_handler);
+        if(bit_depht() != 8) {error_handler.get()->set_value(SCLS_IMAGE_PNG_ERROR_BIT_DEPHT);}
+        else{_load_all_chunks_from_png_file(file, error_handler);}
     }
 
     // Load the sRGB chunk from a path
@@ -2086,6 +2159,45 @@ namespace scls {
         }
     }
 
+    // Fills a form of points in the image
+    void __Image_Base::fill_form(std::vector<Point_2D> points, Color color) {
+		// Triangulate the form
+		if(static_cast<int>(points.size()) < 3){return;}
+
+		// Triangulate the face with the model maker part of SCLS
+		scls::model_maker::Face form_to_face;
+		for(int i = 0;i<static_cast<int>(points.size());i++) {
+			scls::model_maker::Point current_point = scls::Point_3D(points.at(i).x(), 0, points.at(i).y());//points.at(i).get()->to_point_3d_absolute();
+			form_to_face.points().push_back(std::make_shared<scls::model_maker::Point>(current_point));
+		}
+
+		// Get the needed result
+		auto triangulated = form_to_face.triangulate();
+		std::vector<std::shared_ptr<scls::model_maker::Point>>& points_for_rendering = triangulated.get()->points_for_rendering;
+		std::vector<Point_2D> current_triangulated_points = std::vector<Point_2D>(points_for_rendering.size());
+		for(int i = 0;i<static_cast<int>(points_for_rendering.size());i++) {
+			scls::model_maker::Point* current_point = points_for_rendering.at(i).get();
+			current_triangulated_points[i]=Point_2D(current_point->x(), current_point->z());
+		}
+
+		// Draw the inner form
+		scls::Color inner_color = color;
+		if(inner_color.alpha() > 0) {
+			for(int i = 0;i<static_cast<int>(current_triangulated_points.size());i+=3) {
+				Point_2D current_point = current_triangulated_points[i];
+				double first_x = current_point.x();
+				double first_y = current_point.y();
+				current_point = current_triangulated_points[i + 1];
+				double second_x = current_point.x();
+				double second_y = current_point.y();
+				current_point = current_triangulated_points[i + 2];
+				double third_x = current_point.x();
+				double third_y = current_point.y();
+				fill_triangle(first_x, first_y, second_x, second_y, third_x, third_y, inner_color);
+			}
+		}
+	}
+
     // Draw a rectangle on the image
     void __Image_Base::draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());}
     void __Image_Base::draw_rect(int x, int y, int width, int height, unsigned int rect_width, Color color, Color fill_color) {draw_rect(x, y, width, height, rect_width, color.red(), color.green(), color.blue(), color.alpha());fill_rect(x + rect_width, y + rect_width, width - rect_width * 2, height - rect_width * 2, fill_color.red(), fill_color.green(), fill_color.blue(), fill_color.alpha());}
@@ -2528,7 +2640,7 @@ namespace scls {
         for(int i = 0;i<height();i++) {
             for(int j = 0;j<width();j++) {
                 // Calculate the color
-                Color current_color = pixel_rgba_directly((j + i * width() * components()), 1);
+                Color current_color = pixel_rgba_directly((j + i * width()) * components(), 1);
 
                 // Apply the color
                 for(int k = 0;k<repartioned_pixels.at(i);k++){new_image.get()->set_pixel_rgba_directly((j + (y_normal + k) * new_image->width()) * new_image->components(), current_color.red(), current_color.green(), current_color.blue(), current_color.alpha(), 1);}

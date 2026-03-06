@@ -274,6 +274,9 @@ namespace scls {
             // Drawing methods
             // Draws a circle on the image
             void draw_circle(int x_center, int y_center, double radius, Color color, double border_radius);
+            // Draws a line between two points
+            void draw_line(int x_1, int y_1, int x_2, int y_2, Color color);
+            void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width);
             // Fills a circle on the image
             void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
             void fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
@@ -284,8 +287,11 @@ namespace scls {
             void fill_circle(int x_center, int y_center, double radius, double angle_start, double angle_end, Color color, double border_radius, Color border_color);
             void fill_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
             void fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color, double border_radius, Color border_color);
+            void fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color);
             void fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color);
             void fill_circle(int x_center, int y_center, double radius, Color color);
+            // Fills a form of points in the image
+            void fill_form(std::vector<Point_2D> points, Color color);
             // Fills a rectangle on the image
             void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
             void fill_rect(int x, int y, unsigned short width, unsigned short height, Color color);
@@ -470,6 +476,8 @@ namespace scls {
         // Fills a circle with a gradient on the image
         void fill_circle_gradient(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
         void fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
+        // Fills a form of points in the image
+        void fill_form(std::vector<Point_2D> points, Color color);
         // Fills a rectangle on the image
 		void fill_rect_force(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
 		void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
@@ -559,6 +567,7 @@ namespace scls {
 		// Loads the bKGD chunk from a path and returns the color
 		static Color _load_bKGD_from_file(Bytes_Set* file, _PNG_Chunk chunk);
         // Load a IDAT chunk grom a path
+        void _load_png_IDAT_from_file_rgb(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data);
         void _load_png_IDAT_from_file_rgba(int component_size, int current_line_start_position, int last_line_start_position, int multiplier, int processed_data);
 		void _load_png_IDAT_from_file(Bytes_Set* file, std::shared_ptr<__Image_Error>& error_handler);
         // Load the pHYS chunk from a path

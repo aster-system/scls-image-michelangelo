@@ -652,6 +652,7 @@ namespace scls {
         else if(name == "mnotin"){return 8713;}
         else if(name == "mor"){return 8744;}
         else if(name == "mpartial") {return 948;}
+        else if(name == std::string_view("mprod") || name == std::string_view("mproduct")){return 8719;}
         else if(name == "mrang"){return 10217;}
         else if(name == "mroot"){return 8730;}
         else if(name == "mto"){return 10230;}
