@@ -778,6 +778,10 @@ namespace scls {
         return to_return;
     }
     std::shared_ptr<__Math_Part_Image> __generate_sup(std::shared_ptr<XML_Text_Base> content, Text_Style current_style, Text_Image_Block* needed_block) {
+        if(content.get()->sub_texts().size() == 2) {
+            return __generate_sup(content.get()->sub_texts().at(1), current_style, needed_block);
+        }
+
         // Draw the needed image
         Text_Style new_style = current_style.new_child();
         int base_size = new_style.font_size();

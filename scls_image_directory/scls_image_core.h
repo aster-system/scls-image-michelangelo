@@ -647,6 +647,9 @@ namespace scls {
     std::vector<scls::Point_2D> circle_points(int x, int y, int radius, int width, int height);
     // Points in a line
     std::vector<scls::Point_2D> line_points(int x_1, int y_1, int x_2, int y_2, unsigned short line_width);
+
+    // Draw a grid in an image
+    void draw_grid(scls::Image img, scls::Plane_Base* base);
 }
 
 #endif // SCLS_IMAGE_CORE

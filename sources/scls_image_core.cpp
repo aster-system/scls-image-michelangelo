@@ -2823,4 +2823,37 @@ namespace scls {
         }
         return true;
     };
+
+    // Draw a grid in an image
+    void draw_grid(scls::Image img, scls::Plane_Base* base) {
+		double min_x = base->canonical_x_to_base_x(0);
+		double max_x = base->canonical_x_to_base_x(img.width());
+		double min_y = base->canonical_y_to_base_y(img.height());
+		double max_y = base->canonical_y_to_base_y(0);
+
+		// Calculate the start of the grid
+		double step_x = 1;double step_y = 1;
+		double x_start = std::ceil(min_x * (1.0/step_x)) * step_x;
+		double y_start = std::ceil(min_y * (1.0/step_y)) * step_y;
+
+		// Trace the X lines
+		double current_x = x_start;
+		while(current_x <= max_x) {
+			img.draw_line(base->base_x_to_canonical_x(current_x), 0, base->base_x_to_canonical_x(current_x), img.height(), scls::Color(0, 0, 0), 1);
+			current_x += step_x;
+		}
+
+		// Trace the Y lines
+		double current_y = y_start;
+		while(current_y <= max_y) {
+			img.draw_line(0, base->base_y_to_canonical_y(current_y), img.width(), base->base_y_to_canonical_y(current_y), scls::Color(0, 0, 0), 1);
+			current_y += step_y;
+		}
+
+		// Central grid
+		double needed_y = base->base_y_to_canonical_y(0);
+		img.draw_line(0, needed_y, img.width(), needed_y, scls::Color(0, 0, 0), 3);
+		double needed_x = base->base_x_to_canonical_x(0);
+		img.draw_line(needed_x, 0, needed_x, img.height(), scls::Color(0, 0, 0), 3);
+	}
 }
