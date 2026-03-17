@@ -75,6 +75,7 @@
 #include "scls_image_directory/scls_image_graph.h"
 #include "scls_image_directory/scls_image_statistic.h"
 #include "scls_image_directory/scls_image_table.h"
+#include "scls_image_directory/scls_image_turtle.h"
 
 namespace scls {
 

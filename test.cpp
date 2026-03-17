@@ -28,7 +28,13 @@
 SCLS_INIT;
 
 int main() {
-	std::vector<scls::Point_2D> wing = {scls::Point_2D(-0.25, -0.25), scls::Point_2D(0.25, -0.25), scls::Point_2D(0.25, 0.25)};
+    std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>(std::string("sin(x)"));
+    std::cout << "A " << f.get()->to_std_string(0) << std::endl;
+    f = scls::mclaurin(f.get(), std::string("x"), 20);
+    while(f.get()->simplify_step() != scls::Formula_Base::NO_SIMPLIFICATION){}
+    std::cout << "B " << f.get()->to_std_string(0) << std::endl;
+
+	/*std::vector<scls::Point_2D> wing = {scls::Point_2D(-0.25, -0.25), scls::Point_2D(0.25, -0.25), scls::Point_2D(0.25, 0.25)};
 	scls::Physic_Engine engine = scls::Physic_Engine();
 
 	// Generates wing
@@ -68,7 +74,7 @@ int main() {
 	for(std::size_t i = 0;i<particles.size();i++) {
 		image.fill_circle(base.base_x_to_canonical_x(particles.at(i).get()->attached_transform()->absolute_x()), base.base_y_to_canonical_y(-particles.at(i).get()->attached_transform()->absolute_y()), base.base_scale_x_to_canonical_scale_x(particles.at(i).get()->attached_transform()->absolute_scale_x()), base.base_scale_y_to_canonical_scale_y(particles.at(i).get()->attached_transform()->absolute_scale_y()), scls::Color(0, 0, 255));
 	}
-	image.save_png(std::string("tests/avion.png"));
+	image.save_png(std::string("tests/avion.png"));//*/
 
     return 0;
 }

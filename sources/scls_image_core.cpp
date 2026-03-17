@@ -2830,6 +2830,7 @@ namespace scls {
 		double max_x = base->canonical_x_to_base_x(img.width());
 		double min_y = base->canonical_y_to_base_y(img.height());
 		double max_y = base->canonical_y_to_base_y(0);
+		if(min_y > max_y){double temp = min_y;min_y = max_y;max_y = temp;}
 
 		// Calculate the start of the grid
 		double step_x = 1;double step_y = 1;

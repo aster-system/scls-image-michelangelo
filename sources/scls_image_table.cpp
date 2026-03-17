@@ -32,31 +32,55 @@ namespace scls {
 
     //*********
 	//
-	// PLEOS Table handler
+	// Table handler
 	//
 	//*********
 
-	// Height / width of the case
-    int __Table_Case::Table_Case::height() const {if(image.get() == 0){return 0;} return image.get()->height() + margin_bottom + margin_top;};
-    int __Table_Case::Table_Case::width() const {if(image.get() == 0){return 0;}return image.get()->width() + margin * 2;};
+	// Loads the graph XML balises
+    void load_balises_table(__Balise_Container* defined_balises) {
+        // Loads basic table balises
+        defined_balises->__load_built_in_balises();
+
+        std::shared_ptr<scls::Balise_Style_Datas> current_balise;
+        current_balise = std::make_shared<scls::Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        defined_balises->set_defined_balise("case_plus", current_balise);
+        current_balise = std::make_shared<scls::Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        defined_balises->set_defined_balise("histogram", current_balise);
+        current_balise = std::make_shared<scls::Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        defined_balises->set_defined_balise("if", current_balise);
+        current_balise = std::make_shared<scls::Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        defined_balises->set_defined_balise("repeat", current_balise);
+        current_balise = std::make_shared<scls::Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        current_balise.get()->style.set_margin_bottom(16);
+        defined_balises->set_defined_balise("table", current_balise);
+    }
+
+    // Height / width of the case
+    int Table_Base::Table_Case::height() const {if(image.get() == 0){return 0;} return image.get()->height() + margin_bottom + margin_top;};
+    int Table_Base::Table_Case::width() const {if(image.get() == 0){return 0;}return image.get()->width() + margin * 2;};
 
 	// Handle the title
     std::shared_ptr<scls::__Image_Base> Illustrator::title_image(scls::Text_Image_Generator* tig){if(a_title == std::string()){return std::shared_ptr<scls::__Image_Base>();}return tig->image_shared_ptr(a_title, *title_style());};
 
     // Checks the merge of the case
-    void __Table_Case::check_merge() {
+    void Table_Base::check_merge() {
         // Reset merging
         for(int i = 0;i<static_cast<int>(a_cases.size());i++) {
             for(int j = 0;j<static_cast<int>(a_cases.at(i).size());j++) {
-                case_at(i, j)->merged = __Table_Case::Table_Case::Merge_State::MS_No;
+                case_at(i, j)->merged = Table_Base::Table_Case::Merge_State::MS_No;
             }
         }
 
         // Check merging
         for(int i = 0;i<static_cast<int>(a_cases.size());i++) {
             for(int j = 0;j<static_cast<int>(a_cases.at(i).size());j++) {
-                __Table_Case::Table_Case* current_case = case_at(i, j);
-                if(current_case->merged != __Table_Case::Table_Case::Merge_State::MS_Merged){
+                Table_Base::Table_Case* current_case = case_at(i, j);
+                if(current_case->merged != Table_Base::Table_Case::Merge_State::MS_Merged){
                     // Check the merged cases
                     const int temp_i = i;const int temp_j = j;
                     int case_width = 1;bool stop = false;
@@ -64,10 +88,10 @@ namespace scls {
                         j = temp_j;if(i == temp_i){j++;}
                         while(j < static_cast<int>(a_cases.at(i).size())) {
                             if(!(i == temp_i && j == temp_j)) {
-                                __Table_Case::Table_Case* analysed_case = case_at(i, j);
+                                Table_Base::Table_Case* analysed_case = case_at(i, j);
                                 if(current_case->image.get() == analysed_case->image.get()){
-                                    analysed_case->merged = __Table_Case::Table_Case::Merge_State::MS_Merged;
-                                    current_case->merged = __Table_Case::Table_Case::Merge_State::MS_Merged_Main;
+                                    analysed_case->merged = Table_Base::Table_Case::Merge_State::MS_Merged;
+                                    current_case->merged = Table_Base::Table_Case::Merge_State::MS_Merged_Main;
                                     case_width++;
                                 }
                                 else{if(j <= temp_j){stop = true;}break;}
@@ -83,12 +107,12 @@ namespace scls {
     }
 
     // Returns the width of a column
-    int __Table_Case::column_width(int column) const{
+    int Table_Base::column_width(int column) const{
         if(column >= static_cast<int>(a_cases.size())){return 0;}
 
         int to_return = 0;
         for(int i = 0;i<static_cast<int>(a_cases.at(column).size());i++){
-            if(a_cases.at(column).at(i).get() != 0 && a_cases.at(column).at(i).get()->width() > to_return && a_cases.at(column).at(i).get()->merged == __Table_Case::Table_Case::Merge_State::MS_No){
+            if(a_cases.at(column).at(i).get() != 0 && a_cases.at(column).at(i).get()->width() > to_return && a_cases.at(column).at(i).get()->merged == Table_Base::Table_Case::Merge_State::MS_No){
                 to_return = a_cases.at(column).at(i).get()->width();
             }
         }
@@ -97,14 +121,14 @@ namespace scls {
         if(to_return < a_minimum_case_width){return a_minimum_case_width;}
         return to_return;
     };
-    int __Table_Case::column_width(int column, int width) const{int to_return = 0;for(int i = 0;i<width;i++){to_return += column_width(i + column);if(i>0){to_return += column_separation();}}return to_return;};
+    int Table_Base::column_width(int column, int width) const{int to_return = 0;for(int i = 0;i<width;i++){to_return += column_width(i + column);if(i>0){to_return += column_separation();}}return to_return;};
 
     // Returns the height of a line
-    int __Table_Case::line_height(int line) const {
+    int Table_Base::line_height(int line) const {
         int to_return = 0;
         for(int i = 0;i<static_cast<int>(a_cases.size());i++){
             if(static_cast<int>(a_cases.at(i).size()) > line && a_cases.at(i)[line].get() != 0){
-                if(a_cases.at(i).at(line).get()->height() > to_return && a_cases.at(i).at(line).get()->merged == __Table_Case::Table_Case::Merge_State::MS_No){
+                if(a_cases.at(i).at(line).get()->height() > to_return && a_cases.at(i).at(line).get()->merged == Table_Base::Table_Case::Merge_State::MS_No){
                     to_return = a_cases.at(i).at(line).get()->height();
                 }
             }
@@ -125,7 +149,7 @@ namespace scls {
     }
 
     // Returns the number of lines in the table
-    int __Table_Case::line_number() const {
+    int Table_Base::line_number() const {
         int to_return = 0;
         for(int i = 0;i<static_cast<int>(a_cases.size());i++){
             if(static_cast<int>(a_cases.at(i).size()) > to_return){
@@ -136,12 +160,12 @@ namespace scls {
     }
 
     // Returns the case at a certain position
-    __Table_Case::Table_Case* __Table_Case::case_at(int x, int y){
-        while(static_cast<int>(a_cases.size()) <= x){a_cases.push_back(std::vector<std::shared_ptr<__Table_Case::Table_Case>>());}
-        while(static_cast<int>(a_cases[x].size()) <= y){a_cases[x].push_back(std::shared_ptr<__Table_Case::Table_Case>());}
+    Table_Base::Table_Case* Table_Base::case_at(int x, int y){
+        while(static_cast<int>(a_cases.size()) <= x){a_cases.push_back(std::vector<std::shared_ptr<Table_Base::Table_Case>>());}
+        while(static_cast<int>(a_cases[x].size()) <= y){a_cases[x].push_back(std::shared_ptr<Table_Base::Table_Case>());}
         if(a_cases[x][y].get()==0){
             // Create the case
-            a_cases[x][y] = std::make_shared<__Table_Case::Table_Case>();
+            a_cases[x][y] = std::make_shared<Table_Base::Table_Case>();
             a_cases[x][y].get()->image = std::make_shared<scls::Image>();
             a_cases[x][y].get()->parent_table_weak_ptr = a_this_object;
         }
@@ -149,7 +173,7 @@ namespace scls {
     };
 
     // Loads cases in the table
-    void __Table_Case::load_cases(std::shared_ptr<XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig) {
+    void Table_Base::load_cases(std::shared_ptr<XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig) {
         // Get the needed datas
         std::vector<scls::XML_Attribute>& attributes = cases.get()->xml_balise_attributes();
         int height = 0;int width = 0;int x = 0;int y = 0;std::string to_load = std::string();
@@ -198,7 +222,7 @@ namespace scls {
     }
 
     // Merges cases
-    void __Table_Case::merge_cases(int x, int y, int width, int height){
+    void Table_Base::merge_cases(int x, int y, int width, int height){
         case_at(x, y)->merged_height = height;case_at(x, y)->merged_width = width;
         for(int i = 0;i<static_cast<int>(width);i++){
             for(int j = 0;j<static_cast<int>(height);j++){
@@ -211,9 +235,9 @@ namespace scls {
     }
 
     // Set the value of an std::string case
-    std::shared_ptr<scls::__Image_Base> __Table_Case::case_image_from_text(std::string value, scls::Text_Style needed_style, scls::Text_Image_Generator* tig){return tig->image_shared_ptr(value, needed_style);}
-    void __Table_Case::set_case_value(int x, int y, std::string value, scls::Text_Style needed_style, scls::Text_Image_Generator* tig){(*case_at(x, y)->image.get()) = case_image_from_text(value, needed_style, tig);case_at(x, y)->content = value;case_at(x, y)->style.merge_style(needed_style);};
-    void __Table_Case::set_cases_value(int x, int y, int width, int height, std::string value, scls::Text_Style needed_style, scls::Text_Image_Generator* tig) {
+    std::shared_ptr<scls::__Image_Base> Table_Base::case_image_from_text(std::string value, scls::Text_Style needed_style, scls::Text_Image_Generator* tig){return tig->image_shared_ptr(value, needed_style);}
+    void Table_Base::set_case_value(int x, int y, std::string value, scls::Text_Style needed_style, scls::Text_Image_Generator* tig){(*case_at(x, y)->image.get()) = case_image_from_text(value, needed_style, tig);case_at(x, y)->content = value;case_at(x, y)->style.merge_style(needed_style);};
+    void Table_Base::set_cases_value(int x, int y, int width, int height, std::string value, scls::Text_Style needed_style, scls::Text_Image_Generator* tig) {
         std::shared_ptr<scls::__Image_Base> img = case_image_from_text(value, needed_style, tig);
         (*case_at(x, y)->image.get()) = img;
         case_at(x, y)->content = value;
@@ -221,7 +245,7 @@ namespace scls {
     }
 
     // Returns the table to an image
-    scls::Image __Table_Case::to_image() {
+    scls::Image Table_Base::to_image() {
         // Get the needed datas
         int bottom_border = 2;
         int left_border = 2;
@@ -269,9 +293,9 @@ namespace scls {
         // Draw each columns
         for(int i = 0;i<static_cast<int>(a_cases.size());i++) {
             for(int j = 0;j<static_cast<int>(a_cases.at(i).size());j++) {
-                __Table_Case::Table_Case* current_case = case_at(i, j);
+                Table_Base::Table_Case* current_case = case_at(i, j);
                 scls::Image* current_image = current_case->image.get();
-                if(current_case->merged != __Table_Case::Table_Case::Merge_State::MS_Merged){
+                if(current_case->merged != Table_Base::Table_Case::Merge_State::MS_Merged){
                     // Handle merging
                     int current_width = column_width(i, current_case->merged_width);
                     int width_in_pixel = current_image->width();
@@ -313,8 +337,90 @@ namespace scls {
         return to_return;
     }
 
+    // Loads a single XML balise
+    void Table_Base::load_from_xml_balise(std::shared_ptr<XML_Text_Base> xml, Text_Environment* environment, Text_Style needed_style, Text_Image_Generator& tig) {
+        std::string current_balise_name = xml.get()->xml_balise_name();
+        std::vector<scls::XML_Attribute>& attributes = xml.get()->xml_balise_attributes();
+        if(current_balise_name == "case" || current_balise_name == "case_plus"){
+            scls::Color background_color = scls::Color(255, 255, 255);
+            scls::Color color = scls::Color(255, 255, 255);bool color_used = false;
+            std::string content = std::string();bool content_used = false;
+            scls::Text_Style case_style = needed_style.new_child();case_style.set_border_width(0);
+            int height = 1;int width = 1;bool right_border = true;int x = 0;int y = 0;
+            for(int i = 0;i<static_cast<int>(attributes.size());i++) {
+                if(attributes[i].name == std::string("background_color")){background_color = scls::Color::from_std_string(attributes[i].value);}
+                else if(!scls::text_style_from_xml_attribute(&attributes[i], case_style)) {
+                    if(attributes[i].name == std::string("color")){color = scls::Color::from_std_string(attributes[i].value);color_used=true;}
+                    else if(attributes[i].name == std::string("content")){content = attributes[i].value;content_used=true;}
+                    else if(attributes[i].name == std::string("height")){height = std::stoi(attributes[i].value);}
+                    else if(attributes[i].name == std::string("right_border")){if(attributes[i].value==std::string("0")||attributes[i].value==std::string("false")||attributes[i].value==std::string("no")){right_border=false;}}
+                    else if(attributes[i].name == std::string("width")){width = std::stoi(attributes[i].value);}
+                    else if(attributes[i].name == std::string("x")){x = environment->value_double(attributes[i].value);}
+                    else if(attributes[i].name == std::string("y")){y = environment->value_double(attributes[i].value);}
+                }
+            }
+
+            // Create the result
+            case_style.set_background_color(scls::Color(0, 0, 0, 0));
+            case_style.set_font_size(needed_style.font_size());
+            if(color_used){case_style.set_color(color);}
+            if(content_used || current_balise_name == "case_plus") {
+                if(current_balise_name == "case_plus"){
+                    content = xml.get()->text();
+                    if(case_style.max_width() == -1){case_style.set_max_width(column_width(x, width));}
+                }
+                set_case_value(x, y, content, case_style, &tig);
+            }
+
+            // Set the style
+            case_style.set_background_color(background_color);
+            case_at(x, y)->style = case_style;
+
+            // Final settings
+            case_at(x, y)->right_border = right_border;
+            merge_cases(x, y, width, height);
+        }
+        else if(current_balise_name == "cases"){load_cases(xml, needed_style.new_child(), &tig);}
+    }
+
+    // Loads a lot of XML balises
+    void Table_Base::load_from_xml_balises(std::shared_ptr<scls::XML_Text_Base> xml, Text_Environment* environment, Text_Style text_style, Text_Image_Generator& tig){
+	    // Handle a lot of balises
+    	if(xml.get()->xml_balise_name() != std::string_view("table") && xml.get()->xml_balise_name() != std::string_view("")) {
+            // Handle utilities
+            scls::Utility_Balise utility = scls::utilities_balise(xml);
+
+            if(utility.type == SCLS_BALISE_IF) {
+                // Condition to do this structure
+
+            }
+            else if(utility.type == SCLS_BALISE_REPEAT) {
+                // Repeat some instructions
+                xml.get()->set_xml_balise_name(std::string());environment->add_repetition();
+                scls::__Formula_Base::Unknown* needed_variable = environment->create_unknown("b");
+                needed_variable->set_value(std::make_shared<scls::__Formula>(utility.value_start));scls::Fraction step = scls::Fraction(utility.value_end - utility.value_start) / (utility.times - 1);
+                for(int j = 0;j<utility.times;j++){
+                    environment->set_repetition(j);
+                    load_from_xml_balises(xml, environment, text_style, tig);
+                    (*reinterpret_cast<scls::__Formula*>(needed_variable->value.get())) += step;
+                }
+                xml.get()->set_xml_balise_name(std::string("repeat"));
+                environment->remove_repetition();
+            }
+            else{load_from_xml_balise(xml, environment, text_style, tig);}
+	    }
+	    else {
+            for(int i = 0;i<static_cast<int>(xml->sub_texts().size());i++) {
+            	load_from_xml_balises(xml->sub_texts().at(i), environment, text_style, tig);
+            }
+	    }
+	}
+
     // Creates and returns a table from an std::string
-	std::shared_ptr<__Table_Case> table_from_xml(std::shared_ptr<__Table_Case> to_return, std::shared_ptr<XML_Text_Base> xml, scls::Text_Style needed_style) {
+    std::shared_ptr<scls::_Balise_Style_Container> table_from_xml_balises;
+    std::shared_ptr<Table_Base> table_from_xml(std::shared_ptr<Table_Base> to_return, std::string to_parse) {if(table_from_xml_balises.get() == 0){table_from_xml_balises = std::make_shared<scls::_Balise_Style_Container>();}load_balises_table(table_from_xml_balises.get());return table_from_xml(to_return, xml(table_from_xml_balises, to_parse), scls::Text_Style());}
+	std::shared_ptr<Table_Base> table_from_xml(std::shared_ptr<Table_Base> to_return, std::shared_ptr<XML_Text_Base> xml, scls::Text_Style needed_style) {
+	    scls::Text_Environment environment;
 	    scls::Text_Image_Generator tig;
 
 	    // Handle the attributes
@@ -446,58 +552,15 @@ namespace scls {
 	    }
 
 	    // Handle a lot of balises
-	    for(int i = 0;i<static_cast<int>(xml->sub_texts().size());i++){
-            std::string current_balise_name = xml->sub_texts()[i].get()->xml_balise_name();
-            std::vector<scls::XML_Attribute>& attributes = xml->sub_texts()[i].get()->xml_balise_attributes();
-            if(current_balise_name == "case" || current_balise_name == "case_plus"){
-                scls::Color background_color = scls::Color(255, 255, 255);
-                scls::Color color = scls::Color(255, 255, 255);bool color_used = false;
-                std::string content = std::string();bool content_used = false;
-                scls::Text_Style case_style = needed_style.new_child();case_style.set_border_width(0);
-                int height = 1;int width = 1;bool right_border = true;int x = 0;int y = 0;
-                for(int i = 0;i<static_cast<int>(attributes.size());i++) {
-                    if(attributes[i].name == std::string("background_color")){background_color = scls::Color::from_std_string(attributes[i].value);}
-                    else if(!scls::text_style_from_xml_attribute(&attributes[i], case_style)) {
-                        if(attributes[i].name == std::string("color")){color = scls::Color::from_std_string(attributes[i].value);color_used=true;}
-                        else if(attributes[i].name == std::string("content")){content = attributes[i].value;content_used=true;}
-                        else if(attributes[i].name == std::string("height")){height = std::stoi(attributes[i].value);}
-                        else if(attributes[i].name == std::string("right_border")){if(attributes[i].value==std::string("0")||attributes[i].value==std::string("false")||attributes[i].value==std::string("no")){right_border=false;}}
-                        else if(attributes[i].name == std::string("width")){width = std::stoi(attributes[i].value);}
-                        else if(attributes[i].name == std::string("x")){x = std::stoi(attributes[i].value);}
-                        else if(attributes[i].name == std::string("y")){y = std::stoi(attributes[i].value);}
-                    }
-                }
-
-                // Create the result
-                case_style.set_background_color(scls::Color(0, 0, 0, 0));
-                case_style.set_font_size(needed_style.font_size());
-                if(color_used){case_style.set_color(color);}
-                if(content_used || current_balise_name == "case_plus") {
-                    if(current_balise_name == "case_plus"){
-                        content = xml->sub_texts()[i].get()->text();
-                        if(case_style.max_width() == -1){case_style.set_max_width(to_return.get()->column_width(x, width));}
-                    }
-                    to_return.get()->set_case_value(x, y, content, case_style, &tig);
-                }
-
-                // Set the style
-                case_style.set_background_color(background_color);
-                to_return.get()->case_at(x, y)->style = case_style;
-
-                // Final settings
-                to_return.get()->case_at(x, y)->right_border = right_border;
-                to_return.get()->merge_cases(x, y, width, height);
-            }
-            else if(current_balise_name == "cases"){to_return.get()->load_cases(xml->sub_texts()[i], needed_style.new_child(), &tig);}
-        }
+	    to_return.get()->load_from_xml_balises(xml, &environment, Text_Style(), tig);
 
         // Return the result
         return to_return;
 	}
 
 	// Creates a table from a precise object
-	std::shared_ptr<__Table_Case> table_from_boolean(Boolean* boolean) {
-		std::shared_ptr<__Table_Case> table = __Table_Case::new_table();
+	std::shared_ptr<Table_Base> table_from_boolean(Boolean* boolean) {
+		std::shared_ptr<Table_Base> table = Table_Base::new_table();
 		Text_Style t;Text_Image_Generator g;
 
 		// Get each unknowns
@@ -520,8 +583,8 @@ namespace scls {
 
 		return table;
 	}
-	std::shared_ptr<__Table_Case> table_from_boolean_karnaugh(Boolean* boolean) {
-		std::shared_ptr<__Table_Case> table = __Table_Case::new_table();
+	std::shared_ptr<Table_Base> table_from_boolean_karnaugh(Boolean* boolean) {
+		std::shared_ptr<Table_Base> table = Table_Base::new_table();
 		Text_Style t;Text_Image_Generator g;
 
 		// Get each unknowns
@@ -547,8 +610,8 @@ namespace scls {
 
 		return table;
 	}
-	std::shared_ptr<__Table_Case> table_from_statistics(Statistics* stats) {
-		std::shared_ptr<__Table_Case> table = __Table_Case::new_table();
+	std::shared_ptr<Table_Base> table_from_statistics(Statistics* stats) {
+		std::shared_ptr<Table_Base> table = Table_Base::new_table();
 		Text_Style t;Text_Image_Generator g;
 
 		table.get()->set_case_value(0, 0, std::string("Donnée"), t, &g);

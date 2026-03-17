@@ -301,6 +301,7 @@ namespace scls {
         inline bool font_modified() const {return a_datas.get()->font_modified();};
         inline std::string font_path()const{return a_datas.get()->font_path();};
         inline void set_font(Font new_font){a_datas.get()->set_font(new_font);}
+        inline void set_font(std::string new_font){set_font(get_system_font(new_font));}
         inline void set_font_path(std::string new_font_path){a_datas.get()->set_font_path(new_font_path);};
         inline void unset_font(){a_datas.get()->unset_font();};
         // Font size
@@ -891,6 +892,7 @@ namespace scls {
         inline std::shared_ptr<__Image_Base> image_shared_ptr(Fraction fraction, Text_Style style){return image_shared_ptr(fraction.to_mathml(0), style);};
         // Returns a newly created text image
         template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::shared_ptr<XML_Text_Base> text, Text_Style style) {return Text_Image_Block::new_text_image_block<T>(a_balises, text, style);};
+        template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::string text, Text_Style style) {return Text_Image_Block::new_text_image_block<T>(a_balises, text, style);};
         template <typename T = Text_Image_Block> std::shared_ptr<T> new_text_image_block_shared_ptr(std::string text) {return Text_Image_Block::new_text_image_block<T>(a_balises, text);};
 
         // Methods to directly use balises

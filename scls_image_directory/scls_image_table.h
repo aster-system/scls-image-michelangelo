@@ -35,9 +35,12 @@ namespace scls {
 
     //*********
 	//
-	// PLEOS Table handler
+	// Table handler
 	//
 	//*********
+
+	// Loads the graph XML balises
+    void load_balises_table(__Balise_Container* defined_balises);
 
 	class Illustrator {
 	    // Class representating a basic illustrator for PLEOS
@@ -60,7 +63,7 @@ namespace scls {
         std::shared_ptr<scls::Text_Style> a_title_style = std::make_shared<scls::Text_Style>();
 	};
 
-	class __Table_Case : public Illustrator {
+	class Table_Base : public Illustrator {
         // Class representating a more table handler for PLEOS
     public:
 
@@ -98,12 +101,12 @@ namespace scls {
             inline bool border_top() const {return a_border_top;};
 
             // Parent table
-            __Table_Case* parent_table()const{return parent_table_weak_ptr.lock().get();};
-            std::weak_ptr<__Table_Case> parent_table_weak_ptr;
+            Table_Base* parent_table()const{return parent_table_weak_ptr.lock().get();};
+            std::weak_ptr<Table_Base> parent_table_weak_ptr;
         };
 
         // Table constructor
-        template <typename T = __Table_Case> static std::shared_ptr<T> new_table(){{std::shared_ptr<T> to_return = std::shared_ptr<T>(new T());to_return.get()->a_this_object = to_return;return to_return;}};
+        template <typename T = Table_Base> static std::shared_ptr<T> new_table(){{std::shared_ptr<T> to_return = std::shared_ptr<T>(new T());to_return.get()->a_this_object = to_return;return to_return;}};
 
         // Returns the case at a certain position
         Table_Case* case_at(int x, int y);
@@ -126,6 +129,12 @@ namespace scls {
         // Loads cases in the table
         virtual void load_cases(std::shared_ptr<XML_Text_Base> cases, scls::Text_Style style, scls::Text_Image_Generator* tig);
 
+        // Loads a single XML balise
+        virtual void load_from_xml_balise(std::shared_ptr<XML_Text_Base> xml, Text_Environment* environment, Text_Style text_style, Text_Image_Generator& tig);
+
+        // Loads a lot of XML balises
+        virtual void load_from_xml_balises(std::shared_ptr<XML_Text_Base> xml, Text_Environment* environment, Text_Style text_style, Text_Image_Generator& tig);
+
         // Merges cases
         void merge_cases(int x, int y, int width, int height);
 
@@ -147,7 +156,7 @@ namespace scls {
     protected:
 
         // Table constructor
-        __Table_Case():Illustrator(){};
+        Table_Base():Illustrator(){};
 
     private:
 
@@ -161,17 +170,19 @@ namespace scls {
         // Minimum width of a case
         int a_minimum_case_width = 0;
         // Weak ptr to this table
-        std::weak_ptr<__Table_Case> a_this_object;
+        std::weak_ptr<Table_Base> a_this_object;
     };
 
     // Creates and returns a table from an std::string
-	std::shared_ptr<__Table_Case> table_from_xml(std::shared_ptr<__Table_Case> table, std::shared_ptr<scls::XML_Text_Base> xml, scls::Text_Style needed_style);
-	template <typename T = __Table_Case> std::shared_ptr<T> table_from_xml(std::shared_ptr<scls::XML_Text_Base> xml, scls::Text_Style needed_style){std::shared_ptr<T> to_return = __Table_Case::new_table<T>();table_from_xml(to_return, xml, needed_style);return to_return;}
+	std::shared_ptr<Table_Base> table_from_xml(std::shared_ptr<Table_Base> table, std::shared_ptr<scls::XML_Text_Base> xml, scls::Text_Style needed_style);
+	std::shared_ptr<Table_Base> table_from_xml(std::shared_ptr<Table_Base> table, std::string to_parse);
+	template <typename T = Table_Base> std::shared_ptr<T> table_from_xml(std::shared_ptr<scls::XML_Text_Base> xml, scls::Text_Style needed_style){std::shared_ptr<T> to_return = Table_Base::new_table<T>();table_from_xml(to_return, xml, needed_style);return to_return;}
+	template <typename T = Table_Base> std::shared_ptr<T> table_from_xml(std::string to_parse){std::shared_ptr<T> to_return = Table_Base::new_table<T>();table_from_xml(to_return, to_parse);return to_return;}
 
 	// Creates a table from a precise object
-	std::shared_ptr<__Table_Case> table_from_boolean(Boolean* boolean);
-	std::shared_ptr<__Table_Case> table_from_boolean_karnaugh(Boolean* boolean);
-	std::shared_ptr<__Table_Case> table_from_statistics(Statistics* stats);
+	std::shared_ptr<Table_Base> table_from_boolean(Boolean* boolean);
+	std::shared_ptr<Table_Base> table_from_boolean_karnaugh(Boolean* boolean);
+	std::shared_ptr<Table_Base> table_from_statistics(Statistics* stats);
 }
 
 #endif // SCLS_IMAGE_TABLE
