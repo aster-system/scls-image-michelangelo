@@ -46,6 +46,12 @@ namespace scls {
         // Soft-resets the action
         virtual void soft_reset();
 
+        // Returns the action to a XML text
+        virtual std::string to_xml_text(std::string object_name);
+        virtual std::string to_xml_text_name();
+        std::string to_xml_text_object(std::string object_name);
+        std::string to_xml_text_time() const;
+
         // Duration of the action
         double duration = 0;
         // Passed time at executing this action
@@ -92,6 +98,10 @@ namespace scls {
         virtual std::shared_ptr<Action_Structure> clone_as_structure();
         void clone_content(std::shared_ptr<Action_Structure> target);
 
+        // Returns the action to a XML text
+        std::string to_xml_text_content();
+        virtual std::string to_xml_text(std::string object_name);
+
         // Getters and setters
         inline std::vector<std::shared_ptr<Action>>& actions(){return a_actions;};
         inline int current_action() const {return a_current_action;};
@@ -100,6 +110,29 @@ namespace scls {
         std::vector<std::shared_ptr<Action>> a_actions;
         // Current action
         int a_current_action = 0;
+    };
+
+    // Container action
+    class Action_Container {
+        // Class representing an entire container of action
+    public:
+        // Action_Container constructor
+        Action_Container();
+        Action_Container(std::shared_ptr<Action_Structure> main_thread);
+        template <typename T> Action_Container():Action_Container(std::make_shared<T>()){};
+
+        // Returns a thread
+        Action_Structure* main_thread() const;
+        Action_Structure* thread(int position) const;
+
+        // Creates a new thread
+        template <typename T> std::shared_ptr<T> new_thread(){std::shared_ptr<T> t = std::make_shared<T>();a_threads.push_back(t);return t;};
+
+        // Getters and setters
+        inline int threads_number() const {return a_threads.size();};
+    private:
+        // Threads in the container
+        std::vector<std::shared_ptr<Action_Structure>> a_threads;
     };
 
 	//*********
@@ -111,6 +144,16 @@ namespace scls {
 	class Turtle {
 		// Class representing a turtle
 	public:
+
+	    struct Action_Fill : public Action {
+	        #define TURTLE_ACTION_FILL 1003
+
+	        // Action_Fill constructor
+            Action_Fill();
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+	    };
 
 	    struct Action_Move_Forward : public Action {
 	        #define TURTLE_ACTION_MOVE 1001
@@ -161,6 +204,11 @@ namespace scls {
 		// Handle the turtle
 		//*********
 
+		// Fills a part
+		void add_point_to_fill(Point_2D to_fill);
+		void start_filling();
+		void stop_filling();
+
 		// Move
 		void go_forward(double distance);
 
@@ -173,6 +221,7 @@ namespace scls {
 		void rotate_radians(double rotation);
 
 		// Add some actions
+		void add_action_fill();
 		void add_action_move_forward(double needed_distance);
 		void add_action_rotate(double needed_rotation);
 
@@ -184,6 +233,11 @@ namespace scls {
 
 	    // Actions to do
 	    std::shared_ptr<Action_Structure> a_actions = std::make_shared<Action_Structure>();
+
+	    // Point to fill
+	    bool a_prepare_filling = false;
+	    std::list<Point_2D> a_to_fill;
+	    int a_to_fill_size = 0;
 
 		// Pen state
 		bool a_pen = true;

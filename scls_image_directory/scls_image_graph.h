@@ -131,6 +131,9 @@ namespace scls {
         // Nodes in the tree
         std::vector<std::shared_ptr<Node_Base>> a_nodes;
     };
+
+    // Draws the graph of a function
+    void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b);
 }
 
 #endif // SCLS_IMAGE_GRAPH

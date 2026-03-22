@@ -38,6 +38,12 @@ namespace scls {
     // Soft-resets the action
     void Action::soft_reset(){};
 
+    // Action
+    std::string Action::to_xml_text(std::string object_name){return std::string("<") + to_xml_text_name() + to_xml_text_object(object_name) + to_xml_text_time() + std::string(">");}
+    std::string Action::to_xml_text_name(){return std::string("action");}
+    std::string Action::to_xml_text_object(std::string object_name){if(object_name == std::string()){return std::string();}return std::string(" object=\"") + object_name + std::string("\"");}
+    std::string Action::to_xml_text_time() const{if(duration == 0){return std::string();}return std::string(" time=") + scls::Fraction::from_double(duration).to_std_string(0);}
+
     // Action_Structure constructor
     Action_Structure::Action_Structure():Action_Structure(ACTION_STRUCTURE){};
     Action_Structure::Action_Structure(short action_type):Action(action_type){};
@@ -63,9 +69,25 @@ namespace scls {
     // If the current action is the end action
     bool Action_Structure::is_end_action() const{return a_current_action >= static_cast<int>(a_actions.size());}
 
+    // Last action of the structure
+    Action* Action_Structure::last_action() const {if(static_cast<int>(a_actions.size()) <= 0){return 0;}return a_actions.at(0).get();};
+    short Action_Structure::last_action_type() const {return last_action()->type;};
+
     // Getters and setters
     Action* Action_Structure::next_action() const{if(static_cast<int>(a_actions.size()) <= a_current_action){return 0;}return a_actions.at(a_current_action).get();}
     short Action_Structure::next_action_type() const{Action* action = next_action();if(action==0){return 0;}return action->type;}
+
+    // Action structure
+    std::string Action_Structure::to_xml_text_content(){std::string content = std::string();for(int i = 0;i<static_cast<int>(a_actions.size());i++){content += a_actions.at(i).get()->to_xml_text(std::string());if(i<static_cast<int>(a_actions.size())-1){content+=std::string("\n");}}return content;}
+    std::string Action_Structure::to_xml_text(std::string object_name){return std::string("<") + to_xml_text_name() + to_xml_text_object(object_name) + std::string(">\n") + to_xml_text_content() + std::string("\n</") + to_xml_text_name() + std::string(">");}
+
+    // Action_Container constructor
+    Action_Container::Action_Container(){}
+    Action_Container::Action_Container(std::shared_ptr<Action_Structure> main_thread){a_threads.push_back(main_thread);}
+
+    // Returns a thread
+    Action_Structure* Action_Container::main_thread() const {return a_threads.at(0).get();}
+    Action_Structure* Action_Container::thread(int position) const {return a_threads.at(position).get();}
 
 	//*********
 	//
@@ -79,6 +101,9 @@ namespace scls {
 	// Turtle destructor
 	Turtle::~Turtle(){}
 
+	// Action_Fill constructor
+    Turtle::Action_Fill::Action_Fill():Action(TURTLE_ACTION_FILL){};
+
 	// Action_Move_Forward constructor
     Turtle::Action_Move_Forward::Action_Move_Forward(double distance):Action(TURTLE_ACTION_MOVE){a_distance = distance;};
 
@@ -86,6 +111,7 @@ namespace scls {
     Turtle::Action_Rotate::Action_Rotate(double angle):Action(TURTLE_ACTION_ROTATE){a_angle = angle;};
 
     // Clone the action
+    std::shared_ptr<Action> Turtle::Action_Fill::clone(){std::shared_ptr<Action_Fill> to_return = std::make_shared<Action_Fill>();clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Move_Forward::clone(){std::shared_ptr<Action_Move_Forward> to_return = std::make_shared<Action_Move_Forward>(a_distance);clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Rotate::clone(){std::shared_ptr<Action_Rotate> to_return = std::make_shared<Action_Rotate>(a_angle);clone_base(to_return.get());return to_return;};
 
@@ -111,12 +137,30 @@ namespace scls {
 	void Turtle::rotate_radians(double rotation){a_rotation += rotation;}
 
 	// Add some actions
+	void Turtle::add_action_fill(){actions()->add_action(std::make_shared<Turtle::Action_Fill>());}
     void Turtle::add_action_move_forward(double needed_distance){actions()->add_action(std::make_shared<Turtle::Action_Move_Forward>(needed_distance));}
     void Turtle::add_action_rotate(double needed_rotation){while(needed_rotation < 0){needed_rotation += 360.0;}actions()->add_action(std::make_shared<Turtle::Action_Rotate>(needed_rotation / (180.0 / SCLS_PI)));}
 
+    // Fills a part
+    void Turtle::add_point_to_fill(Point_2D to_fill){if(!(a_to_fill.back().x() == to_fill.x() && a_to_fill.back().y() == to_fill.y())){a_to_fill.push_back(to_fill);a_to_fill_size++;}}
+    void Turtle::start_filling() {a_prepare_filling = true;}
+    void Turtle::stop_filling() {
+        std::vector<Point_2D> needed_vector = std::vector<Point_2D>(a_to_fill_size);
+        for(std::size_t i = 0;i<needed_vector.size();i++){needed_vector[i] = a_to_fill.front();a_to_fill.pop_front();}
+        a_image.fill_form(needed_vector, Color(0, 0, 153));
+        a_prepare_filling = false;a_to_fill_size = 0;
+    }
+
 	// Update the actions in the turtle
     double Turtle::execute_action(Action* action, double delta_time){
-        if(action->type == TURTLE_ACTION_MOVE) {
+        if(action->type == TURTLE_ACTION_FILL) {
+            // Go forward with the turtle
+            Turtle::Action_Fill* m = reinterpret_cast<Turtle::Action_Fill*>(action);
+            if(a_prepare_filling){stop_filling();}
+            else{start_filling();}
+            return -1;
+        }
+        else if(action->type == TURTLE_ACTION_MOVE) {
             // Go forward with the turtle
             Turtle::Action_Move_Forward* m = reinterpret_cast<Turtle::Action_Move_Forward*>(action);
             double distance = delta_time * m->a_speed;
@@ -147,7 +191,7 @@ namespace scls {
             double time_needed = 0;
             do {
                 time_needed = execute_action(actions()->next_action(), delta_time);
-                if(time_needed > 0){delta_time -= time_needed;actions()->go_to_next_action();}
+                if(time_needed > 0){delta_time -= time_needed;if(a_prepare_filling){add_point_to_fill(a_position);}actions()->go_to_next_action();}
             } while(actions()->next_action() != 0 && time_needed > 0);
 
             if(time_needed == -1){actions()->go_to_next_action();}
