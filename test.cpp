@@ -28,7 +28,20 @@
 SCLS_INIT;
 
 int main() {
-	std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("sin(x)");
+    // Precision problem : 17614578979479 / 11245
+	scls::Extendable_Int m = scls::Extendable_Int(1);
+	for(int i = 0;i<1000;i++) {
+        scls::Extendable_Int n = scls::Extendable_Int(i + 1);
+        m.multiply(&n);
+	}
+	std::string needed = m.to_std_string();
+	scls::write_in_file("tests/bcp.txt", needed);
+	std::cout << m.to_std_string() << std::endl;//*/
+
+	/*Mega_Cool_Integer m = Mega_Cool_Integer(1);for(int i = 0;i<30;i++){m.multiply(10);}m.multiply(1054897897);
+	std::cout << m.to_std_string() << std::endl;//*/
+
+	/*std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("sin(x)");
     //std::shared_ptr<scls::Formula_Base> g = scls::string_to_algebra_element<scls::Formula_Base>("-sqrt(1 - x * x)");
 
     scls::Plane_Base b = scls::Plane_Base(50, 50, 500, 500);
