@@ -172,6 +172,42 @@ namespace scls {
             double a_speed = 100;
 	    };
 
+	    struct Action_Move_To : public Action {
+	        #define TURTLE_ACTION_MOVE_TO 1004
+
+	        // Action_Move_To constructor
+            Action_Move_To(Point_2D position);
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+
+            // Needed position
+            Point_2D a_position;
+
+            // Speed
+            double a_speed = 100;
+            double a_speed_rotation = SCLS_PI;
+	    };
+
+	    struct Action_Pen_Down : public Action {
+	        #define TURTLE_ACTION_PEN_DOWN 1006
+
+	        // Action_Pen_Down constructor
+            Action_Pen_Down();
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+	    };
+	    struct Action_Pen_Up : public Action {
+	        #define TURTLE_ACTION_PEN_UP 1007
+
+	        // Action_Pen_Up constructor
+            Action_Pen_Up();
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+	    };
+
 	    struct Action_Rotate : public Action {
 	        #define TURTLE_ACTION_ROTATE 1002
 
@@ -184,6 +220,22 @@ namespace scls {
             // Needed position
             double a_angle;
             double a_angle_updated = 0;
+
+            // Speed
+            double a_speed = SCLS_PI;
+	    };
+
+	    struct Action_Rotate_Towards : public Action {
+	        #define TURTLE_ACTION_ROTATE_TOWARDS 1005
+
+	        // Action_Rotate_Towards constructor
+            Action_Rotate_Towards(Point_2D position);
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+
+            // Needed position
+            Point_2D a_position;
 
             // Speed
             double a_speed = SCLS_PI;
@@ -219,11 +271,17 @@ namespace scls {
 		// Rotation
 		void rotate_degrees(double rotation);
 		void rotate_radians(double rotation);
+		void rotate_towards(Point_2D point, double offset);
+		void rotate_towards(Point_2D point);
 
 		// Add some actions
 		void add_action_fill();
 		void add_action_move_forward(double needed_distance);
+		void add_action_move_to(Point_2D needed_position);
+		void add_action_pen_down();
+		void add_action_pen_up();
 		void add_action_rotate(double needed_rotation);
+		void add_action_rotate_towards(Point_2D needed_position);
 
 		// Update the actions in the turtle
 		double execute_action(Action* action, double delta_time);
@@ -253,6 +311,24 @@ namespace scls {
 		Image a_image;
 	};
 
+	// Draw a form by only controlling advancement and rotation
+    void draw_by_rotation(Image img, std::shared_ptr<scls::Formula_Base> rotation, double start_angle);
+
+    // Draw bag
+    void draw_bag(Image img, double start_angle);
+
+    // Draw lemniscate
+    void draw_lemniscate_bernoulli_actions(Turtle* t, double start_angle);
+    void draw_lemniscate_bernoulli(Turtle* t, double start_angle);
+    void draw_lemniscate_bernoulli(Image img, double start_angle);
+    void draw_lemniscate_gerono_actions(Turtle* t, double start_angle);
+    void draw_lemniscate_gerono(Image img, double start_angle);
+
+    // Draw spirals
+    void draw_spiral_archimedian_actions(Turtle* t, double start_angle);
+    void draw_spiral_archimedian(Image img, double start_angle);
+    void draw_spiral_fermat(Image img, double start_angle);
+    void draw_spiral_logarithm(Image img, double start_angle);
 }
 
 #endif // SCLS_IMAGE_TURTLE

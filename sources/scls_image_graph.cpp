@@ -334,40 +334,10 @@ namespace scls {
     Graph_Base::Node_Base* Graph_Base::node(int id)const{if(id > static_cast<int>(a_nodes.size())){return 0;}return a_nodes.at(id).get();};
     std::vector<std::shared_ptr<Graph_Base::Node_Base>>& Graph_Base::nodes() {return a_nodes;};
 
-    class Relation_Module {
-    	// Class representing a relation module
-    public:
-    	// Relation_Module constructor
-    	Relation_Module(scls::Fraction modulo):a_modulo(modulo){};
-    	Relation_Module(){};
-
-    	// Returns if a value is in relation with another
-    	scls::Fraction congruence_class(scls::Fraction f_1) {
-    		scls::Fraction to_return = f_1 - ((f_1 / a_modulo).to_double_floor()) * a_modulo;
-    		if(to_return < 0){to_return += a_modulo;}
-    		return to_return;
-    	};
-
-    	// Returns if a value is in relation with another
-    	bool is_in_relation(scls::Fraction f_1, scls::Fraction f_2) {return congruence_class(f_1) == congruence_class(f_2);};
-    	bool is_in_relation_interval(scls::Fraction f_1, scls::Fraction f_2) {
-    		scls::Fraction a = congruence_class(f_1);
-    		scls::Fraction b = congruence_class(f_2);
-    		return (a - b) != (f_1 - f_2);
-    	};
-
-    private:
-    	// Type of relation
-    	int a_type = 0;
-
-    	// Class of the relation
-    	scls::Fraction a_modulo = 1;
-    };
-
     // Draws the graph of a function
     void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b) {
     	scls::Fraction pi_temp = scls::Fraction(31415, 10000);
-    	Relation_Module m = Relation_Module(pi_temp);
+    	//Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
 
     	scls::Point_2D last_point = scls::Point_2D(-1, 0);
     	double last_x = 0;double needed_x = 0;

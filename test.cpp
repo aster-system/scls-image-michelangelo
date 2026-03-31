@@ -22,24 +22,20 @@
 #include "../scls-math-carl/scls_math_directory/scls_math_permutation.h"
 #include "../scls-math-carl/scls_math_directory/scls_math_string.h"
 #include "scls_image_directory/scls_image_core.h"
-#include "scls_image_directory/scls_image_table.h"
-#include "scls_image_directory/scls_image_statistic.h"
+#include "scls_image_directory/scls_image_turtle.h"
 
 SCLS_INIT;
 
 int main() {
-    // Precision problem : 17614578979479 / 11245
-	scls::Extendable_Int m = scls::Extendable_Int(1);
-	for(int i = 0;i<1000;i++) {
-        scls::Extendable_Int n = scls::Extendable_Int(i + 1);
-        m.multiply(&n);
-	}
-	std::string needed = m.to_std_string();
-	scls::write_in_file("tests/bcp.txt", needed);
-	std::cout << m.to_std_string() << std::endl;//*/
+    scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+	scls::draw_by_rotation(img, scls::string_to_algebra_element<scls::Formula_Base>("cos(((x)/100))*200"), 0);
+	img.save_png("tests/t.png");
 
-	/*Mega_Cool_Integer m = Mega_Cool_Integer(1);for(int i = 0;i<30;i++){m.multiply(10);}m.multiply(1054897897);
-	std::cout << m.to_std_string() << std::endl;//*/
+	/*scls::Relation_Module r = scls::Relation_Module(15);
+	scls::Relation_Order s = scls::Relation_Order(scls::Relation_Order::lesser_strict);
+	std::cout << s.is_in_relation(164794987, 4) << " " << s.is_in_relation(4, 164794987) << std::endl;
+
+	std::string c = std::string("3 * x + 2 ~ 0 [4]");//*/
 
 	/*std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("sin(x)");
     //std::shared_ptr<scls::Formula_Base> g = scls::string_to_algebra_element<scls::Formula_Base>("-sqrt(1 - x * x)");

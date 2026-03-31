@@ -189,34 +189,34 @@ namespace scls {
         // Loads each cases
         if(cutted.at(0) == std::string("sequence_arithmetic")){
             if(cutted.size() < 2){scls::print("Warning", std::string("PLEOS Table"), std::string("Not enough argument to load the cases \"") + cases.get()->text() + std::string("."));return;}
-            scls::__Formula first_part = *scls::string_to_formula(cutted.at(1)).get();
-            scls::__Formula reason = *scls::string_to_formula(cutted.at(2)).get();
+            std::shared_ptr<Formula_Base> first_part = scls::string_to_algebra_element<scls::Formula_Base>(cutted.at(1));
+            std::shared_ptr<Formula_Base> reason = scls::string_to_algebra_element<scls::Formula_Base>(cutted.at(2));
 
             // Get the cases
             scls::Textual_Math_Settings settings;settings.set_hide_if_0(false);
-            scls::__Formula current = first_part;
+            std::shared_ptr<Formula_Base> current = first_part.get()->clone();
             int needed_size = std::max(width, height);
             for(int i = 0;i<needed_size;i++) {
                 int needed_x = x;int needed_y = y;
                 if(width > 1){needed_x += i;}else{needed_y += i;}
-                set_case_value(needed_x, needed_y, current.to_std_string(&settings), style, tig);
-                current += reason;
+                set_case_value(needed_x, needed_y, current.get()->to_std_string(&settings), style, tig);
+                current->add(reason.get());
             }
         }
         else if(cutted.at(0) == std::string("sequence_geometric")){
             if(cutted.size() < 2){scls::print("Warning", std::string("PLEOS Table"), std::string("Not enough argument to load the cases \"") + cases.get()->text() + std::string("."));return;}
-            scls::__Formula first_part = *scls::string_to_formula(cutted.at(1)).get();
-            scls::__Formula reason = *scls::string_to_formula(cutted.at(2)).get();
+            std::shared_ptr<Formula_Base> first_part = scls::string_to_algebra_element<scls::Formula_Base>(cutted.at(1));
+            std::shared_ptr<Formula_Base> reason = scls::string_to_algebra_element<scls::Formula_Base>(cutted.at(2));
 
             // Get the cases
             scls::Textual_Math_Settings settings;settings.set_hide_if_0(false);
-            scls::__Formula current = first_part;
+            std::shared_ptr<Formula_Base> current = first_part.get()->clone();
             int needed_size = std::max(width, height);
             for(int i = 0;i<needed_size;i++) {
                 int needed_x = x;int needed_y = y;
                 if(width > 1){needed_x += i;}else{needed_y += i;}
-                set_case_value(needed_x, needed_y, scls::format_number_to_text(current.value_to_double()), style, tig);
-                current *= reason;
+                set_case_value(needed_x, needed_y, scls::format_number_to_text(current.get()->value<Fraction>()->to_double()), style, tig);
+                current.get()->multiply(reason.get());
             }
         }
     }
@@ -397,12 +397,10 @@ namespace scls {
             else if(utility.type == SCLS_BALISE_REPEAT) {
                 // Repeat some instructions
                 xml.get()->set_xml_balise_name(std::string());environment->add_repetition();
-                scls::__Formula_Base::Unknown* needed_variable = environment->create_unknown("b");
-                needed_variable->set_value(std::make_shared<scls::__Formula>(utility.value_start));scls::Fraction step = scls::Fraction(utility.value_end - utility.value_start) / (utility.times - 1);
+                scls::Fraction step = scls::Fraction(utility.value_end - utility.value_start) / (utility.times - 1);
                 for(int j = 0;j<utility.times;j++){
                     environment->set_repetition(j);
                     load_from_xml_balises(xml, environment, text_style, tig);
-                    (*reinterpret_cast<scls::__Formula*>(needed_variable->value.get())) += step;
                 }
                 xml.get()->set_xml_balise_name(std::string("repeat"));
                 environment->remove_repetition();
@@ -575,8 +573,8 @@ namespace scls {
 		// Get the values
 		int unknowns_number = std::pow(2, needed_unknowns.size());
 		for(int i = 0;i<unknowns_number;i++) {
-			Unknowns_Container a = Unknowns_Container();
-			for(int j = 0;j<static_cast<int>(needed_unknowns.size());j++){bool result = (static_cast<int>(floor(static_cast<double>(i) / pow(2,needed_unknowns.size() - (1 + j)))) % 2) == 1;a.create_unknown<Boolean_Unknown>(needed_unknowns.at(j))->value = result;unknowns_value[j] = result;}
+            Boolean::Unknowns_Container a = Boolean::Unknowns_Container();
+			for(int j = 0;j<static_cast<int>(needed_unknowns.size());j++){bool result = (static_cast<int>(floor(static_cast<double>(i) / pow(2,needed_unknowns.size() - (1 + j)))) % 2) == 1;a.create_unknown(needed_unknowns.at(j))->value = result;unknowns_value[j] = result;}
 			for(int j = 0;j<static_cast<int>(needed_unknowns.size());j++){table.get()->set_case_value(j, i + 1, std::to_string(static_cast<int>(unknowns_value.at(j))), t, &g);}
 			table.get()->set_case_value(needed_unknowns.size(), i + 1, boolean->replace_unknowns(&a).get()->to_std_string(0), t, &g);
 		}
@@ -594,8 +592,8 @@ namespace scls {
 		int unknowns_number = std::pow(2, needed_unknowns.size());
 		std::vector<char> boolean_value = std::vector<char>(unknowns_number);
 		for(int i = 0;i<unknowns_number;i++) {
-			Unknowns_Container a = Unknowns_Container();
-			for(int j = 0;j<static_cast<int>(needed_unknowns.size());j++){bool result = (static_cast<int>(floor(static_cast<double>(i) / pow(2,needed_unknowns.size() - (1 + j)))) % 2) == 1;a.create_unknown<Boolean_Unknown>(needed_unknowns.at(j))->value = result;unknowns_value[j] = result;}
+			Boolean::Unknowns_Container a = Boolean::Unknowns_Container();
+			for(int j = 0;j<static_cast<int>(needed_unknowns.size());j++){bool result = (static_cast<int>(floor(static_cast<double>(i) / pow(2,needed_unknowns.size() - (1 + j)))) % 2) == 1;a.create_unknown(needed_unknowns.at(j))->value = result;unknowns_value[j] = result;}
 			boolean_value[i] = boolean->replace_unknowns(&a).get()->value();
 		}
 
