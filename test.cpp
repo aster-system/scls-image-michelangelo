@@ -27,9 +27,15 @@
 SCLS_INIT;
 
 int main() {
-    scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
-	scls::draw_by_rotation(img, scls::string_to_algebra_element<scls::Formula_Base>("cos(((x)/100))*200"), 0);
-	img.save_png("tests/t.png");
+	std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("sqrt(ln(3 * x + 1))");
+	std::cout << "I " << f.get()->definition_domain().to_std_string(0) << std::endl;
+
+	//scls::Matrix product = m.product(&a);
+	//std::cout << product.to_std_string(0) << std::endl;
+
+    //scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+	//scls::draw_by_rotation(img, scls::string_to_algebra_element<scls::Formula_Base>("50000/x"), 0);
+	//img.save_png("tests/t.png");
 
 	/*scls::Relation_Module r = scls::Relation_Module(15);
 	scls::Relation_Order s = scls::Relation_Order(scls::Relation_Order::lesser_strict);

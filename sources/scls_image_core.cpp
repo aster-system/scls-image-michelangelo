@@ -90,10 +90,11 @@ namespace scls {
         Color to_return(255, 255, 255);
         if(cutted.size() > 1) {
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                if(i == 0) to_return.set_red(string_to_algebra_element<Formula_Base>(cutted[i]).get()->value<Fraction>()->to_double());
-                else if(i == 1) to_return.set_green(string_to_algebra_element<Formula_Base>(cutted[i]).get()->value<Fraction>()->to_double());
-                else if(i == 2) to_return.set_blue(string_to_algebra_element<Formula_Base>(cutted[i]).get()->value<Fraction>()->to_double());
-                else if(i == 3) to_return.set_alpha(string_to_algebra_element<Formula_Base>(cutted[i]).get()->value<Fraction>()->to_double());
+                std::shared_ptr<Formula_Base> value = string_to_algebra_element<Formula_Base>(cutted[i]);value.get()->simplify();
+                if(i == 0) to_return.set_red(value.get()->value<Fraction>()->to_double());
+                else if(i == 1) to_return.set_green(value.get()->value<Fraction>()->to_double());
+                else if(i == 2) to_return.set_blue(value.get()->value<Fraction>()->to_double());
+                else if(i == 3) to_return.set_alpha(value.get()->value<Fraction>()->to_double());
             }
         }
         else if (cutted.size() == 1) {defined_color_by_name(cutted.at(0), to_return);}
@@ -2015,8 +2016,9 @@ namespace scls {
         }
         else {
             x_2++; y_2++;
-            double distance_x = static_cast<double>(x_2 - x_1);
-            double distance_y = static_cast<double>(y_2 - y_1);
+            double distance_x = static_cast<double>(x_2) - static_cast<double>(x_1);
+            double distance_y = static_cast<double>(y_2) - static_cast<double>(y_1);
+            if(distance_y == 0){distance_y = 0.0001;}
 
             double x_y_ratio = distance_x / distance_y;
 
@@ -2034,11 +2036,13 @@ namespace scls {
                 // Check the positions
                 double actual_x = x_1;double actual_y = y_1;
                 if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
+                if(actual_x >= width()){actual_y -= (actual_x - width()) / x_y_ratio;actual_x = width();}
                 if(y_2 >= height()) y_2 = height() - 1;
                 // Draw the line
                 while (actual_y < y_2) {
                     actual_y++;
                     actual_x += x_y_ratio;
+                    if(actual_x < 0){break;}
                     set_pixel(actual_x, actual_y, red, green, blue, alpha, line_width);
                 }
             }
@@ -2057,10 +2061,13 @@ namespace scls {
                 double actual_x = x_1;double actual_y = y_1;
                 double y_x_ratio = distance_y / distance_x;
                 if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
-                if(x_2 >= width()) x_2 = width() - 1;
+                if(actual_y < 0) {actual_x += std::abs(actual_y) / y_x_ratio;actual_y=0;}
+                else if(actual_y >= height()){actual_x -= (actual_y - height()) / y_x_ratio;actual_y = height();}
+                if(x_2 >= width()){x_2 = width() - 1;}
                 // Draw the line
                 while (actual_x < x_2) {
                     actual_y += y_x_ratio;
+                    if(actual_y < 0){break;}
                     actual_x++;
                     set_pixel(actual_x, actual_y, red, green, blue, alpha, line_width);
                 }
@@ -2824,8 +2831,12 @@ namespace scls {
         return true;
     };
 
-    // Draw a grid in an image
+    // Draw a grid in an image (the canonical base is the image base)
     void draw_grid(scls::Image img, scls::Plane_Base* base) {
+        // Datas
+        int central_width = 8;
+        int side_width = 4;
+
 		double min_x = base->canonical_x_to_base_x(0);
 		double max_x = base->canonical_x_to_base_x(img.width());
 		double min_y = base->canonical_y_to_base_y(img.height());
@@ -2840,21 +2851,101 @@ namespace scls {
 		// Trace the X lines
 		double current_x = x_start;
 		while(current_x <= max_x) {
-			img.draw_line(base->base_x_to_canonical_x(current_x), 0, base->base_x_to_canonical_x(current_x), img.height(), scls::Color(0, 0, 0), 1);
+			img.draw_line(base->base_x_to_canonical_x(current_x), 0, base->base_x_to_canonical_x(current_x), img.height(), scls::Color(150, 150, 150), side_width);
 			current_x += step_x;
 		}
 
 		// Trace the Y lines
 		double current_y = y_start;
 		while(current_y <= max_y) {
-			img.draw_line(0, base->base_y_to_canonical_y(current_y), img.width(), base->base_y_to_canonical_y(current_y), scls::Color(0, 0, 0), 1);
+			img.draw_line(0, base->base_y_to_canonical_y(current_y), img.width(), base->base_y_to_canonical_y(current_y), scls::Color(150, 150, 150), side_width);
 			current_y += step_y;
 		}
 
 		// Central grid
 		double needed_y = base->base_y_to_canonical_y(0);
-		img.draw_line(0, needed_y, img.width(), needed_y, scls::Color(0, 0, 0), 3);
+		img.draw_line(0, needed_y, img.width(), needed_y, scls::Color(0, 0, 0), central_width);
 		double needed_x = base->base_x_to_canonical_x(0);
-		img.draw_line(needed_x, 0, needed_x, img.height(), scls::Color(0, 0, 0), 3);
+		img.draw_line(needed_x, 0, needed_x, img.height(), scls::Color(0, 0, 0), central_width);
 	}
+
+	// Draw a grid in an image with a linear application
+    void draw_grid(scls::Image img, scls::Matrix* u, scls::Matrix* v) {
+        // Position of the zero
+        double zero_x = img.width() / 2;
+        double zero_y = img.height() / 2;
+
+        // Needed vectors
+        double u_x = u->element_at(0)->value_to_double();
+        double u_y = u->element_at(1)->value_to_double();
+        double u_coeff = (u_x / u_y);
+        bool u_coeff_infinite = (u_y == 0);
+        double v_x = v->element_at(0)->value_to_double();
+        double v_y = v->element_at(1)->value_to_double();
+        double v_coeff = (v_x / v_y);
+
+        // U vector tracing
+
+        // Top
+        int converted_y = 0;
+        double current_x = zero_x;
+        double current_y = zero_y;
+        double min_u_y = 0;
+        while(min_u_y < img.height()) {
+            double needed_min_x = current_y - (current_x * u_coeff);
+            if(u_coeff_infinite){needed_min_x = current_y;}
+            double needed_max_x = current_y + ((img.width() - current_x) * u_coeff);
+            if(u_coeff_infinite){needed_max_x = current_y;}
+            if(converted_y == 0){img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 3);}
+            else{img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 1);}
+            converted_y++;current_y += v_y;
+            min_u_y = std::min(needed_min_x, needed_max_x);
+        }
+
+        // Bottom
+        converted_y = 0;
+        current_x = zero_x;
+        current_y = zero_y;
+        double max_u_y = 0;
+        while(max_u_y >= 0) {
+            double needed_min_x = current_y - (current_x * u_coeff);
+            if(u_coeff_infinite){needed_min_x = current_y;}
+            double needed_max_x = current_y + ((img.width() - current_x) * u_coeff);
+            if(u_coeff_infinite){needed_max_x = current_y;}
+            if(converted_y == 0){img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 3);}
+            else{img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 1);}
+            converted_y--;current_y -= v_y;
+            max_u_y = std::max(needed_min_x, needed_max_x);
+        }
+
+        // V vector tracing
+
+        // Left
+        int converted_x = 0;
+        current_x = zero_x;
+        current_y = zero_y;
+        double min_u_x = 0;
+        while(min_u_x < img.width()) {
+            double needed_min_y = current_x - (current_y * v_coeff);
+            double needed_max_y = current_x + ((img.height() - current_y) * v_coeff);
+            if(converted_x == 0){img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 4);}
+            else{img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 2);}
+            converted_x++;current_x += u_x;
+            min_u_x = std::min(needed_min_y, needed_max_y);
+        }
+
+        // Right
+        converted_x = 0;
+        current_x = zero_x;
+        current_y = zero_y;
+        double max_u_x = 0;
+        while(max_u_x >= 0) {
+            double needed_min_y = current_x - (current_y * v_coeff);
+            double needed_max_y = current_x + ((img.height() - current_y) * v_coeff);
+            if(converted_x == 0){img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 4);}
+            else{img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 2);}
+            converted_x--;current_x -= u_x;
+            max_u_x = std::max(needed_min_y, needed_max_y);
+        }
+    }
 }
