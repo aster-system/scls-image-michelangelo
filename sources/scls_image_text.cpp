@@ -413,6 +413,10 @@ namespace scls {
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
         set_defined_balise("munder", current_balise);
+        // Create the <munderover> style
+        current_balise = std::make_shared<Balise_Style_Datas>();
+        current_balise.get()->has_content = true;
+        set_defined_balise("munderover", current_balise);
         // Create the <sub> style
         current_balise = std::make_shared<Balise_Style_Datas>();
         current_balise.get()->has_content = true;
@@ -631,7 +635,7 @@ namespace scls {
         else if(name == "mequal") {return '=';}
         else if(name == "mequiv") {return 8801;}
         else if(name == "mequi") {return 8660;}
-        else if(name == "mempty" || name == "mempty_set"){return 8709;}
+        else if(name == "mempty" || name == std::string_view("memptyset") || name == "mempty_set"){return 8709;}
         else if(name == "mexists") {return 8707;}
         else if(name == "mforall"){return 8704;}
         else if(name == "mimp" || name == "mimplies"){return 8658;}
@@ -655,6 +659,7 @@ namespace scls {
         else if(name == std::string_view("mprod") || name == std::string_view("mproduct")){return 8719;}
         else if(name == "mrang"){return 10217;}
         else if(name == "mroot"){return 8730;}
+        else if(name == std::string_view("msum")){return 8721;}
         else if(name == "mto"){return 10230;}
         else if(name == "mu") {return 956;}
         else if(name == "munion") {return 8746;}
@@ -670,6 +675,9 @@ namespace scls {
 	    for(int i = 0;i<static_cast<int>(text.get()->sub_texts().size());i++) {
             int potential_symbol = utf_8_symbol_by_name(text.get()->sub_texts().at(i).get()->xml_balise_name());
             if(potential_symbol != -1) {
+                // Other cases
+                if(text.get()->sub_texts().at(i).get()->xml_balise_name() == std::string_view("msum") && text.get()->sub_texts().at(i).get()->xml_attributes().size() > 0){return;}
+
                 text.get()->sub_texts().at(i).get()->clear();
                 text.get()->sub_texts().at(i).get()->set_xml_balise_name(std::string());
                 if(to_html) {

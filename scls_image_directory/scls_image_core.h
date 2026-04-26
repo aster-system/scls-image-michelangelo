@@ -650,7 +650,9 @@ namespace scls {
 
     // Draw a grid in an image
     void draw_grid(Image img, Plane_Base* base);
+    void draw_grid(Image img, double u_x, double u_y, double v_x, double v_y);
     void draw_grid(Image img, Matrix* u, Matrix* v);
+    void draw_grid(Image img, Vector_Base* base);
 }
 
 #endif // SCLS_IMAGE_CORE
