@@ -36,36 +36,8 @@
 #ifndef SCLS_IMAGE
 #define SCLS_IMAGE
 
-// Avoid some errors with libraries path
-// SCLS Math
-#ifndef SCLS_MATH_PATH
-#ifdef __ASTER_DEV
-#define SCLS_MATH_PATH "../scls-math-carl/scls_math.h"
-#else
-#define SCLS_MATH_PATH <scls_math.h>
-#endif // __ASTER_DEV
-#endif // SCLS_MATH_PATH
-
-// Include SCLS Math
-#include SCLS_MATH_PATH
-
-// Font path of the Aster System's logo
-#ifndef LOGO_FONT_PATH
-// Before school PC : "/usr/share/fonts/truetype/AlteHaasGroteskBold.ttf"
-// Development PC : "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
-#define LOGO_FONT_PATH "E:\\Divers\\Fonts\\AlteHaasGroteskBold.ttf"
-#endif // LOGO_FONT_PATH
-
-// Define SCLS_INIT
-#ifndef SCLS_IMAGE_INIT
-    #define SCLS_IMAGE_INIT std::string scls::__base_font_path = std::string(BASE_FONT_PATH); std::string scls::__default_font = std::string(DEFAULT_FONT);
-#endif // SCLS_IMAGE
-#ifdef SCLS_INIT
-#undef SCLS_INIT
-#endif // SCLS_INIT
-#ifndef SCLS_INIT
-#define SCLS_INIT SCLS_IMAGE_INIT SCLS_MATH_INIT SCLS_FOUNDATION_INIT
-#endif // SCLS_INIT
+// Root
+#include "scls_image_root.h"
 
 // Include the needed SCLS Image files
 #include "scls_image_directory/scls_image_core.h"
@@ -76,6 +48,8 @@
 #include "scls_image_directory/scls_image_statistic.h"
 #include "scls_image_directory/scls_image_table.h"
 #include "scls_image_directory/scls_image_turtle.h"
+// Maths
+#include "scls_image_directory/scls_image_math/scls_image_math_analysis.h"
 
 namespace scls {
 

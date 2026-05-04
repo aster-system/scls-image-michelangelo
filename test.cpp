@@ -117,10 +117,19 @@ Limit formula_limit(scls::Formula_Base* f, Limit to) {
 }
 
 int main() {
+	std::shared_ptr<scls::Formula_Base> function = scls::string_to_algebra_element<scls::Formula_Base>("(x*x)/4+x/2-1");
+	scls::Image image = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+	scls::Plane_Base p = scls::Plane_Base(100, 100, 500, 500);
+	scls::draw_grid(image, &p);
+	draw_function_integral_riemann(image, function.get(), &p, 0, 3, 0.5);
+	scls::draw_function_graph(image, function.get(), &p, 0, 1000);
+
+	image.save_png("tests/f.png");
+
 	//Extendable_Fraction f = Extendable_Fraction(71, 7);
 	//f.normalize();
 
-	std::shared_ptr<scls::Extendable_Formula_Base> f = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("exp(x)");
+	/*std::shared_ptr<scls::Extendable_Formula_Base> f = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("exp(x)");
 	//f = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("((1/1307674368000) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x)) + ((1/87178291200) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x))");
 	//std::shared_ptr<scls::Extendable_Formula_Base> g = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("(x * x) / 2 + x");
 	std::shared_ptr<scls::Extendable_Formula_Base> dev = scls::mclaurin(f.get(), std::string("x"), 25);
@@ -132,7 +141,7 @@ int main() {
 	scls::draw_function_graph(img, dev.get(), &p, scls::Color(0, 0, 255), -1000, 1000);
 	img.save_png("tests/f.png");
 
-	std::cout << "E " << f.get()->to_std_string(0) << " " << dev.get()->replace_unknowns("x", scls::Extendable_Fraction(1)).get()->value_to_double() << std::endl;
+	std::cout << "E " << f.get()->to_std_string(0) << " " << dev.get()->replace_unknowns("x", scls::Extendable_Fraction(1)).get()->value_to_double() << std::endl;//*/
 
     /*std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("1/4 * x + 1");
 

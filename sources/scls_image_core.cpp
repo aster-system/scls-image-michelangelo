@@ -2872,11 +2872,11 @@ namespace scls {
 	}
 
 	// Draw a grid in an image with a linear application
-    void draw_grid(Image img, Vector_Base* base) {
-    	double u_x = base->x_in_canonical_base_x() * base->width_unit_in_canonical_base();
-    	double u_y = base->x_in_canonical_base_y() * base->width_unit_in_canonical_base();
-    	double v_x = base->y_in_canonical_base_x() * base->height_unit_in_canonical_base();
-    	double v_y = base->y_in_canonical_base_y() * base->height_unit_in_canonical_base();
+    void draw_grid(Image img, Vector_Base_2D* base) {
+    	double u_x = base->x_in_canonical_base_x();
+    	double u_y = base->x_in_canonical_base_y();
+    	double v_x = base->y_in_canonical_base_x();
+    	double v_y = base->y_in_canonical_base_y();
     	draw_grid(img, u_x, u_y, v_x, v_y);
     }
     void draw_grid(scls::Image img, scls::Matrix* u, scls::Matrix* v) {
@@ -2896,6 +2896,8 @@ namespace scls {
         bool u_coeff_infinite = (u_y == 0);
         double v_coeff = (v_x / v_y);
 
+        std::cout << "E " << u_x << " " << u_y << " " << v_x << " " << v_y << std::endl;
+
         // U vector tracing
 
         // Top
@@ -2910,7 +2912,7 @@ namespace scls {
             if(u_coeff_infinite){needed_max_x = current_y;}
             if(converted_y == 0){img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 3);}
             else{img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 1);}
-            converted_y++;current_y += v_y;
+            converted_y++;current_x += v_x;current_y += v_y;
             min_u_y = std::min(needed_min_x, needed_max_x);
         }
 
@@ -2926,7 +2928,7 @@ namespace scls {
             if(u_coeff_infinite){needed_max_x = current_y;}
             if(converted_y == 0){img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 3);}
             else{img.draw_line(0, img.height() - needed_min_x, img.width(), img.height() - needed_max_x, scls::Color(0, 0, 0), 1);}
-            converted_y--;current_y -= v_y;
+            converted_y--;current_x -= v_x;current_y -= v_y;
             max_u_y = std::max(needed_min_x, needed_max_x);
         }
 
@@ -2942,7 +2944,7 @@ namespace scls {
             double needed_max_y = current_x + ((img.height() - current_y) * v_coeff);
             if(converted_x == 0){img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 4);}
             else{img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 2);}
-            converted_x++;current_x += u_x;
+            converted_x++;current_x += u_x;current_y += u_y;
             min_u_x = std::min(needed_min_y, needed_max_y);
         }
 
@@ -2956,7 +2958,7 @@ namespace scls {
             double needed_max_y = current_x + ((img.height() - current_y) * v_coeff);
             if(converted_x == 0){img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 4);}
             else{img.draw_line(needed_max_y, 0, needed_min_y, img.height(), scls::Color(0, 0, 0), 2);}
-            converted_x--;current_x -= u_x;
+            converted_x--;current_x -= u_x;current_y -= u_y;
             max_u_x = std::max(needed_min_y, needed_max_y);
         }
     }
