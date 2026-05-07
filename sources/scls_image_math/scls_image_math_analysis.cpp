@@ -29,58 +29,68 @@
 
 namespace scls {
     // Draw a Darboux integral
-    void draw_function_integral_darboux_sub(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step) {
+    void draw_function_integral_darboux_sub(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, int parts) {
         scls::Fraction pi_temp = scls::Fraction(31415, 10000);
         //Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
+
+        // Step
+        double step = (end_x - start_x) / static_cast<double>(parts);
 
         // Datas for the drawing
         Color fill_color_top = Color(0, 0, 255);
         Color fill_color_bottom = Color(0, 255, 0);
-        step *= b->width_unit_in_canonical_base();
         end_x = b->base_x_to_canonical_x(end_x);
         start_x = b->base_x_to_canonical_x(start_x);
+        step *= b->width_unit_in_canonical_base();
 
         scls::Point_2D last_point = scls::Point_2D(0, 0);
-        double needed_x = 0;
+        double current_x = start_x;double needed_x = 0;
         double zero_position_y = b->base_y_to_canonical_y(0);
-        for(int j = start_x;j<img.width();j+=step){
-            needed_x = b->canonical_x_to_base_x(j);
+        for(int i = 0;i<parts;++i){
+            double j = current_x;needed_x = b->canonical_x_to_base_x(std::floor(j));
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
             if(j < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
-                    if(zero_position_y < current_point.y()) {img.fill_rect(j, zero_position_y, step, current_point.y() - zero_position_y, fill_color_bottom);}
-                    else{img.fill_rect(j, current_point.y(), step, zero_position_y - current_point.y(), fill_color_top);}
+                    double rect_width = step;if(current_x + step > std::floor(current_x) + step){rect_width++;}
+                    if(zero_position_y < current_point.y()) {img.fill_rect(j, zero_position_y, rect_width, current_point.y() - zero_position_y, fill_color_bottom);}
+                    else{img.fill_rect(j, current_point.y(), rect_width, zero_position_y - current_point.y(), fill_color_top);}
                 }
             }
             else{break;}
             last_point = current_point;
+            current_x += step;
         }
     }
-    void draw_function_integral_darboux_sup(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step) {
+    void draw_function_integral_darboux_sup(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, int parts) {
         scls::Fraction pi_temp = scls::Fraction(31415, 10000);
         //Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
+
+        // Step
+        double step = (end_x - start_x) / static_cast<double>(parts);
 
         // Datas for the drawing
         Color fill_color_top = Color(0, 0, 255);
         Color fill_color_bottom = Color(0, 255, 0);
-        step *= b->width_unit_in_canonical_base();
         end_x = b->base_x_to_canonical_x(end_x);
         start_x = b->base_x_to_canonical_x(start_x);
+        step *= b->width_unit_in_canonical_base();
 
         scls::Point_2D last_point = scls::Point_2D(0, 0);
-        double needed_x = 0;
+        double current_x = start_x;double needed_x = 0;
         double zero_position_y = b->base_y_to_canonical_y(0);
-        for(int j = start_x;j<img.width();j+=step){
-            needed_x = b->canonical_x_to_base_x(j + step);
+        for(int i = 0;i<parts;++i){
+            double j = current_x;needed_x = b->canonical_x_to_base_x(std::floor(j + step));
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
             if(j < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
-                    if(zero_position_y < current_point.y()) {img.fill_rect(j, zero_position_y, step, current_point.y() - zero_position_y, fill_color_bottom);}
-                    else{img.fill_rect(j, current_point.y(), step, zero_position_y - current_point.y(), fill_color_top);}
+                    double rect_width = step;if(current_x + step > std::floor(current_x) + step){rect_width++;}
+                    if(zero_position_y < current_point.y()) {img.fill_rect(j, zero_position_y, rect_width, current_point.y() - zero_position_y, fill_color_bottom);}
+                    else{img.fill_rect(j, current_point.y(), rect_width, zero_position_y - current_point.y(), fill_color_top);}
                 }
             }
             else{break;}
             last_point = current_point;
+            current_x += step;
         }
     }
 

@@ -32,8 +32,8 @@
 
 namespace scls {
     // Draw a Darboux integral
-    void draw_function_integral_darboux_sub(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step);
-    void draw_function_integral_darboux_sup(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step);
+    void draw_function_integral_darboux_sub(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, int parts);
+    void draw_function_integral_darboux_sup(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, int parts);
 
     // Draw a Riemann integral
     void draw_function_integral_riemann(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step);
