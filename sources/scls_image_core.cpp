@@ -39,13 +39,17 @@ namespace scls {
 	//*********
 
 	// Basic Color constructor
+	Color::Color():Color(0,0,0,255){}
     Color::Color(short red, short green, short blue):Color(red, green, blue, 255){}
-    Color::Color(short red, short green, short blue, short alpha) {
+    Color::Color(short red, short green, short blue, short alpha): Object() {
         a_alpha = static_cast<double>(alpha) / 255.0;
         a_blue = static_cast<double>(blue) / 255.0;
         a_green = static_cast<double>(green) / 255.0;
         a_red = static_cast<double>(red) / 255.0;
     }
+
+    // Color copy constructor
+    Color::Color(const Color& color_copy):Object(),a_alpha(color_copy.a_alpha),a_blue(color_copy.a_blue),a_green(color_copy.a_green),a_red(color_copy.a_red){};
 
     // Defined colors by name
     void defined_color_by_name(std::string name, Color& color){
@@ -1637,9 +1641,10 @@ namespace scls {
                 }
 
                 // Right part of the border
-                needed_x = (x_center + drew_radius_x) - current_x;
-                if(needed_x >= 0 && needed_x < needed_width){
+                int new_needed_x = (x_center + drew_radius_x) - current_x;
+                if(new_needed_x != needed_x && new_needed_x >= 0 && new_needed_x < needed_width){
                     // Right-bottom of the circle border
+                    needed_x = new_needed_x;
                     int i = 0;double current_angle = needed_angle_bottom;double current_angle_border = angle_border;int y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle_border, current_angle) || (in_border_bottom && current_angle_border < adaptated_angle_end)){
                         double x_hypothenus = (static_cast<double>(radius_x - current_x) / std::abs(std::cos(adaptated_angle_end)));
@@ -1732,9 +1737,12 @@ namespace scls {
 
                 // Fill the circle
                 int i = 0;
+                int x_left = (x_center - drew_radius_x) + current_x;
+                int x_right = (x_center + drew_radius_x) - current_x;
+
                 // Left of the circle
-                needed_x = (x_center - drew_radius_x) + current_x;
-                if(needed_x >= 0 && needed_x < needed_width){
+                needed_x = x_left;
+                if(needed_x <= x_right && needed_x >= 0 && needed_x < needed_width){
                     if(use_bottom_left) {
                         for(;i < last_y_bottom;i++) {
                             int current_y = (needed_y_left + i);
@@ -1748,7 +1756,7 @@ namespace scls {
                     if(use_top_left) {
                         for(i = start_top_left;i < last_y_top_left;i++) {
                             int current_y = (needed_y_left - i);
-                            if(current_y >= 0 && current_y < needed_height) {
+                            if(current_y < needed_y_left && current_y >= 0 && current_y < needed_height) {
                                 int position = (current_y * needed_width + needed_x) * needed_components;
                                 if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                                 else{set_pixel_directly(position, red, green, blue, multiplier);}
@@ -1758,8 +1766,8 @@ namespace scls {
                 }
 
                 // Right of the circle
-                needed_x = (x_center + drew_radius_x) - current_x;
-                if(needed_x >= 0 && needed_x < needed_width){
+                needed_x = x_right;
+                if(x_left < needed_x && needed_x >= 0 && needed_x < needed_width){
                     // Bottom right part of the circle
                     if(use_bottom_right) {
                         for(i = 0;i < last_y_bottom;i++) {
@@ -1776,7 +1784,7 @@ namespace scls {
                     if(use_top_right) {
                         for(i = start_top_right;i < last_y_top_right;i++) {
                             int current_y = (needed_y_right - i);
-                            if(current_y >= 0 && current_y < needed_height) {
+                            if(current_y < needed_y_right && current_y >= 0 && current_y < needed_height) {
                                 int position = (current_y * needed_width + needed_x) * needed_components;
                                 if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
                                 else{set_pixel_directly(position, red, green, blue, multiplier);}
@@ -2174,14 +2182,14 @@ namespace scls {
 		if(static_cast<int>(points.size()) < 3){return;}
 
 		// Triangulate the face with the model maker part of SCLS
-		scls::model_maker::Face form_to_face;
+		std::shared_ptr<scls::model_maker::Face> form_to_face = model_maker::Face::new_face_object();
 		for(int i = 0;i<static_cast<int>(points.size());i++) {
 			scls::model_maker::Point current_point = scls::Point_3D(points.at(i).x(), 0, points.at(i).y());//points.at(i).get()->to_point_3d_absolute();
-			form_to_face.points().push_back(std::make_shared<scls::model_maker::Point>(current_point));
+			form_to_face.get()->points().push_back(std::make_shared<scls::model_maker::Point>(current_point));
 		}
 
 		// Get the needed result
-		auto triangulated = form_to_face.triangulate();
+		auto triangulated = form_to_face.get()->triangulate();
 		std::vector<std::shared_ptr<scls::model_maker::Point>>& points_for_rendering = triangulated.get()->points_for_rendering;
 		std::vector<Point_2D> current_triangulated_points = std::vector<Point_2D>(points_for_rendering.size());
 		for(int i = 0;i<static_cast<int>(points_for_rendering.size());i++) {

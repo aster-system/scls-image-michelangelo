@@ -116,6 +116,10 @@ namespace scls {
     Turtle::Action_Pen_Down::Action_Pen_Down():Action(TURTLE_ACTION_PEN_DOWN){}
     Turtle::Action_Pen_Up::Action_Pen_Up():Action(TURTLE_ACTION_PEN_UP){}
 
+    // Action_Save_Position constructor
+    Turtle::Action_Restore_Position::Action_Restore_Position():Action(TURTLE_ACTION_RESTORE_POSITION){};
+    Turtle::Action_Save_Position::Action_Save_Position():Action(TURTLE_ACTION_SAVE_POSITION){};
+
     // Clone the action
     std::shared_ptr<Action> Turtle::Action_Fill::clone(){std::shared_ptr<Action_Fill> to_return = std::make_shared<Action_Fill>();clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Move_Forward::clone(){std::shared_ptr<Action_Move_Forward> to_return = std::make_shared<Action_Move_Forward>(a_distance);clone_base(to_return.get());return to_return;};
@@ -124,6 +128,8 @@ namespace scls {
     std::shared_ptr<Action> Turtle::Action_Rotate_Towards::clone(){std::shared_ptr<Action_Rotate_Towards> to_return = std::make_shared<Action_Rotate_Towards>(a_position);clone_base(to_return.get());to_return.get()->a_speed = a_speed;return to_return;};
     std::shared_ptr<Action> Turtle::Action_Pen_Down::clone(){std::shared_ptr<Action_Pen_Down> to_return = std::make_shared<Action_Pen_Down>();clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Pen_Up::clone(){std::shared_ptr<Action_Pen_Up> to_return = std::make_shared<Action_Pen_Up>();clone_base(to_return.get());return to_return;};
+    std::shared_ptr<Action> Turtle::Action_Restore_Position::clone(){std::shared_ptr<Action_Restore_Position> to_return = std::make_shared<Action_Restore_Position>();clone_base(to_return.get());return to_return;};
+    std::shared_ptr<Action> Turtle::Action_Save_Position::clone(){std::shared_ptr<Action_Save_Position> to_return = std::make_shared<Action_Save_Position>();clone_base(to_return.get());return to_return;};
 
 	//*********
 	// Handle the turtle
@@ -158,6 +164,34 @@ namespace scls {
     void Turtle::add_action_rotate_towards(Point_2D needed_position){actions()->add_action(std::make_shared<Turtle::Action_Rotate_Towards>(needed_position));}
     void Turtle::add_action_pen_down(){actions()->add_action(std::make_shared<Turtle::Action_Pen_Down>());}
     void Turtle::add_action_pen_up(){actions()->add_action(std::make_shared<Turtle::Action_Pen_Up>());}
+    void Turtle::add_action_restore_position(){actions()->add_action(std::make_shared<Turtle::Action_Restore_Position>());}
+    void Turtle::add_action_save_position(){actions()->add_action(std::make_shared<Turtle::Action_Save_Position>());}
+
+    // Load actions
+    void Turtle::load_actions_from_std_string(std::string t){load_actions_from_std_string(t, 45, 20);}
+    void Turtle::load_actions_from_std_string(std::string t, double rotation_angle, double side) {
+        t = scls::replace(t, "-", "*");
+        for(std::size_t i = 0;i<t.size();i++) {
+            std::string current = std::string();
+            current += t.at(i);
+
+            if(current == std::string_view("+")){
+                add_action_rotate(rotation_angle);
+            }
+            else if(current == std::string_view("*")) {
+                add_action_rotate(-rotation_angle);
+            }
+            else if(current == std::string_view("[")) {
+                add_action_save_position();
+            }
+            else if(current == std::string_view("]")) {
+                add_action_restore_position();
+            }
+            else {
+                add_action_move_forward(side);
+            }
+        }
+    }
 
     // Fills a part
     void Turtle::add_point_to_fill(Point_2D to_fill){if(!(a_to_fill.back().x() == to_fill.x() && a_to_fill.back().y() == to_fill.y())){a_to_fill.push_back(to_fill);a_to_fill_size++;}}
@@ -245,6 +279,8 @@ namespace scls {
         }
         else if(action->type == TURTLE_ACTION_PEN_DOWN) {pen_down();return -1;}
         else if(action->type == TURTLE_ACTION_PEN_UP) {pen_up();return -1;}
+        else if(action->type == TURTLE_ACTION_RESTORE_POSITION) {set_position(a_saved_positions.back());a_saved_positions.pop_back();a_rotation = a_saved_rotations.back();a_saved_rotations.pop_back();return -1;}
+        else if(action->type == TURTLE_ACTION_SAVE_POSITION){a_saved_positions.push_back(a_position);a_saved_rotations.push_back(a_rotation);return -1;};
 
         return 0;
     }
@@ -398,4 +434,32 @@ namespace scls {
         }
     }
 
+    // Product and return a L-System
+    std::string l_system(std::string axiom, std::map<std::string, std::string> rules, int number) {
+        std::string result = axiom;
+
+        for(int i = 0;i<number;i++) {
+            // Prepare the datas
+            axiom = result;
+            result = std::string();
+
+            // Browse
+            for(std::size_t j = 0;j<axiom.size();j++) {
+                std::string current = std::string();
+                current += axiom.at(j);
+
+                bool found = false;
+                for(std::map<std::string, std::string>::iterator it = rules.begin();it!=rules.end();it++) {
+                    if(it->first == current) {
+                        result += it->second;
+                        found = true;break;
+                    }
+                }
+
+                if(!found){result += current;}
+            }
+        }
+
+        return result;
+    }
 }

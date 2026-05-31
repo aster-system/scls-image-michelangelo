@@ -247,6 +247,7 @@ namespace scls {
         }
         else if(attribute->name == "background_color") {style.set_background_color(scls::Color::from_std_string(attribute->value));return true;}
         else if(attribute->name == std::string("color")) {style.set_color(scls::Color::from_std_string(attribute->value));return true;}
+        else if(attribute->name == std::string_view("font")){std::string needed_font = attribute->value;if(contains_system_font(needed_font)){style.set_font(needed_font);}else{print("SCLS Image" ,"Warning", "The \"" + needed_font + "\" does not exist.");}}
         else if(attribute->name == std::string("max_width")) {style.set_max_width(std::stoi(attribute->value));return true;}
         return false;
     }
@@ -641,7 +642,7 @@ namespace scls {
         else if(name == "mimp" || name == "mimplies"){return 8658;}
         else if(name == "min"){return 8712;}
         else if(name == "mincluded"){return 8838;}
-        else if(name == "mincluded_strict"){return 8834;}
+        else if(name == "mincluded_strict"){return 8842;}
         else if(name == "minfinity" || name == "minf"){return 8734;}
         else if(name == "mint"){return 8747;}
         else if(name == "minter"){return 8745;}

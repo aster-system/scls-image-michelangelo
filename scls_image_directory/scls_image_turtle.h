@@ -208,6 +208,16 @@ namespace scls {
             virtual std::shared_ptr<Action> clone();
 	    };
 
+	    struct Action_Restore_Position : public Action {
+	        #define TURTLE_ACTION_RESTORE_POSITION 1008
+
+	        // Action_Restore_Position constructor
+            Action_Restore_Position();
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+	    };
+
 	    struct Action_Rotate : public Action {
 	        #define TURTLE_ACTION_ROTATE 1002
 
@@ -241,6 +251,16 @@ namespace scls {
             double a_speed = SCLS_PI;
 	    };
 
+	    struct Action_Save_Position : public Action {
+	        #define TURTLE_ACTION_SAVE_POSITION 1009
+
+	        // Action_Save_Position constructor
+            Action_Save_Position();
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+	    };
+
 		// Turtle constructor
 		Turtle(Image image);
 		// Turtle destructor
@@ -251,6 +271,7 @@ namespace scls {
 		inline Point_2D position() const {return a_position;};
 		inline double rotation() const {return a_rotation;};
 		inline void set_pen_size(int new_pen_size){a_pen_size = new_pen_size;};
+		inline void set_position(Point_2D new_position){a_position = new_position;}
 
 		//*********
 		// Handle the turtle
@@ -280,8 +301,14 @@ namespace scls {
 		void add_action_move_to(Point_2D needed_position);
 		void add_action_pen_down();
 		void add_action_pen_up();
+		void add_action_restore_position();
 		void add_action_rotate(double needed_rotation);
 		void add_action_rotate_towards(Point_2D needed_position);
+		void add_action_save_position();
+
+		// Load actions
+		void load_actions_from_std_string(std::string t, double rotation_angle, double side);
+		void load_actions_from_std_string(std::string t);
 
 		// Update the actions in the turtle
 		double execute_action(Action* action, double delta_time);
@@ -291,6 +318,10 @@ namespace scls {
 
 	    // Actions to do
 	    std::shared_ptr<Action_Structure> a_actions = std::make_shared<Action_Structure>();
+
+	    // Saved position
+	    std::list<Point_2D> a_saved_positions;
+	    std::list<double> a_saved_rotations;
 
 	    // Point to fill
 	    bool a_prepare_filling = false;
@@ -329,6 +360,9 @@ namespace scls {
     void draw_spiral_archimedian(Image img, double start_angle);
     void draw_spiral_fermat(Image img, double start_angle);
     void draw_spiral_logarithm(Image img, double start_angle);
+
+    // Product and return a L-System
+    std::string l_system(std::string axiom, std::map<std::string, std::string> rules, int number);
 }
 
 #endif // SCLS_IMAGE_TURTLE

@@ -117,15 +117,15 @@ namespace scls {
 	//
 	//*********
 
-	class Color {
+	class Color : public Object {
 	    // Class representing an 8 bit RGBA color
     public:
         // Basic Color constructor
         Color(short red, short green, short blue);
         Color(short red, short green, short blue, short alpha);
-        Color():Color(0,0,0,255){}
+        Color();
         // Color copy constructor
-        Color(const Color& color_copy):a_alpha(color_copy.a_alpha),a_blue(color_copy.a_blue),a_green(color_copy.a_green),a_red(color_copy.a_red){};
+        Color(const Color& color_copy);
 
         // Return a color loaded from a text
         static std::vector<std::string> from_std_string_parts(std::string source);

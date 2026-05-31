@@ -117,14 +117,33 @@ Limit formula_limit(scls::Formula_Base* f, Limit to) {
 }
 
 int main() {
-	std::shared_ptr<scls::Formula_Base> function = scls::string_to_algebra_element<scls::Formula_Base>("(x*x)/4+x/2-1");
-	scls::Image image = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+	std::map<std::string, std::string> r = {{"F", "FF-[-F+F+F]+[+F-F-F]"}};
+	std::string result = scls::l_system("F", r, 4);
+
+	scls::Image image = scls::Image(2000, 2000, scls::Color(255, 255, 255));
+	scls::Turtle t = scls::Turtle(image);
+	t.pen_up();
+	t.go_forward(1000);
+	t.rotate_degrees(90);
+	t.go_forward(1500);
+	t.rotate_degrees(-180);
+	t.pen_down();
+
+	t.load_actions_from_std_string(result);
+	for(int i=0;i<1000000;i++){t.update_actions(0.01);}
+	image.save_png("tests/l.png");
+
+	//std::shared_ptr<scls::Formula_Base> function = scls::string_to_algebra_element<scls::Formula_Base>("4*(x-27/4)(x-21)(x+4)");
+	//std::cout << "E " << function.get()->to_std_string(0) << std::endl;
+
+
+	/*scls::Image image = scls::Image(1000, 1000, scls::Color(255, 255, 255));
 	scls::Plane_Base p = scls::Plane_Base(100, 100, 500, 500);
 	scls::draw_grid(image, &p);
 	draw_function_integral_riemann(image, function.get(), &p, 0, 3, 0.5);
 	scls::draw_function_graph(image, function.get(), &p, 0, 1000);
 
-	image.save_png("tests/f.png");
+	image.save_png("tests/f.png");/*
 
 	//Extendable_Fraction f = Extendable_Fraction(71, 7);
 	//f.normalize();
