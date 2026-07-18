@@ -82,6 +82,10 @@ namespace scls {
         defined_balises->set_defined_balise("trees", current_balise);
     }
 
+    // Creates a new graph
+    std::shared_ptr<Graph_Base> Graph_Base::new_graph_from_xml(std::shared_ptr<XML_Text_Base> xml_text){std::shared_ptr<Graph_Base> graph = std::make_shared<Graph_Base>();graph.get()->load_from_xml(xml_text);return graph;}
+    std::shared_ptr<Graph_Base> Graph_Base::new_graph_from_xml(std::string xml_text){std::shared_ptr<Graph_Base> graph = std::make_shared<Graph_Base>();graph.get()->load_from_xml(xml_text);return graph;}
+
     // Adds a node in the graph
     int Graph_Base::add_node(std::shared_ptr<__Image_Base> image, double x, double y){std::shared_ptr<Node_Base>new_node=__create_node(image,x,y);a_nodes.push_back(new_node);return new_node.get()->id();};
     int Graph_Base::add_node(std::string value, double x, double y){Text_Style s;std::shared_ptr<Node_Base>new_node=__create_node(string_to_image(value, s),x,y);a_nodes.push_back(new_node);new_node.get()->set_value(value);return new_node.get()->id();}
@@ -315,7 +319,7 @@ namespace scls {
                         }
 
                         // Draw the link
-                        to_return.get()->draw_line(current_x_start + x_offset, current_y_start + y_offset, current_x_end + x_offset, current_y_end + y_offset, Color(0, 0, 0), 2);
+                        to_return.get()->draw_line(current_x_start + x_offset, current_y_start + y_offset, current_x_end + x_offset, current_y_end + y_offset, Color(0, 0, 0), 4);
                     }
                 }
             } //*/
@@ -342,7 +346,7 @@ namespace scls {
     	//Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
 
     	scls::Point_2D last_point = scls::Point_2D(-1, 0);
-    	double last_x = 0;double needed_x = 0;
+    	double needed_x = 0;
         for(int j = 0;j<img.width();j++){
         	needed_x = b->canonical_x_to_base_x(j);std::cout << "A " << needed_x << " " << f->replace_unknowns("x", needed_x)->value_to_double() << std::endl;
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value_to_double()));
@@ -350,7 +354,7 @@ namespace scls {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), color, 5);}
             }
             else{break;}
-            last_point = current_point;last_x = needed_x;
+            last_point = current_point;
         }
     }
     void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b){draw_function_graph(img, f, b, b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
@@ -359,15 +363,17 @@ namespace scls {
     	//Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
 
     	scls::Point_2D last_point = scls::Point_2D(-1, 0);
-    	double last_x = 0;double needed_x = 0;
+    	double needed_x = 0;
         for(int j = 0;j<img.width();j++){
         	needed_x = b->canonical_x_to_base_x(j);
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
             if(needed_x < end_x) {
-                if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(255, 0, 0), 5);}
+                if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
+                    img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(255, 0, 0), 5);
+                }
             }
             else{break;}
-            last_point = current_point;last_x = needed_x;
+            last_point = current_point;
         }
     }
 }

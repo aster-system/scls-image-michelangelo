@@ -26,199 +26,293 @@
 
 SCLS_INIT;
 
-struct Limit {
-	Limit(scls::Fraction v){value = v;};
+void scalar_field_2d_colored(scls::Image image, scls::Formula_Base* formula, scls::Plane_Base* base) {
+	// Datas
 
-	bool exists = true;
-	char infinity = 0;
-	scls::Fraction value = 0;
+	// Browse the image
+	for(int y_pixel = 0;y_pixel<image.height();y_pixel++) {
+		for(int x_pixel = 0;x_pixel<image.width();x_pixel++) {
+			// Datas for this pixel
+			scls::Fraction x = base->canonical_x_to_base_x(x_pixel);
+			scls::Fraction y = base->canonical_y_to_base_y(image.height() - y_pixel);
 
-	// Limit sign
-	char sign() {
-		if(infinity != 0){return infinity;}
-		return scls::sign(value.to_double());
-	}
-};
-Limit formula_limit(scls::Formula_Base* f, Limit to) {
-	Limit to_return = Limit(0);
-	if(f->is_known()){to_return = Limit(*f->value<scls::Fraction>());}
-	else if(f->is_final_element()) {to_return = to;}
-	else {
-		bool first_limit = true;
-
-		if(f->algebra_operator_name() == std::string_view("+")) {
-			for(std::size_t i = 0;i<f->algebra_elements_const().size();i++) {
-				scls::Formula_Base* current_f = f->formula_element(i);
-				Limit current_limit = formula_limit(current_f, to);
-				if(first_limit){to_return = current_limit;first_limit = false;}
-				else {
-					if(to_return.infinity * current_limit.infinity == -1) {
-						to_return.exists = false;
-						break;
-					}
-					else {
-						if(to_return.infinity == 0){to_return.infinity = current_limit.infinity;}
-						to_return.value += current_limit.value;
-					}
-				}
-			}
-		}
-		else if(f->algebra_operator_name() == std::string_view("*")) {
-			for(std::size_t i = 0;i<f->algebra_elements_const().size();i++) {
-				scls::Formula_Base* current_f = f->formula_element(i);
-				Limit current_limit = formula_limit(current_f, to);
-
-				if(first_limit){to_return = current_limit;first_limit = false;}
-				else {
-					if((std::abs(to_return.infinity) == 1 && (current_limit.infinity == 0 && current_limit.value == 0)) || (std::abs(current_limit.infinity) == 1 && (to_return.infinity == 0 && to_return.value == 0))) {
-						to_return.exists = false;
-						break;
-					}
-					else {
-						if(to_return.infinity == 0){to_return.infinity = current_limit.infinity;}
-						else if(current_limit.infinity != 0){to_return.infinity *= current_limit.infinity;}
-						to_return.value *= current_limit.value;
-					}
-				}
-			}
-		}
-		else if(f->algebra_operator_name() == std::string_view("/")) {
-			scls::Formula_Base* denominator = f->formula_element(1);
-			scls::Formula_Base* numerator = f->formula_element(0);
-			Limit denominator_limit = formula_limit(denominator, to);
-			Limit numerator_limit = formula_limit(numerator, to);
-
-			std::cout << "A " << numerator->to_std_string(0) << " " << (int)numerator_limit.infinity << " " << (int)denominator_limit.infinity << " " << to.value.to_double() << " " << (int)to.infinity << " " << to.exists << std::endl;
-			std::cout << "B " << numerator_limit.value.to_double() << " " << (int)numerator_limit.infinity << " " << (int)denominator_limit.infinity << std::endl;
-			if(denominator_limit.infinity == 0 && numerator_limit.infinity == 0){
-				if(denominator_limit.value == 0 && numerator_limit.value == 0){
-					to_return.exists = false;
-				}
-				else if(denominator_limit.value == 0){
-					to_return.infinity = scls::sign(numerator_limit.value.to_double());
-				}
-				else if(numerator_limit.value == 0) {
-					to_return.value = 0;
-				}
-				else {
-					to_return.value = numerator_limit.value / denominator_limit.value;
-				}
-			}
-			else if(denominator_limit.infinity != 0 && numerator_limit.infinity != 0) {
-				to_return.exists = false;
-			}
-			else {
-				to_return.infinity = scls::sign(denominator_limit.sign() * numerator_limit.sign());
-			}
+			scls::Fraction current_value = *formula->replace_unknowns("x", x).get()->replace_unknowns("y", y).get()->value<scls::Fraction>();
+			if(current_value > 0 ){image.set_pixel(x_pixel, y_pixel, scls::Color(100.0 * current_value.to_double(), 0, 0));}
+			else{image.set_pixel(x_pixel, y_pixel, scls::Color(0, 0, 100.0 * -current_value.to_double()));}
 		}
 	}
+}
 
-	return to_return;
+void vector_field_2d(scls::Image image, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, scls::Plane_Base* base) {
+	// Datas
+	int start_x_pixel = 40;
+	int start_y_pixel = 40;
+	int step_x_pixel = 80;
+	int step_y_pixel = 80;
+
+	// Browse the image
+	int current_x_pixel = start_x_pixel;
+	int current_y_pixel = start_y_pixel;
+	while(current_y_pixel < image.height()) {
+		while(current_x_pixel < image.width()) {
+			double current_x = base->canonical_x_to_base_x(current_x_pixel);
+			double current_y = base->canonical_y_to_base_y(current_y_pixel);
+
+			// Get the needed vector
+			scls::Fraction current_value_x = *formula_x->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();
+			scls::Fraction current_value_y = *formula_y->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();
+			int current_value_x_pixel = current_value_x.to_double() * 20.0;
+			int current_value_y_pixel = current_value_y.to_double() * 20.0;
+
+			image.image()->draw_arrow(current_x_pixel, image.height() - current_y_pixel, current_x_pixel + current_value_x_pixel, image.height() - (current_y_pixel + current_value_y_pixel), scls::Color(0, 0, 0), 0.3, 5);
+
+			current_x_pixel += step_x_pixel;
+		}
+		current_x_pixel = start_x_pixel;
+		current_y_pixel += step_y_pixel;
+	}
+}
+void vector_field_2d_link(scls::Image image, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, scls::Plane_Base* base) {
+	// Datas
+	int start_x_pixel = 80;
+	int start_y_pixel = 80;
+	int step_x_pixel = 160;
+	int step_y_pixel = 160;
+
+	// Browse the image
+	int current_x_pixel = start_x_pixel;
+	int current_y_pixel = start_y_pixel;
+	while(current_y_pixel < image.height()) {
+		while(current_x_pixel < image.width()) {
+			double current_x = base->canonical_x_to_base_x(current_x_pixel);
+			double current_y = base->canonical_y_to_base_y(current_y_pixel);
+
+			// Get the needed vector
+			scls::Fraction current_value_x = *formula_x->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();
+			scls::Fraction current_value_y = *formula_y->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();
+			int current_value_x_pixel = base->base_x_to_canonical_x(current_value_x.to_double());
+			int current_value_y_pixel = base->base_y_to_canonical_y(current_value_x.to_double());
+
+			image.image()->draw_arrow(current_x_pixel, image.height() - current_y_pixel, current_value_x_pixel, image.height() - (current_value_y_pixel), scls::Color(0, 0, 0), 0.3, 5);
+			//image.draw_line(current_x_pixel, current_y_pixel, current_value_x_pixel, current_value_y_pixel, scls::Color(0, 0, 0), 5);
+
+			current_x_pixel += step_x_pixel;
+		}
+		current_x_pixel = start_x_pixel;
+		current_y_pixel += step_y_pixel;
+	}
+}
+
+void apply_force_from_field_2d(scls::Physic_Object* object, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, double delta_time) {
+	double current_x = object->attached_transform()->x();
+	double current_y = object->attached_transform()->y();
+
+	// Get the needed vector
+	scls::Fraction current_value_x = *formula_x->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();
+	scls::Fraction current_value_y = *formula_y->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();
+	object->apply_force(scls::Point_2D(current_value_x.to_double(), current_value_y.to_double()) * delta_time);
+}
+void van_der_pol_oscillator(scls::Physic_Object* object, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, double delta_time) {
+	double current_x = object->attached_transform()->x();
+	double current_y = object->attached_transform()->y();
+	double current_x_velocity = object->attached_transform()->velocity_x();
+	double current_y_velocity = object->attached_transform()->velocity_y();
+
+	// Get the needed vector
+	double w0 = 1;
+	double current_value_x = w0 * (1 - current_x * current_x) * current_x_velocity - w0 * w0 * current_x;
+	double current_value_y = w0 * (1 - current_y * current_y) * current_y_velocity - w0 * w0 * current_y;
+	object->apply_force(scls::Point_2D(current_value_x, current_value_y) * delta_time);
 }
 
 int main() {
-	std::map<std::string, std::string> r = {{"F", "FF-[-F+F+F]+[+F-F-F]"}};
-	std::string result = scls::l_system("F", r, 4);
+    scls::Image img = scls::Image(2000, 2000);scls::Plane_Base b = scls::Plane_Base::base_for_image(2000, 2000, 100, 100);
+    vector_field_2d(img, scls::string_to_algebra_element<scls::Formula_Base>("-y").get(), scls::string_to_algebra_element<scls::Formula_Base>("x").get(), &b);
+    //img.draw_line(500, 100, 501, 900, scls::Color(255, 0, 0), 100);
+    //img.draw_line(100, 100, 900, 900, scls::Color(255, 0, 0), 100);
+    //img.draw_line(100, 100, 900, 100, scls::Color(255, 0, 0), 100);
+    //img.draw_line(100, 100, 100, 900, scls::Color(255, 0, 0), 100);
+    //img.fill_circle(900, 100, 50, scls::Color(255, 0, 0));
+    //img.draw_line(100, 500, 900, 501, scls::Color(255, 0, 0), 100);
 
-	scls::Image image = scls::Image(2000, 2000, scls::Color(255, 255, 255));
-	scls::Turtle t = scls::Turtle(image);
-	t.pen_up();
-	t.go_forward(1000);
-	t.rotate_degrees(90);
-	t.go_forward(1500);
-	t.rotate_degrees(-180);
-	t.pen_down();
+    /*for(int i = 0;i<img.width();i++){
+        img.draw_line(i, i, i + 1, i + 1, scls::Color(255, 0, 0), 5);
+        img.draw_line(i, i / 2, i + 1, (i + 1) / 2, scls::Color(255, 0, 0), 5);
+    }//*/
 
-	t.load_actions_from_std_string(result);
-	for(int i=0;i<1000000;i++){t.update_actions(0.01);}
-	image.save_png("tests/l.png");
+    //scls::draw_grid(img, &b);
+    //scls::draw_function_graph(img, scls::string_to_algebra_element<scls::Formula_Base>("ln(x)").get(), &b);
+    img.save_png("tests/t.png");return 0;
 
-	//std::shared_ptr<scls::Formula_Base> function = scls::string_to_algebra_element<scls::Formula_Base>("4*(x-27/4)(x-21)(x+4)");
-	//std::cout << "E " << function.get()->to_std_string(0) << std::endl;
+    /*scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+    img.draw_line(100, 300, 900, 700, scls::Color(255, 0, 0, 75), 99);
+    img.draw_line(100, 700, 900, 300, scls::Color(255, 0, 0, 75), 99);
+    img.draw_line(300, 900, 700, 100, scls::Color(255, 0, 0, 75), 99);
+    img.draw_line(300, 100, 700, 900, scls::Color(255, 0, 0, 75), 99);
 
+    img.save_png("tests/p.png");//*/
 
-	/*scls::Image image = scls::Image(1000, 1000, scls::Color(255, 255, 255));
-	scls::Plane_Base p = scls::Plane_Base(100, 100, 500, 500);
-	scls::draw_grid(image, &p);
-	draw_function_integral_riemann(image, function.get(), &p, 0, 3, 0.5);
-	scls::draw_function_graph(image, function.get(), &p, 0, 1000);
+	/*std::shared_ptr<scls::Transform_Object_2D> transform = std::make_shared<scls::Transform_Object_2D>();
+	scls::Physic_Engine engine;
+	std::shared_ptr<scls::Physic_Object> t = engine.new_physic_object(transform);
+	t.get()->set_static(false);t.get()->set_use_gravity(false);
+	t.get()->new_collision(scls::Collision_Type::GCT_Circle);
+	transform.get()->set_scale_x(0.1);
+	transform.get()->set_scale_y(0.1);
+	transform.get()->set_x(-3);
+	transform.get()->set_y(0);
 
-	image.save_png("tests/f.png");/*
+	std::shared_ptr<scls::Transform_Object_2D> obstacle = std::make_shared<scls::Transform_Object_2D>();
+	std::shared_ptr<scls::Physic_Object> obstacle_physic = engine.new_physic_object(obstacle);
+	obstacle_physic.get()->new_collision(scls::Collision_Type::GCT_Circle);
+	//obstacle_physic.get()->add_collision(-0.5, 0, 0.5, -0.5);
+	obstacle_physic.get()->set_static(true);obstacle_physic.get()->set_use_gravity(false);
+	obstacle.get()->set_scale_x(2);
+	obstacle.get()->set_scale_y(2);
+	obstacle.get()->set_x(0);
+	obstacle.get()->set_y(0);
 
-	//Extendable_Fraction f = Extendable_Fraction(71, 7);
-	//f.normalize();
+	std::shared_ptr<scls::Transform_Object_2D> obstacle_1 = std::make_shared<scls::Transform_Object_2D>();
+	std::shared_ptr<scls::Physic_Object> obstacle_physic_1 = engine.new_physic_object(obstacle_1);
+	obstacle_physic_1.get()->new_collision(scls::Collision_Type::GCT_Circle);
+	obstacle_physic_1.get()->set_static(true);obstacle_physic_1.get()->set_use_gravity(false);
+	obstacle_1.get()->set_scale_x(1);
+	obstacle_1.get()->set_scale_y(1);
+	obstacle_1.get()->set_x(1);
+	obstacle_1.get()->set_y(2);
 
-	/*std::shared_ptr<scls::Extendable_Formula_Base> f = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("exp(x)");
-	//f = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("((1/1307674368000) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x)) + ((1/87178291200) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x) * (x))");
-	//std::shared_ptr<scls::Extendable_Formula_Base> g = scls::string_to_algebra_element<scls::Extendable_Formula_Base>("(x * x) / 2 + x");
-	std::shared_ptr<scls::Extendable_Formula_Base> dev = scls::mclaurin(f.get(), std::string("x"), 25);
+	std::shared_ptr<scls::Transform_Object_2D> obstacle_2 = std::make_shared<scls::Transform_Object_2D>();
+	std::shared_ptr<scls::Physic_Object> obstacle_physic_2 = engine.new_physic_object(obstacle_2);
+	obstacle_physic_2.get()->new_collision(scls::Collision_Type::GCT_Circle);
+	obstacle_physic_2.get()->set_static(true);obstacle_physic_2.get()->set_use_gravity(false);
+	obstacle_2.get()->set_scale_x(1);
+	obstacle_2.get()->set_scale_y(1);
+	obstacle_2.get()->set_x(1);
+	obstacle_2.get()->set_y(-2);
 
-	scls::Image img = scls::Image(1000, 1000);
-	scls::Vector_Base p = scls::Vector_Base(50, 0, 0, 50, 500, 500);
-	scls::draw_grid(img, &p);
-	scls::draw_function_graph(img, f.get(), &p, -1000, 1000);
-	scls::draw_function_graph(img, dev.get(), &p, scls::Color(0, 0, 255), -1000, 1000);
-	img.save_png("tests/f.png");
+	std::shared_ptr<scls::Plane_Base> b = std::make_shared<scls::Plane_Base>(scls::Plane_Base::base_for_image(1000, 1000, 100, 100));
+	scls::Image image = scls::Image(1000, 1000, scls::Color(255, 255, 255));
+	//vector_field_2d(image, scls::string_to_algebra_element<scls::Formula_Base>("-y").get(), scls::string_to_algebra_element<scls::Formula_Base>("x").get(), b.get());
+	scls::Turtle turtle = scls::Turtle(image);
+	turtle.set_pen_size(10);turtle.pen_up();turtle.go_to_object(transform.get(), b.get());turtle.pen_down();
 
-	std::cout << "E " << f.get()->to_std_string(0) << " " << dev.get()->replace_unknowns("x", scls::Extendable_Fraction(1)).get()->value_to_double() << std::endl;//*/
+	t.get()->set_velocity(scls::Point_2D(0.3, -1));
 
-    /*std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("1/4 * x + 1");
+	for(int i = 0;i<560;i++) {
+        std::cout << "A " << i << std::endl;
+		for(int j = 0;j<340;j++) {
+			transform.get()->set_x(-1.5 + static_cast<double>(j) / 110.0);
+			transform.get()->set_y(static_cast<double>(i) / 110.0);
 
-	scls::Image img = scls::Image(1000, 1000);
-	scls::Vector_Base p = scls::Vector_Base(50, 0, 0, 50, 500, 500);
-	scls::draw_grid(img, &p);
-	scls::draw_function_graph(img, f.get(), &p, -1000, 2);
-	img.save_png("tests/f.png");//*/
+			std::map<scls::Transform_Object_2D*, std::shared_ptr<scls::Transform_Object_2D>> transforms;
+			scls::Physic_Engine engine_clone;
+			engine.clone(&engine_clone, transforms);
+			turtle.clear_actions();
+			//turtle.add_action_follow(transforms[transform.get()], b);
+			turtle.pen_up();
+			turtle.go_to_object(transforms[transform.get()].get(), b.get());
+			turtle.pen_down();
 
-	/*double branches = 8;
-	double center_x = 500;
-	double center_y = 500;
-	double r_outer = 200;
-	double r_inner = 150;
-	scls::Vector_Base p = scls::Vector_Base(50, 0, 0, 50, 500, 500);
-	std::vector<scls::Point_2D> points = std::vector<scls::Point_2D>(branches * 2);
-	const double angle_step = SCLS_PI / branches;
-	for (int i = 0; i < branches * 2; ++i) {
-		// On commence à -PI/2 pour que la première pointe soit vers le haut
-		double angle  = static_cast<double>(i) * angle_step;
-		double radius = (i % 2 == 0) ? r_outer : r_inner;
+			for(int k=0;k<1000;k++) {
+				engine_clone.update_physic(0.01);
+				turtle.update_actions(0.01);
+			}
 
-		double x = center_x + radius * std::cos(angle);
-		double y = center_y + radius * std::sin(angle);
-		points[i] = scls::Point_2D(500 - p.canonical_to_base_x(x, y) * 50, 500 + p.canonical_to_base_y(x, y) * 50);
+			scls::Point_2D current_velocity = transforms[transform.get()].get()->velocity();
+			double angle = scls::vector_2d_angle(current_velocity);
+			image.fill_circle(transform.get(), b.get(), 1, scls::Color(angle * 35.0, angle * 35.0, 0));
+		}
 	}
 
-	scls::Image img = scls::Image(1000, 1000);
-	scls::draw_grid(img, &p);
-	img.fill_form(points, scls::Color(255, 0, 0));
-	img.save_png("tests/f.png");//*/
+	t.get()->set_velocity(scls::Point_2D(-0.3, 1));
 
+	for(int i = 0;i<560;i++) {
+        std::cout << "B " << i << std::endl;
+		for(int j = 0;j<340;j++) {
+			transform.get()->set_x(-1.5 + static_cast<double>(j) / 110.0);
+			transform.get()->set_y(-5.0 + static_cast<double>(i) / 110.0);
 
-	//scls::Relation_Egality r;
-	//f.get()->check_relation(&r, g.get());
-	//std::cout << "I " << f.get()->definition_domain().to_std_string(0) << std::endl;
+			std::map<scls::Transform_Object_2D*, std::shared_ptr<scls::Transform_Object_2D>> transforms;
+			scls::Physic_Engine engine_clone;
+			engine.clone(&engine_clone, transforms);
+			turtle.clear_actions();
+			//turtle.add_action_follow(transforms[transform.get()], b);
+			turtle.pen_up();
+			turtle.go_to_object(transforms[transform.get()].get(), b.get());
+			turtle.pen_down();
 
-	//scls::Matrix product = m.product(&a);
-	//std::cout << product.to_std_string(0) << std::endl;
+			for(int k=0;k<1000;k++) {
+				engine_clone.update_physic(0.01);
+				turtle.update_actions(0.01);
+			}
 
-    //scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
-	//scls::draw_by_rotation(img, scls::string_to_algebra_element<scls::Formula_Base>("50000/x"), 0);
-	//img.save_png("tests/t.png");
+			scls::Point_2D current_velocity = transforms[transform.get()].get()->velocity();
+			double angle = scls::vector_2d_angle(current_velocity);
+			image.fill_circle(transform.get(), b.get(), 1, scls::Color(angle * 35.0, angle * 35.0, 0));
+		}
+	}
 
-	/*scls::Relation_Module r = scls::Relation_Module(15);
-	scls::Relation_Order s = scls::Relation_Order(scls::Relation_Order::lesser_strict);
-	std::cout << s.is_in_relation(164794987, 4) << " " << s.is_in_relation(4, 164794987) << std::endl;
+	t.get()->set_velocity(scls::Point_2D(1, 0.3));
 
-	std::string c = std::string("3 * x + 2 ~ 0 [4]");//*/
+	for(int i = 0;i<1110;i++) {
+        std::cout << "C " << i << std::endl;
+		for(int j = 0;j<440;j++) {
+			transform.get()->set_x(-5.0 + static_cast<double>(j) / 110.0);
+			transform.get()->set_y(-5.0 + static_cast<double>(i) / 110.0);
 
-	/*std::shared_ptr<scls::Formula_Base> f = scls::string_to_algebra_element<scls::Formula_Base>("sin(x)");
-    //std::shared_ptr<scls::Formula_Base> g = scls::string_to_algebra_element<scls::Formula_Base>("-sqrt(1 - x * x)");
+			std::map<scls::Transform_Object_2D*, std::shared_ptr<scls::Transform_Object_2D>> transforms;
+			scls::Physic_Engine engine_clone;
+			engine.clone(&engine_clone, transforms);
+			turtle.clear_actions();
+			//turtle.add_action_follow(transforms[transform.get()], b);
+			turtle.pen_up();
+			turtle.go_to_object(transforms[transform.get()].get(), b.get());
+			turtle.pen_down();
 
-    scls::Plane_Base b = scls::Plane_Base(50, 50, 500, 500);
-    scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
-    scls::draw_grid(img, &b);
-    scls::draw_function_graph(img, f.get(), &b);
-    img.save_png("tests/t.png");//*/
+			for(int k=0;k<1000;k++) {
+				engine_clone.update_physic(0.01);
+				turtle.update_actions(0.01);
+			}
 
-    return 0;
+			scls::Point_2D current_velocity = transforms[transform.get()].get()->velocity();
+			double angle = scls::vector_2d_angle(current_velocity);
+			image.fill_circle(transform.get(), b.get(), 1, scls::Color(angle * 35.0, angle * 35.0, 0));
+		}
+	}
+
+	t.get()->set_velocity(scls::Point_2D(-1, -0.3));
+
+	for(int i = 0;i<1110;i++) {
+        std::cout << "D " << i << std::endl;
+		for(int j = 0;j<400;j++) {
+			transform.get()->set_x(1.5 + static_cast<double>(j) / 110.0);
+			transform.get()->set_y(-5.0 + static_cast<double>(i) / 110.0);
+
+			std::map<scls::Transform_Object_2D*, std::shared_ptr<scls::Transform_Object_2D>> transforms;
+			scls::Physic_Engine engine_clone;
+			engine.clone(&engine_clone, transforms);
+			turtle.clear_actions();
+			//turtle.add_action_follow(transforms[transform.get()], b);
+			turtle.pen_up();
+			turtle.go_to_object(transforms[transform.get()].get(), b.get());
+			turtle.pen_down();
+
+			for(int k=0;k<1000;k++) {
+				engine_clone.update_physic(0.01);
+				turtle.update_actions(0.01);
+			}
+
+			scls::Point_2D current_velocity = transforms[transform.get()].get()->velocity();
+			double angle = scls::vector_2d_angle(current_velocity);
+			image.fill_circle(transform.get(), b.get(), 1, scls::Color(angle * 35.0, angle * 35.0, 0));
+		}
+	}
+
+	image.fill_circle(obstacle.get(), b.get(), scls::Color(255, 0, 0));
+	image.fill_circle(obstacle_1.get(), b.get(), scls::Color(255, 0, 0));
+	image.fill_circle(obstacle_2.get(), b.get(), scls::Color(255, 0, 0));
+
+	image.save_png("tests/l.png");
+
+    return 0;//*/
 }

@@ -96,6 +96,10 @@ namespace scls {
         Graph_Base(){};
         virtual ~Graph_Base(){};
 
+        // Creates a new graph
+        static std::shared_ptr<Graph_Base> new_graph_from_xml(std::shared_ptr<XML_Text_Base> xml_text);
+        static std::shared_ptr<Graph_Base> new_graph_from_xml(std::string xml_text);
+
         // Adds a node in the graph
         virtual std::shared_ptr<Node_Base> __create_node(std::shared_ptr<scls::__Image_Base> image, double x, double y){std::shared_ptr<Graph_Base::Node_Base>to_return=std::make_shared<Node_Base>(image, x, y, a_nodes.size());return to_return;};
         int add_node(std::shared_ptr<scls::__Image_Base> image, double x, double y);

@@ -293,6 +293,8 @@ namespace scls {
             void fill_circle(int x_center, int y_center, double radius_x, double radius_y, Color color);
             void fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color);
             void fill_circle(int x_center, int y_center, double radius, Color color);
+            void fill_circle(Transform_Object_2D* transform, Plane_Base* base, double radius, Color color);
+            void fill_circle(Transform_Object_2D* transform, Plane_Base* base, Color color);
             // Fills a form of points in the image
             void fill_form(std::vector<Point_2D> points, Color color);
             // Fills a rectangle on the image

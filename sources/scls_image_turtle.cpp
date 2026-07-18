@@ -104,6 +104,9 @@ namespace scls {
 	// Action_Fill constructor
     Turtle::Action_Fill::Action_Fill():Action(TURTLE_ACTION_FILL){};
 
+    // Action_Follow constructor
+    Turtle::Action_Follow::Action_Follow(std::shared_ptr<Transform_Object_2D> transform_object, std::shared_ptr<Plane_Base> plane_base):Action(TURTLE_ACTION_FOLLOW){plane = plane_base;to_follow = transform_object;};
+
 	// Action_Move_To constructor
     Turtle::Action_Move_Forward::Action_Move_Forward(double distance):Action(TURTLE_ACTION_MOVE){a_distance = distance;};
     Turtle::Action_Move_To::Action_Move_To(Point_2D position):Action(TURTLE_ACTION_MOVE_TO){a_position = position;};
@@ -122,6 +125,7 @@ namespace scls {
 
     // Clone the action
     std::shared_ptr<Action> Turtle::Action_Fill::clone(){std::shared_ptr<Action_Fill> to_return = std::make_shared<Action_Fill>();clone_base(to_return.get());return to_return;};
+    std::shared_ptr<Action> Turtle::Action_Follow::clone(){std::shared_ptr<Action_Follow> to_return = std::make_shared<Action_Follow>(to_follow, plane);clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Move_Forward::clone(){std::shared_ptr<Action_Move_Forward> to_return = std::make_shared<Action_Move_Forward>(a_distance);clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Move_To::clone(){std::shared_ptr<Action_Move_To> to_return = std::make_shared<Action_Move_To>(a_position);clone_base(to_return.get());return to_return;};
     std::shared_ptr<Action> Turtle::Action_Rotate::clone(){std::shared_ptr<Action_Rotate> to_return = std::make_shared<Action_Rotate>(a_angle);clone_base(to_return.get());return to_return;};
@@ -143,6 +147,17 @@ namespace scls {
 
 		a_position = new_position;
 	}
+    void Turtle::go_to(Point_2D point) {
+        if(a_pen){a_image.draw_line(a_position.x(), a_position.y(), point.x(), point.y(), Color(0, 0, 153), a_pen_size);}
+
+        double angle = vector_2d_angle(point - a_position);set_rotation(angle);
+		a_position = point;
+    }
+    void Turtle::go_to_object(Transform_Object_2D* object, Plane_Base* plane) {
+        set_rotation(object->absolute_rotation());
+        if(plane == 0){go_to(object->absolute_position());}
+        else{go_to(Point_2D(plane->base_x_to_canonical_x(object->absolute_position().x()), a_image.height() - plane->base_y_to_canonical_y(object->absolute_position().y())));}
+    }
 
 	// Handle the pen
 	void Turtle::pen_down(){a_pen = true;}
@@ -158,6 +173,7 @@ namespace scls {
 
 	// Add some actions
 	void Turtle::add_action_fill(){actions()->add_action(std::make_shared<Turtle::Action_Fill>());}
+	void Turtle::add_action_follow(std::shared_ptr<Transform_Object_2D> transform_object, std::shared_ptr<Plane_Base> plane_base){actions()->add_action(std::make_shared<Turtle::Action_Follow>(transform_object, plane_base));}
     void Turtle::add_action_move_forward(double needed_distance){actions()->add_action(std::make_shared<Turtle::Action_Move_Forward>(needed_distance));}
     void Turtle::add_action_move_to(Point_2D needed_position){actions()->add_action(std::make_shared<Turtle::Action_Move_To>(needed_position));}
     void Turtle::add_action_rotate(double needed_rotation){while(needed_rotation < 0){needed_rotation += 360.0;}actions()->add_action(std::make_shared<Turtle::Action_Rotate>(needed_rotation / (180.0 / SCLS_PI)));}
@@ -166,6 +182,9 @@ namespace scls {
     void Turtle::add_action_pen_up(){actions()->add_action(std::make_shared<Turtle::Action_Pen_Up>());}
     void Turtle::add_action_restore_position(){actions()->add_action(std::make_shared<Turtle::Action_Restore_Position>());}
     void Turtle::add_action_save_position(){actions()->add_action(std::make_shared<Turtle::Action_Save_Position>());}
+
+    // Clear actions
+    void Turtle::clear_actions(){a_actions.get()->clear_actions();};
 
     // Load actions
     void Turtle::load_actions_from_std_string(std::string t){load_actions_from_std_string(t, 45, 20);}
@@ -207,10 +226,15 @@ namespace scls {
     double Turtle::execute_action(Action* action, double delta_time){
         if(action->type == TURTLE_ACTION_FILL) {
             // Go forward with the turtle
-            Turtle::Action_Fill* m = reinterpret_cast<Turtle::Action_Fill*>(action);
+            //Turtle::Action_Fill* m = reinterpret_cast<Turtle::Action_Fill*>(action);
             if(a_prepare_filling){stop_filling();}
             else{start_filling();}
             return -1;
+        }
+        else if(action->type == TURTLE_ACTION_FOLLOW) {
+            // Go forward with the turtle
+            Turtle::Action_Follow* m = reinterpret_cast<Turtle::Action_Follow*>(action);
+            go_to_object(m->to_follow.get(), m->plane.get());
         }
         else if(action->type == TURTLE_ACTION_MOVE) {
             // Go forward with the turtle

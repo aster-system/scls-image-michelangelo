@@ -100,6 +100,8 @@ namespace scls {
         //Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
 
         // Datas for the drawing
+        double border_width = 2;
+        Color border_color = Color(0, 0, 0);
         Color fill_color_top = Color(0, 0, 255);
         Color fill_color_bottom = Color(0, 255, 0);
         step *= b->width_unit_in_canonical_base();
@@ -107,15 +109,24 @@ namespace scls {
         start_x = b->base_x_to_canonical_x(start_x);
 
         scls::Point_2D last_point = scls::Point_2D(0, 0);
-        double needed_x = 0;
         double zero_position_y = b->base_y_to_canonical_y(0);
         for(int j = start_x;j<img.width();j+=step){
-            needed_x = b->canonical_x_to_base_x(j + step / 2.0);
+            double needed_x = b->canonical_x_to_base_x(j + step / 2.0);
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
             if(j < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
-                    if(zero_position_y < current_point.y()) {img.fill_rect(j, zero_position_y, step, current_point.y() - zero_position_y, fill_color_bottom);}
-                    else{img.fill_rect(j, current_point.y(), step, zero_position_y - current_point.y(), fill_color_top);}
+                    //if(border_width != 0){img.fill_rect(j, current_point.y(), step, (zero_position_y - current_point.y()), border_color);}
+                    //if(zero_position_y < current_point.y()) {img.fill_rect(j + border_width, current_point.y() + border_width, step - border_width * 2, (zero_position_y - current_point.y()) - border_width * 2, fill_color_bottom);}
+                    //else{img.fill_rect(j + border_width, current_point.y() + border_width, step - border_width * 2, (zero_position_y - current_point.y()) - border_width * 2, fill_color_top);}
+
+                    if(zero_position_y < current_point.y()) {
+                        if(border_width != 0){img.fill_rect(j, zero_position_y, step, current_point.y() - zero_position_y, border_color);}
+                        if(step > border_width * 2.0 && (current_point.y() - zero_position_y) > border_width * 2.0){img.fill_rect(j + border_width, zero_position_y + border_width, step - border_width * 2.0, (current_point.y() - zero_position_y) - border_width * 2.0, fill_color_bottom);}
+                    }
+                    else{
+                        if(border_width != 0){img.fill_rect(j, current_point.y(), step, (zero_position_y - current_point.y()), border_color);}
+                        if(step > border_width * 2.0 && (zero_position_y - current_point.y()) > border_width * 2.0){img.fill_rect(j + border_width, current_point.y() + border_width, step - border_width * 2.0, (zero_position_y - current_point.y()) - border_width * 2.0, fill_color_top);}
+                    }
                 }
             }
             else{break;}
@@ -170,6 +181,8 @@ namespace scls {
         double zero_position_y = b->base_y_to_canonical_y(0);
         for(int j = 0;j<img.width();j++){
             needed_x = b->canonical_x_to_base_x(j);
+            if(needed_x < start_x){continue;}
+
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
             if(needed_x < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){

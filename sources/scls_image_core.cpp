@@ -95,10 +95,10 @@ namespace scls {
         if(cutted.size() > 1) {
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
                 std::shared_ptr<Formula_Base> value = string_to_algebra_element<Formula_Base>(cutted[i]);value.get()->simplify();
-                if(i == 0) to_return.set_red(value.get()->value<Fraction>()->to_double());
-                else if(i == 1) to_return.set_green(value.get()->value<Fraction>()->to_double());
-                else if(i == 2) to_return.set_blue(value.get()->value<Fraction>()->to_double());
-                else if(i == 3) to_return.set_alpha(value.get()->value<Fraction>()->to_double());
+                if(i == 0) to_return.set_red(scls::normalize_value(value.get()->value<Fraction>()->to_double(), 0, 255));
+                else if(i == 1) to_return.set_green(scls::normalize_value(value.get()->value<Fraction>()->to_double(), 0, 255));
+                else if(i == 2) to_return.set_blue(scls::normalize_value(value.get()->value<Fraction>()->to_double(), 0, 255));
+                else if(i == 3) to_return.set_alpha(scls::normalize_value(value.get()->value<Fraction>()->to_double(), 0, 255));
             }
         }
         else if (cutted.size() == 1) {defined_color_by_name(cutted.at(0), to_return);}
@@ -329,6 +329,18 @@ namespace scls {
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){a_image.get()->fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius, Color color){a_image.get()->fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
     void __Image_Base::Image::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha){a_image.get()->fill_circle(x_center, y_center, radius_x, radius_y, angle, angle_start, angle_end, red ,green, blue, alpha, border_radius, border_red, border_green, border_blue, border_alpha);}
+    void __Image_Base::Image::fill_circle(Transform_Object_2D* transform, Plane_Base* base, double radius, Color color) {
+        double needed_x = base->base_x_to_canonical_x(transform->absolute_x());
+    	double needed_y = height() - base->base_y_to_canonical_y(transform->absolute_y());
+
+    	fill_circle(needed_x, needed_y, radius, radius, color);
+    }
+    void __Image_Base::Image::fill_circle(Transform_Object_2D* transform, Plane_Base* base, Color color) {
+    	double needed_scale_x = transform->absolute_scale_x() * base->width_unit_in_canonical_base();
+    	double needed_scale_y = transform->absolute_scale_y() * base->height_unit_in_canonical_base();
+
+    	fill_circle(transform, base, needed_scale_x / 2.0, color);
+    }
     // Fills a form of points in the image
     void __Image_Base::Image::fill_form(std::vector<Point_2D> points, Color color){a_image.get()->fill_form(points, color);}
     // Fills a rectangle on the image
@@ -1522,6 +1534,7 @@ namespace scls {
         while(angle <= -90.0){angle += 180.0;}while(angle >= 90.0){angle -= 180.0;}
         angle /= (180.0/SCLS_PI);
 
+        // Approximate the angle of the farest part of the circle at the left
         double last_angle = SCLS_PI / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / SCLS_PI)).x();
         double left_angle = SCLS_PI * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / SCLS_PI)).x();
         for(int i = 0;i<30;i++){
@@ -1551,8 +1564,8 @@ namespace scls {
         double y_multiplier = 1;
         double y_center_offset_left = 0;
         double y_center_offset_left_to_add = drew_y_center / drew_radius_x;
-        const int start_y_left = y_center - drew_y_center * y_multiplier;
-        const int start_y_right = y_center + drew_y_center * y_multiplier;
+        const int start_y_left = round(y_center - drew_y_center * y_multiplier);
+        const int start_y_right = round(y_center + drew_y_center * y_multiplier);
 
         // Upgrade in the drawing
         double adaptated_angle_end = angle_end;double adaptated_angle_start = angle_start;
@@ -1568,19 +1581,18 @@ namespace scls {
         int needed_width = width();
         while(current_x < drew_radius_x) {
             // Update the coordinate
-            current_x++;
             double current_x_proportion_border = current_x / drew_radius_x;
-            double current_x_proportion = (current_x - border_radius) / (drew_radius_x - border_radius);
+            double current_x_proportion = (current_x - border_radius) / (drew_radius_x - border_radius) + (1.0 / (drew_radius_x - border_radius)) / 1.5;
             int needed_x = start_x + current_x;
-            int needed_y_left = (start_y_left + y_center_offset_left);
-            int needed_y_right = (start_y_right - y_center_offset_left);
+            int needed_y_left = round(start_y_left + y_center_offset_left);
+            int needed_y_right = round(start_y_right - y_center_offset_left);
             y_center_offset_left += y_center_offset_left_to_add;
 
             // Get the needed x/y
             double angle_border = circle_angle_at_x(current_x_proportion_border - 1.0) + (left_angle - SCLS_PI);
             Point_2D director_border_before_angle = oval_vector_x(radius_x, radius_y, angle_border) * radius_x;
             Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/SCLS_PI));
-            int first_y_top = director_border_top.y() - (drew_y_center - y_center_offset_left);
+            int first_y_top = round(director_border_top.y() - (drew_y_center - y_center_offset_left));
 
             // Draw each needed pixels
             // Set the last y
@@ -1590,8 +1602,8 @@ namespace scls {
             double needed_angle_bottom = SCLS_PI;double needed_angle_top = SCLS_PI;
             bool in_border_bottom = true;int last_y_bottom = 0;int last_y_top = 0;
             if(needed_x >= start_x_inner) {
-                needed_angle_bottom = circle_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
-                needed_angle_top = circle_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
+                needed_angle_bottom = circle_angle_at_x((radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
+                needed_angle_top = circle_angle_at_x((radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
 
                 // Update angles
                 needed_angle_bottom -= SCLS_PI;needed_angle_top -= SCLS_PI;
@@ -1602,8 +1614,8 @@ namespace scls {
                 Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/SCLS_PI));
 
                 double current_border_radius = std::sqrt(std::pow(radius_x, 2) + std::pow(radius_x - border_radius, 2) - 2 * radius_x * (radius_x - border_radius) * std::cos((needed_angle_bottom - angle_border) / SCLS_PI));
-                last_y_bottom = (director_bottom.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left);
-                last_y_top = (director_top.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left);
+                last_y_bottom = round((director_bottom.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left));
+                last_y_top = round((director_top.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left));
                 in_border_bottom = false;
             }
 
@@ -1737,8 +1749,8 @@ namespace scls {
 
                 // Fill the circle
                 int i = 0;
-                int x_left = (x_center - drew_radius_x) + current_x;
-                int x_right = (x_center + drew_radius_x) - current_x;
+                int x_left = (x_center - drew_radius_x) + (current_x + 1);
+                int x_right = (x_center + drew_radius_x) - (current_x + 1);
 
                 // Left of the circle
                 needed_x = x_left;
@@ -1793,6 +1805,9 @@ namespace scls {
                     }
                 }
             }
+
+            // Do the final updates
+            current_x++;
         }
     }
     // Fill a circle with a gradient on the image
@@ -1985,6 +2000,13 @@ namespace scls {
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short line_width) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), line_width);}
     void __Image_Base::draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short line_width){draw_line(point_1.x(), point_1.y(), point_2.x(), point_2.y(), color.red(), color.green(), color.blue(), color.alpha(), line_width);};
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
+        // Asserts
+        if(y_1 - line_width / 2 > height() && y_2 - line_width / 2 > height()){return;}
+        else if(x_1 == x_2 && y_1 == y_2){set_pixel(x_1, y_1, red, green, blue, alpha, 1);return;}
+
+        // Datas
+        bool draw_circles = true;//draw_circles=false;
+
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
             // Check the X position
@@ -1996,13 +2018,13 @@ namespace scls {
             } y_2++;
 
             // Draw the line
-            x_1 -= line_width / 2;x_2 -= line_width / 2;
+            int mid_line_width = line_width / 2;x_1 -= mid_line_width;
             fill_rect(x_1, y_1, line_width, (y_2 - y_1), red, green, blue, alpha);
 
             // Draw the extremity
-            y_1 -= line_width / 2;y_2 -= std::floor(static_cast<double>(line_width) / 2.0) + 1;
-            fill_rect(x_1, y_1, line_width, line_width, red, green, blue, alpha);
-            fill_rect(x_1, y_2, line_width, line_width, red, green, blue, alpha);
+            y_1 -= mid_line_width;
+            fill_rect(x_1, y_1, line_width, mid_line_width, red, green, blue, alpha);
+            fill_rect(x_1, y_2, line_width, mid_line_width, red, green, blue, alpha);
         }
         else if(y_1 == y_2) {
             // Check the Y position
@@ -2014,19 +2036,19 @@ namespace scls {
             } x_2++;
 
             // Draw the line
-            y_1 -= line_width / 2;y_2 -= line_width / 2;
+            int mid_line_width = line_width / 2;y_1 -= mid_line_width;
             fill_rect(x_1, y_1, x_2 - x_1, line_width, red, green, blue, alpha);
 
             // Draw the extremity
-            x_1 -= line_width / 2;x_2 -= std::floor(static_cast<double>(line_width) / 2.0) + 1;
-            fill_rect(x_1, y_1, line_width, line_width, red, green, blue, alpha);
-            fill_rect(x_2, y_1, line_width, line_width, red, green, blue, alpha);
+            x_1 -= mid_line_width;
+            fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
+            fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
         }
         else {
-            x_2++; y_2++;
+            //x_2++; y_2++;
             double distance_x = static_cast<double>(x_2) - static_cast<double>(x_1);
             double distance_y = static_cast<double>(y_2) - static_cast<double>(y_1);
-            if(distance_y == 0){distance_y = 0.0001;}
+            if(distance_y == 0){distance_y = 0.000001;}
 
             double x_y_ratio = distance_x / distance_y;
 
@@ -2043,17 +2065,50 @@ namespace scls {
 
                 // Check the positions
                 double actual_x = x_1;double actual_y = y_1;
-                // Start
+                actual_x -= (line_width / 2.0) * x_y_ratio;actual_y -= line_width / 2.0;
+
+                // Circle
+                double angle = std::atan(x_y_ratio);
+                double cos_angle = std::cos(angle);double sin_angle = std::sin(angle);
+                double maximum_x = (std::max(x_1, x_2) + std::abs(cos_angle) * (line_width / 2)) - 1;
+                double maximum_y = (std::max(y_1, y_2) + std::abs(sin_angle) * (line_width / 2)) - 1;
+                double minimum_x = (std::min(x_1, x_2) - std::abs(cos_angle) * (line_width / 2)) + 1;
+                double minimum_y = (std::min(y_1, y_2) - std::abs(sin_angle) * (line_width / 2)) + 1;
+                double needed_width_reduced = std::abs(cos_angle) * line_width;
+                double length_to_use = (line_width * (line_width / needed_width_reduced) - 1);
+                double length_to_use_half = length_to_use / 2;
+
+                // Left / right
+                if(draw_circles) {fill_circle(x_1, y_1, line_width / 2.0, red, green, blue, alpha);fill_circle(x_2, y_2, line_width / 2.0, red, green, blue, alpha);}
+
+                // Pre-circle modification
+                actual_x -= (actual_y - minimum_y) * x_y_ratio;actual_y -= (actual_y - minimum_y);
+                x_2 += (maximum_y - y_2) * x_y_ratio;y_2 += (maximum_y - y_2);
+
+                // Optimise the position
+                if(actual_x < 0){actual_y += (-actual_x) / x_y_ratio;actual_x = 0;}
                 if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
                 if(actual_x >= width()){actual_y -= (actual_x - width()) / x_y_ratio;actual_x = width();}
-                // End
                 if(y_2 >= height()){y_2 = height() - 1;}
+
                 // Draw the line
                 while (actual_y < y_2) {
                     actual_y++;
                     actual_x += x_y_ratio;
                     if(actual_x < 0 && x_y_ratio < 0){break;}
-                    set_pixel(actual_x, actual_y, red, green, blue, alpha, line_width);
+
+                    // TEMP TO DISABLE FASTLY
+                    //fill_circle(actual_x, actual_y, line_width / 2.0, red, green, blue, alpha);
+
+                    // Draw the pixels
+                    double current_maximum_x = actual_x + length_to_use_half;
+                    double current_minimum_x = actual_x - length_to_use_half;
+                    double start = std::max(0.0, minimum_x - current_minimum_x);
+                    double total_length = length_to_use - std::max(0.0, current_maximum_x - maximum_x);
+                    if(total_length + start > width()){total_length = width() - start;}
+                    for(int i = start;i<total_length;i++) {
+                        set_pixel(actual_x + (i - length_to_use_half), actual_y, red, green, blue, alpha, 1);
+                    }
                 }
             }
             else {
@@ -2070,16 +2125,52 @@ namespace scls {
                 // Check the positions
                 double actual_x = x_1;double actual_y = y_1;
                 double y_x_ratio = distance_y / distance_x;
-                if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
+                actual_x -= line_width / 2.0;actual_y -= y_x_ratio * (line_width / 2.0);
+
+                // Circle
+                double angle = std::atan(x_y_ratio);
+                double cos_angle = std::cos(angle);double sin_angle = std::sin(angle);
+                double maximum_x = (std::max(x_1, x_2) + std::abs(cos_angle) * (line_width / 2)) - 1;
+                double maximum_y = (std::max(y_1, y_2) + std::abs(sin_angle) * (line_width / 2)) - 1;
+                double minimum_x = (std::min(x_1, x_2) - std::abs(cos_angle) * (line_width / 2)) + 1;
+                double minimum_y = (std::min(y_1, y_2) - std::abs(sin_angle) * (line_width / 2)) + 1;
+                double needed_width_reduced = std::abs(sin_angle) * line_width;
+                double height_to_use = (line_width * (line_width / needed_width_reduced) - 1);
+                double height_to_use_half = height_to_use / 2;
+
+                // Left / right
+                if(draw_circles) {
+                    fill_circle(x_1, y_1, line_width / 2.0, red, green, blue, alpha);
+                    fill_circle(x_2, y_2, line_width / 2.0, red, green, blue, alpha);
+                }
+
+                // Pre-circle modification
+                actual_y -= (actual_x - minimum_x) * y_x_ratio;actual_x -= (actual_x - minimum_x);
+                y_2 += (maximum_x - x_2) * y_x_ratio;x_2 += (maximum_x - x_2);
+
+                // Optimise the positions
                 if(actual_y < 0) {actual_x += std::abs(actual_y) / y_x_ratio;actual_y=0;}
                 else if(actual_y >= height()){actual_x -= (actual_y - height()) / y_x_ratio;actual_y = height();}
+                if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
                 if(x_2 >= width()){x_2 = width() - 1;}
+
                 // Draw the line
                 while (actual_x < x_2) {
                     actual_y += y_x_ratio;
                     if(actual_y < 0){break;}
                     actual_x++;
-                    set_pixel(actual_x, actual_y, red, green, blue, alpha, line_width);
+
+                    // TEMP TO DISABLE FASTLY
+                    //fill_circle(actual_x, actual_y, line_width / 2.0, red, green, blue, alpha);
+
+                    // Draw the pixels
+                    double current_maximum_y = actual_y + height_to_use_half;
+                    double current_minimum_y = actual_y - height_to_use_half;
+                    double start = std::max(0.0, minimum_y - current_minimum_y);
+                    double total_height = height_to_use - std::max(0.0, current_maximum_y - maximum_y);
+                    for(int i = start;i<total_height;i++) {
+                        set_pixel(actual_x, actual_y + (i - height_to_use_half), red, green, blue, alpha, 1);
+                    }
                 }
             }
         }

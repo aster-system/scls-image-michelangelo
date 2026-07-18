@@ -145,10 +145,10 @@ namespace scls {
         scls::Color to_return(255, 255, 255);
         if(cutted.size() > 1) {
             for(int i = 0;i<static_cast<int>(cutted.size());i++) {
-                if(i == 0) to_return.set_red(value_double(cutted[i]));
-                else if(i == 1) to_return.set_green(value_double(cutted[i]));
-                else if(i == 2) to_return.set_blue(value_double(cutted[i]));
-                else if(i == 3) to_return.set_alpha(value_double(cutted[i]));
+                if(i == 0) to_return.set_red(scls::normalize_value(value_double(cutted[i]), 0, 255));
+                else if(i == 1) to_return.set_green(scls::normalize_value(value_double(cutted[i]), 0, 255));
+                else if(i == 2) to_return.set_blue(scls::normalize_value(value_double(cutted[i]), 0, 255));
+                else if(i == 3) to_return.set_alpha(scls::normalize_value(value_double(cutted[i]), 0, 255));
             }
         }
         else if(cutted.size() == 1) {scls::defined_color_by_name(cutted.at(0), to_return);}
@@ -649,6 +649,8 @@ namespace scls {
         else if(name == "mlang"){return 10216;}
         else if(name == "mlt"){return 60;}
         else if(name == "mltequal"){return 8804;}
+        else if(name == std::string_view("mgamma")){return 947;}
+        else if(name == std::string_view("mgammamaj")){return 915;}
         else if(name == "mgt"){return 62;}
         else if(name == "mgtequal"){return 8805;}
         else if(name == "mnatural"){return 'N';}
@@ -677,7 +679,7 @@ namespace scls {
             int potential_symbol = utf_8_symbol_by_name(text.get()->sub_texts().at(i).get()->xml_balise_name());
             if(potential_symbol != -1) {
                 // Other cases
-                if(text.get()->sub_texts().at(i).get()->xml_balise_name() == std::string_view("msum") && text.get()->sub_texts().at(i).get()->xml_attributes().size() > 0){return;}
+                if(text.get()->sub_texts().at(i).get()->xml_balise_name() == std::string_view("msum") && text.get()->sub_texts().at(i).get()->xml_attributes().size() > 0){continue;}
 
                 text.get()->sub_texts().at(i).get()->clear();
                 text.get()->sub_texts().at(i).get()->set_xml_balise_name(std::string());

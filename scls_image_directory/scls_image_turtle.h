@@ -38,6 +38,7 @@ namespace scls {
 
         // Action constructor
         Action(short action_type);
+        ~Action() = default;
 
         // Clone the action
         virtual std::shared_ptr<Action> clone() = 0;
@@ -153,6 +154,20 @@ namespace scls {
 
             // Clone the action
             virtual std::shared_ptr<Action> clone();
+	    };
+
+	    struct Action_Follow : public Action {
+	        #define TURTLE_ACTION_FOLLOW 1010
+
+	        // Action_Follow constructor
+            Action_Follow(std::shared_ptr<Transform_Object_2D> transform_object, std::shared_ptr<Plane_Base> plane_base);
+
+            // Clone the action
+            virtual std::shared_ptr<Action> clone();
+
+            // Transform object
+            std::shared_ptr<Plane_Base> plane;
+            std::shared_ptr<Transform_Object_2D> to_follow;
 	    };
 
 	    struct Action_Move_Forward : public Action {
@@ -271,7 +286,8 @@ namespace scls {
 		inline Point_2D position() const {return a_position;};
 		inline double rotation() const {return a_rotation;};
 		inline void set_pen_size(int new_pen_size){a_pen_size = new_pen_size;};
-		inline void set_position(Point_2D new_position){a_position = new_position;}
+		inline void set_position(Point_2D new_position){a_position = new_position;};
+		inline void set_rotation(double new_rotation){a_rotation = new_rotation;};
 
 		//*********
 		// Handle the turtle
@@ -284,6 +300,8 @@ namespace scls {
 
 		// Move
 		void go_forward(double distance);
+		void go_to(Point_2D point);
+		void go_to_object(Transform_Object_2D* object, Plane_Base* plane);
 
 		// Handle the pen
 		void pen_down();
@@ -297,6 +315,7 @@ namespace scls {
 
 		// Add some actions
 		void add_action_fill();
+		void add_action_follow(std::shared_ptr<Transform_Object_2D> transform_object, std::shared_ptr<Plane_Base> plane_base);
 		void add_action_move_forward(double needed_distance);
 		void add_action_move_to(Point_2D needed_position);
 		void add_action_pen_down();
@@ -305,6 +324,9 @@ namespace scls {
 		void add_action_rotate(double needed_rotation);
 		void add_action_rotate_towards(Point_2D needed_position);
 		void add_action_save_position();
+
+		// Clear actions
+		void clear_actions();
 
 		// Load actions
 		void load_actions_from_std_string(std::string t, double rotation_angle, double side);
