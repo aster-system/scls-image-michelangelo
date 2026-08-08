@@ -127,7 +127,7 @@ void van_der_pol_oscillator(scls::Physic_Object* object, scls::Formula_Base* for
 
 int main() {
     scls::Image img = scls::Image(2000, 2000);scls::Plane_Base b = scls::Plane_Base::base_for_image(2000, 2000, 100, 100);
-    vector_field_2d(img, scls::string_to_algebra_element<scls::Formula_Base>("-y").get(), scls::string_to_algebra_element<scls::Formula_Base>("x").get(), &b);
+    vector_field_2d(img, scls::string_to_algebra_element<scls::Formula_Base>("x").get(), scls::string_to_algebra_element<scls::Formula_Base>("y").get(), &b);
     //img.draw_line(500, 100, 501, 900, scls::Color(255, 0, 0), 100);
     //img.draw_line(100, 100, 900, 900, scls::Color(255, 0, 0), 100);
     //img.draw_line(100, 100, 900, 100, scls::Color(255, 0, 0), 100);
@@ -142,15 +142,18 @@ int main() {
 
     //scls::draw_grid(img, &b);
     //scls::draw_function_graph(img, scls::string_to_algebra_element<scls::Formula_Base>("ln(x)").get(), &b);
-    img.save_png("tests/t.png");return 0;
+    /*std::shared_ptr<scls::Table_Base> t_shared_ptr = scls::Table_Base::new_table();scls::Table_Base* t = t_shared_ptr.get();
+    scls::Text_Style s;scls::Text_Image_Generator gen;
+    for(int i = 0;i<100;i++){for(int j = 0;j<100;j++){t->set_case_value(i, j, std::to_string((i + 5 * j) % (3 * i + 2)), s, &gen);}}//*/
+    //t->to_image().save_png("tests/t.png");return 0;
 
     /*scls::Image img = scls::Image(1000, 1000, scls::Color(255, 255, 255));
     img.draw_line(100, 300, 900, 700, scls::Color(255, 0, 0, 75), 99);
     img.draw_line(100, 700, 900, 300, scls::Color(255, 0, 0, 75), 99);
     img.draw_line(300, 900, 700, 100, scls::Color(255, 0, 0, 75), 99);
-    img.draw_line(300, 100, 700, 900, scls::Color(255, 0, 0, 75), 99);
+    img.draw_line(300, 100, 700, 900, scls::Color(255, 0, 0, 75), 99);//*/
 
-    img.save_png("tests/p.png");//*/
+    img.save_png("tests/p.png");
 
 	/*std::shared_ptr<scls::Transform_Object_2D> transform = std::make_shared<scls::Transform_Object_2D>();
 	scls::Physic_Engine engine;

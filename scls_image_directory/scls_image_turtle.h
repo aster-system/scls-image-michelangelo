@@ -36,6 +36,9 @@ namespace scls {
     struct Action {
         #define ACTION_STRUCTURE 1
 
+        #define ACTION_DELETE 2
+        #define ACTION_WAIT 3
+
         // Action constructor
         Action(short action_type);
         ~Action() = default;
@@ -65,6 +68,42 @@ namespace scls {
         const short type = -1;
         // If the action should directly pass to the other at the end
         bool direct_pass_at_end = false;
+    };
+
+    // Interesting type of actions
+    struct Action_Delete : public Action {
+
+        // Action_Delete constructor
+        Action_Delete();
+        Action_Delete(short to_delete);
+        ~Action_Delete() = default;
+
+        // Clone the action
+        virtual std::shared_ptr<Action> clone();
+
+        // Getters and setters
+        inline double to_delete() const {return a_to_delete;}
+
+    private:
+        // Data about thing to delete
+        short a_to_delete;
+    };
+    struct Action_Wait : public Action {
+
+        // Action_Wait constructor
+        Action_Wait(double time);
+        ~Action_Wait() = default;
+
+        // Clone the action
+        virtual std::shared_ptr<Action> clone();
+
+        // Getters and setters
+        inline double remaining_time() const {return a_time - passed_time;}
+        inline double time() const {return a_time;}
+
+    private:
+        // Time
+        double a_time;
     };
 
     // Structure action

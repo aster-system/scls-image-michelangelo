@@ -44,6 +44,18 @@ namespace scls {
     std::string Action::to_xml_text_object(std::string object_name){if(object_name == std::string()){return std::string();}return std::string(" object=\"") + object_name + std::string("\"");}
     std::string Action::to_xml_text_time() const{if(duration == 0){return std::string();}return std::string(" time=") + scls::Fraction::from_double(duration).to_std_string(0);}
 
+    // Action_Delete constructor
+    Action_Delete::Action_Delete(short to_delete):Action(ACTION_DELETE){a_to_delete = to_delete;};
+
+    // Clone the action
+    std::shared_ptr<Action> Action_Delete::clone(){std::shared_ptr<Action_Delete> a = std::make_shared<Action_Delete>(a_to_delete);clone_base(a.get());return a;};
+
+    // Action_Wait constructor
+    Action_Wait::Action_Wait(double time):Action(ACTION_WAIT){a_time = time;};
+
+    // Clone the action
+    std::shared_ptr<Action> Action_Wait::clone(){std::shared_ptr<Action_Wait> a = std::make_shared<Action_Wait>(a_time);clone_base(a.get());return a;};
+
     // Action_Structure constructor
     Action_Structure::Action_Structure():Action_Structure(ACTION_STRUCTURE){};
     Action_Structure::Action_Structure(short action_type):Action(action_type){};

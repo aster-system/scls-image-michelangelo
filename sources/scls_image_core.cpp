@@ -2002,7 +2002,7 @@ namespace scls {
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
         // Asserts
         if(y_1 - line_width / 2 > height() && y_2 - line_width / 2 > height()){return;}
-        else if(x_1 == x_2 && y_1 == y_2){set_pixel(x_1, y_1, red, green, blue, alpha, 1);return;}
+        else if(x_1 == x_2 && y_1 == y_2){fill_rect(x_1 - line_width / 2, y_1 - line_width / 2, line_width, line_width, red, green, blue, alpha);return;}
 
         // Datas
         bool draw_circles = true;//draw_circles=false;
@@ -2959,12 +2959,12 @@ namespace scls {
 		// Trace the Y lines
 		double current_y = y_start;
 		while(current_y <= max_y) {
-			img.draw_line(0, base->base_y_to_canonical_y(current_y), img.width(), base->base_y_to_canonical_y(current_y), scls::Color(150, 150, 150), side_width);
+			img.draw_line(0, img.height() - base->base_y_to_canonical_y(current_y), img.width(), img.height() - base->base_y_to_canonical_y(current_y), scls::Color(150, 150, 150), side_width);
 			current_y += step_y;
 		}
 
 		// Central grid
-		double needed_y = base->base_y_to_canonical_y(0);
+		double needed_y = img.height() - base->base_y_to_canonical_y(0);
 		img.draw_line(0, needed_y, img.width(), needed_y, scls::Color(0, 0, 0), central_width);
 		double needed_x = base->base_x_to_canonical_x(0);
 		img.draw_line(needed_x, 0, needed_x, img.height(), scls::Color(0, 0, 0), central_width);

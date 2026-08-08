@@ -137,6 +137,7 @@ namespace scls {
         // Function
         scls::Function_Called_Text called_function = scls::parse_function_call(base);
         if(called_function.name == std::string("random")){return scls::Color(scls::random_int_between_included(0, 255), scls::random_int_between_included(0, 255), scls::random_int_between_included(0, 255));}
+        else if(!called_function.error == SCLS_FUNCTION_CALLED_TEXT_NOT_FUNCTION){scls::print("Warning", "SCLS Image", "Unknown \"" + called_function.name + "\" to parse color.");return scls::Color(0,0,0);}
 
         // Set the color
         std::vector<std::string> cutted = scls::Color::from_std_string_parts(base);
@@ -642,6 +643,8 @@ namespace scls {
         else if(name == "mimp" || name == "mimplies"){return 8658;}
         else if(name == "min"){return 8712;}
         else if(name == "mincluded"){return 8838;}
+        else if(name == std::string_view("mincluded")){return 8838;}
+        else if(name == std::string_view("mincluded_inversed")){return 8839;}
         else if(name == "mincluded_strict"){return 8842;}
         else if(name == "minfinity" || name == "minf"){return 8734;}
         else if(name == "mint"){return 8747;}
@@ -654,7 +657,7 @@ namespace scls {
         else if(name == "mgt"){return 62;}
         else if(name == "mgtequal"){return 8805;}
         else if(name == "mnatural"){return 'N';}
-        else if(name == "mno"){return 172;}
+        else if(name == std::string_view("mno") || name == std::string_view("mnot")){return 172;}
         else if(name == "mnotequal"){return 8800;}
         else if(name == "mnotin"){return 8713;}
         else if(name == "mor"){return 8744;}
