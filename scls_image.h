@@ -50,6 +50,7 @@
 #include "scls_image_directory/scls_image_turtle.h"
 // Maths
 #include "scls_image_directory/scls_image_math/scls_image_math_analysis.h"
+#include "scls_image_directory/scls_image_math/scls_image_math_field.h"
 
 namespace scls {
 

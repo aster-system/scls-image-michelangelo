@@ -649,6 +649,8 @@ namespace scls {
         else if(name == "minfinity" || name == "minf"){return 8734;}
         else if(name == "mint"){return 8747;}
         else if(name == "minter"){return 8745;}
+        else if(name == "mlambda"){return 955;}
+        else if(name == "mlambdamaj"){return 923;}
         else if(name == "mlang"){return 10216;}
         else if(name == "mlt"){return 60;}
         else if(name == "mltequal"){return 8804;}
@@ -664,6 +666,7 @@ namespace scls {
         else if(name == "mpartial") {return 948;}
         else if(name == std::string_view("mprod") || name == std::string_view("mproduct")){return 8719;}
         else if(name == "mrang"){return 10217;}
+        else if(name == "mreal"){return 8477;}
         else if(name == "mroot"){return 8730;}
         else if(name == std::string_view("msum")){return 8721;}
         else if(name == "mto"){return 10230;}
@@ -1035,24 +1038,25 @@ namespace scls {
 			if(current_dimension > dimension_x){dimension_x = current_dimension;}
 		}
 
-// Draw the matrice
+		std::cout << "A " << dimension_x << " " << dimension_y << std::endl;
+		std::cout << "B " << xml_content.get()->full_text() << std::endl;
+
+        // Draw the table
 		Text_Image_Generator gen;Text_Image_Generator* generator = &gen;
-		std::vector<std::vector<std::shared_ptr<__Image_Base>>> images = std::vector<std::vector<std::shared_ptr<__Image_Base>>>();
+		std::vector<std::vector<std::shared_ptr<__Image_Base>>> images = std::vector<std::vector<std::shared_ptr<__Image_Base>>>(dimension_y, std::vector<std::shared_ptr<__Image_Base>>(dimension_x));
 		// Create each images
-		std::vector<int> max_height = std::vector<int>(dimension_x);
-		std::vector<int> max_width = std::vector<int>(dimension_y);
+		std::vector<int> max_height = std::vector<int>(dimension_y);
+		std::vector<int> max_width = std::vector<int>(dimension_x);
 		for(int i = 0;i<dimension_x;i++) {
 			// Get each sub-matrices
-			std::vector<std::shared_ptr<__Image_Base>> current_matrice;
 			for(int j = 0;j<dimension_y;j++) {
 				// Get each images
-				int x = i; int y = j;
-				std::shared_ptr<__Image_Base> current_image = generator->image_shared_ptr(xml_content.get()->sub_texts().at(x).get()->sub_texts().at(y), current_style);
+				int x = i; int y = j;//std::cout << "U " << x << " " << y << " " << xml_content.get()->sub_texts().at(x).get()->full_text() << std::endl;
+				std::shared_ptr<__Image_Base> current_image = generator->image_shared_ptr(xml_content.get()->sub_texts().at(y).get()->sub_texts().at(x), current_style);
 				if(max_height[y] < current_image.get()->height()){max_height[y] = current_image.get()->height();}
 				if(max_width[x] < current_image.get()->width()){max_width[x] = current_image.get()->width();}
-				current_matrice.push_back(current_image);
+				images[y][x] = current_image;
 			}
-			images.push_back(current_matrice);
 		}
 
 		// Create the formating

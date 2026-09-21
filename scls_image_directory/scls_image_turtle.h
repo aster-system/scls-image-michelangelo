@@ -38,10 +38,11 @@ namespace scls {
 
         #define ACTION_DELETE 2
         #define ACTION_WAIT 3
+		#define ACTION_WAIT_UNTIL 4
 
         // Action constructor
         Action(short action_type);
-        ~Action() = default;
+        virtual ~Action() = default;
 
         // Clone the action
         virtual std::shared_ptr<Action> clone() = 0;
@@ -76,7 +77,7 @@ namespace scls {
         // Action_Delete constructor
         Action_Delete();
         Action_Delete(short to_delete);
-        ~Action_Delete() = default;
+        virtual ~Action_Delete() = default;
 
         // Clone the action
         virtual std::shared_ptr<Action> clone();
@@ -92,7 +93,7 @@ namespace scls {
 
         // Action_Wait constructor
         Action_Wait(double time);
-        ~Action_Wait() = default;
+        virtual ~Action_Wait() = default;
 
         // Clone the action
         virtual std::shared_ptr<Action> clone();
@@ -105,6 +106,20 @@ namespace scls {
         // Time
         double a_time;
     };
+    struct Action_Wait_Until : public scls::Action {
+		// Action_Wait_Until constructor
+		Action_Wait_Until():Action(ACTION_WAIT_UNTIL){};
+		Action_Wait_Until(double time):Action_Wait_Until(){duration = time;};
+		virtual ~Action_Wait_Until() = default;
+
+		// Clone the action
+		virtual std::shared_ptr<Action> clone();
+
+		// Returns the action to a XML text
+		virtual std::string to_xml_text(std::string object_name);
+		virtual std::string to_xml_text_name();
+		std::string to_xml_text_duration();
+	};
 
     // Structure action
     struct Action_Structure : public Action {
@@ -113,6 +128,7 @@ namespace scls {
         // Action_Structure constructor
         Action_Structure();
         Action_Structure(short action_type);
+        virtual ~Action_Structure() = default;
 
         // Adds an action
         std::shared_ptr<Action> add_action(std::shared_ptr<Action> needed_action);

@@ -483,6 +483,9 @@ namespace scls {
         void fill_circle_gradient(int x_center, int y_center, double radius, Color color, Color (*needed_function)(double, int, int, int, unsigned char, unsigned char, unsigned char, unsigned char) = &fill_circle_gradient_linear);
         // Fills a form of points in the image
         void fill_form(std::vector<Point_2D> points, Color color);
+        // Fills an oval on the image
+        void fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha);
+        void fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
         // Fills a rectangle on the image
 		void fill_rect_force(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
 		void fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
@@ -597,6 +600,19 @@ namespace scls {
         unsigned int physical_height_ratio() const;
         unsigned int physical_unit() const;
         unsigned int physical_width_ratio() const;
+
+        //*********
+        //
+        // __Image_Base drawing datas
+        //
+        //*********
+
+        // Minimum x for last drawing
+        double a_minimum_x_ld = 0;
+        double a_minimum_y_ld = 0;
+        double a_maximum_x_ld = 0;
+        double a_maximum_y_ld = 0;
+
     private:
 	    // Base datas about the image
         // Bit depth of the image

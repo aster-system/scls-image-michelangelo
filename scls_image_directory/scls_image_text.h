@@ -947,7 +947,7 @@ namespace scls {
     };
 
     // Converts some well-known types into image
-    std::shared_ptr<__Image_Base> string_to_image(std::string value, scls::Text_Style style);
+    std::shared_ptr<__Image_Base> string_to_image(std::string value, Text_Style style);
     std::shared_ptr<__Image_Base> to_image(std::string* value, scls::Text_Style style);
     std::shared_ptr<__Image_Base> to_image(std::string value, scls::Text_Style style);
     std::shared_ptr<__Image_Base> to_image(std::string* value);

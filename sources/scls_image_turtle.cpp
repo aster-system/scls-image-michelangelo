@@ -56,6 +56,12 @@ namespace scls {
     // Clone the action
     std::shared_ptr<Action> Action_Wait::clone(){std::shared_ptr<Action_Wait> a = std::make_shared<Action_Wait>(a_time);clone_base(a.get());return a;};
 
+    // Clone the action
+    std::shared_ptr<scls::Action> Action_Wait_Until::clone(){std::shared_ptr<Action_Wait_Until> new_action = std::make_shared<Action_Wait_Until>();new_action.get()->duration = duration;new_action.get()->direct_pass_at_end = direct_pass_at_end;return new_action;}
+    std::string Action_Wait_Until::to_xml_text(std::string object_name){return std::string("<") + to_xml_text_name() + to_xml_text_object(object_name) + to_xml_text_duration() +  std::string(">");}
+    std::string Action_Wait_Until::to_xml_text_duration(){return std::string(" duration=") + scls::Fraction::from_double(duration).to_std_string(0);}
+    std::string Action_Wait_Until::to_xml_text_name(){return std::string("action_wait_until");}
+
     // Action_Structure constructor
     Action_Structure::Action_Structure():Action_Structure(ACTION_STRUCTURE){};
     Action_Structure::Action_Structure(short action_type):Action(action_type){};

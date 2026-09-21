@@ -1516,6 +1516,72 @@ namespace scls {
     //
     //*********
 
+    // Fills an oval on the image
+    void __Image_Base::fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){
+        // TEMP
+        fill_circle(x_center, y_center, radius_x, radius_y, Color(red, green, blue, alpha), 0, Color(0, 0, 0, 0));
+    }
+    void __Image_Base::fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
+    	// Datas for the oval
+    	double oval_maximum_x = x_center + radius_x;
+    	double oval_minimum_x = x_center - radius_x;
+    	double radius_x_without_border = radius_x - border_radius;
+    	double radius_y_without_border = radius_y - border_radius;
+    	double oval_maximum_x_without_border = x_center + radius_x_without_border;
+    	double oval_minimum_x_without_border = x_center - radius_x_without_border;
+
+    	// Pixel handling
+    	int oval_maximum_x_pixel = ceil(oval_maximum_x);
+    	int oval_minimum_x_pixel = floor(oval_minimum_x);
+    	int oval_minimum_x_without_border_pixel = floor(oval_minimum_x_without_border);
+    	double oval_x_ratio = 1.0 / (radius_x * 2.0 - 1.0);
+    	double oval_x_without_border_ratio = 1.0 / (radius_x_without_border * 2.0 - 1.0);
+    	double oval_x_proportion = (oval_minimum_x_pixel - oval_minimum_x) * oval_x_ratio;
+    	double oval_x_without_border_proportion = (oval_minimum_x_pixel - oval_minimum_x_without_border_pixel) * oval_x_without_border_ratio;
+    	int radius_x_pixel = (oval_maximum_x_pixel - oval_minimum_x_pixel);
+
+    	// Loop
+    	int current_x_pixel = oval_minimum_x_pixel;
+    	for(int i = 0;i<radius_x_pixel;i++) {
+    		// Height of the disk witho border
+    		double proportion_corrected = (round(oval_x_proportion * radius_x * 2) - 0.5) / (radius_x * 2);
+    		double height = std::sqrt(1 - std::pow(proportion_corrected * 2.0 - 1, 2)) * radius_y;
+    		int height_in_pixel = round(height);if(height_in_pixel < 0){height_in_pixel = 0;}
+
+    		// Height of the disk without border
+    		double proportion_corrected_without_border = (round(oval_x_without_border_proportion * radius_x_without_border * 2) - 0.5) / (radius_x_without_border * 2);
+    		double height_without_border = std::sqrt(1 - std::pow(proportion_corrected_without_border * 2.0 - 1, 2)) * radius_y_without_border;
+    		int height_without_border_in_pixel = round(height_without_border);if(height_without_border_in_pixel < 0){height_without_border_in_pixel = 0;}
+
+    		// Pixels Y-
+    		int needed_components = components();int to_remove = needed_components * width();
+    		unsigned int position = ((y_center) * width() + current_x_pixel) * needed_components * (bit_depht() / 8.0);
+    		for(int i = 0;i<height_without_border_in_pixel;i++) {
+				set_pixel_rgba_directly(position, 255, 0, 0, 255, 1);
+				position -= to_remove;
+			}
+			for(int i = height_without_border_in_pixel;i<height_in_pixel;i++) {
+				set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, 1);
+				position -= to_remove;
+			}
+
+    		// Pixels Y+
+    		position = ((y_center + 1) * width() + current_x_pixel) * components() * (bit_depht() / 8.0);
+    		for(int i = 1;i<height_without_border_in_pixel;i++) {
+				set_pixel_rgba_directly(position, 255, 0, 0, 255, 1);
+				position += to_remove;
+			}
+			for(int i = height_without_border_in_pixel;i<height_in_pixel;i++) {
+				set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, 1);
+				position += to_remove;
+			}
+
+    		// Continue
+    		current_x_pixel++;
+    		oval_x_proportion += oval_x_ratio;
+    		oval_x_without_border_proportion += oval_x_without_border_ratio;
+    	}
+    }
     // Draws / fills a circle on the image
     void __Image_Base::draw_circle(int x_center, int y_center, double radius, Color color, unsigned short line_width){draw_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha(),line_width);}
     void __Image_Base::draw_circle(int x_center, int y_center, double radius, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {fill_circle(x_center, y_center, radius, 0, 0, 0, 0, line_width, red, green, blue, alpha);}
@@ -1575,6 +1641,7 @@ namespace scls {
         while(adaptated_angle_end < 0.0){adaptated_angle_end += 360.0;}while(adaptated_angle_start < 0.0){adaptated_angle_start += 360.0;}
         while(adaptated_angle_end >= 360.0){adaptated_angle_end -= 360.0;}while(adaptated_angle_start >= 360.0){adaptated_angle_start -= 360.0;}
         adaptated_angle_end /= (180.0/SCLS_PI);adaptated_angle_start /= (180.0/SCLS_PI);angle_end /= (180.0/SCLS_PI);angle_start /= (180.0/SCLS_PI);
+        int iteration = 0;
         int multiplier = 1;
         int needed_components = components();
         int needed_height = height();
@@ -1620,11 +1687,13 @@ namespace scls {
             }
 
             // Border part
-            if(border_alpha > 0 && border_radius > 0) {
+            bool use_border = border_alpha > 0 && border_radius > 0;
+            if(use_border) {
                 // Draw the circle border
                 int y_height_base = (first_y_top - last_y_top);
                 // Left part of the border
-                needed_x = (x_center - drew_radius_x) + current_x;
+                needed_x = (x_center - drew_radius_x) + (current_x + 1);
+                if(iteration == 0){a_minimum_x_ld = needed_x;}
                 if(needed_x >= 0 && needed_x < needed_width) {
                     // Left-bottom of the circle border
                     int i = 0;double current_angle = SCLS_PI - needed_angle_bottom;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
@@ -1653,7 +1722,8 @@ namespace scls {
                 }
 
                 // Right part of the border
-                int new_needed_x = (x_center + drew_radius_x) - current_x;
+                int new_needed_x = (x_center + drew_radius_x) - (current_x + 1);
+                if(iteration == 0){a_maximum_x_ld = needed_x;}
                 if(new_needed_x != needed_x && new_needed_x >= 0 && new_needed_x < needed_width){
                     // Right-bottom of the circle border
                     needed_x = new_needed_x;
@@ -1753,7 +1823,7 @@ namespace scls {
                 int x_right = (x_center + drew_radius_x) - (current_x + 1);
 
                 // Left of the circle
-                needed_x = x_left;
+                needed_x = x_left;if(iteration == 0 && !use_border){a_minimum_x_ld = needed_x;}
                 if(needed_x <= x_right && needed_x >= 0 && needed_x < needed_width){
                     if(use_bottom_left) {
                         for(;i < last_y_bottom;i++) {
@@ -1778,7 +1848,7 @@ namespace scls {
                 }
 
                 // Right of the circle
-                needed_x = x_right;
+                needed_x = x_right;if(iteration == 0 && !use_border){a_maximum_x_ld = needed_x;}
                 if(x_left < needed_x && needed_x >= 0 && needed_x < needed_width){
                     // Bottom right part of the circle
                     if(use_bottom_right) {
@@ -1808,6 +1878,7 @@ namespace scls {
 
             // Do the final updates
             current_x++;
+            iteration++;
         }
     }
     // Fill a circle with a gradient on the image
@@ -2005,7 +2076,8 @@ namespace scls {
         else if(x_1 == x_2 && y_1 == y_2){fill_rect(x_1 - line_width / 2, y_1 - line_width / 2, line_width, line_width, red, green, blue, alpha);return;}
 
         // Datas
-        bool draw_circles = true;//draw_circles=false;
+        bool draw_extremity = true;draw_extremity=true;
+        char extremity_type = 0; // 0 = circle, 1 = rect
 
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
@@ -2015,16 +2087,24 @@ namespace scls {
                 y_2 += y_1;
                 y_1 = y_2 - y_1;
                 y_2 = y_2 - y_1;
-            } y_2++;
+            }
 
             // Draw the line
-            int mid_line_width = line_width / 2;x_1 -= mid_line_width;
+            if(line_width % 2 == 1){y_2++;}
+            int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);x_1 -= mid_line_width;
             fill_rect(x_1, y_1, line_width, (y_2 - y_1), red, green, blue, alpha);
 
             // Draw the extremity
-            y_1 -= mid_line_width;
-            fill_rect(x_1, y_1, line_width, mid_line_width, red, green, blue, alpha);
-            fill_rect(x_1, y_2, line_width, mid_line_width, red, green, blue, alpha);
+            if(extremity_type == 0) {
+                x_1 += mid_line_width;
+                fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                fill_oval(x_1, y_2, mid_line_width, mid_line_width, red, green, blue, alpha);
+            }
+            else if(extremity_type == 1) {
+                y_1 -= mid_line_width;
+                fill_rect(x_1, y_1, line_width, mid_line_width, red, green, blue, alpha);
+                fill_rect(x_1, y_2, line_width, mid_line_width, red, green, blue, alpha);
+            }
         }
         else if(y_1 == y_2) {
             // Check the Y position
@@ -2033,19 +2113,26 @@ namespace scls {
                 x_2 += x_1;
                 x_1 = x_2 - x_1;
                 x_2 = x_2 - x_1;
-            } x_2++;
+            }
 
             // Draw the line
-            int mid_line_width = line_width / 2;y_1 -= mid_line_width;
-            fill_rect(x_1, y_1, x_2 - x_1, line_width, red, green, blue, alpha);
+            if(line_width % 2 == 1){x_2++;}
+            int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);y_1 -= mid_line_width;
+            fill_rect(x_1, y_1, (x_2 - x_1), line_width, red, green, blue, alpha);
 
             // Draw the extremity
-            x_1 -= mid_line_width;
-            fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
-            fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
+            if(extremity_type == 0) {
+                y_1 += mid_line_width;
+                fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                fill_oval(x_2, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+            }
+            else if(extremity_type == 1) {
+                x_1 -= mid_line_width;
+                fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
+                fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
+            }
         }
         else {
-            //x_2++; y_2++;
             double distance_x = static_cast<double>(x_2) - static_cast<double>(x_1);
             double distance_y = static_cast<double>(y_2) - static_cast<double>(y_1);
             if(distance_y == 0){distance_y = 0.000001;}
@@ -2076,10 +2163,16 @@ namespace scls {
                 double minimum_y = (std::min(y_1, y_2) - std::abs(sin_angle) * (line_width / 2)) + 1;
                 double needed_width_reduced = std::abs(cos_angle) * line_width;
                 double length_to_use = (line_width * (line_width / needed_width_reduced) - 1);
-                double length_to_use_half = length_to_use / 2;
+                double length_to_use_half = length_to_use / 2.0;
 
                 // Left / right
-                if(draw_circles) {fill_circle(x_1, y_1, line_width / 2.0, red, green, blue, alpha);fill_circle(x_2, y_2, line_width / 2.0, red, green, blue, alpha);}
+                if(draw_extremity) {
+                    fill_oval(x_1, y_1, line_width / 2, line_width / 2, red, green, blue, alpha);
+                    if(x_1 <= x_2){minimum_x = a_minimum_x_ld;}else{maximum_x = a_maximum_x_ld;}
+
+                    fill_oval(x_2, y_2, line_width / 2, line_width / 2, red, green, blue, alpha);
+                    if(x_1 > x_2){minimum_x = a_minimum_x_ld;}else{maximum_x = a_maximum_x_ld;}
+                }
 
                 // Pre-circle modification
                 actual_x -= (actual_y - minimum_y) * x_y_ratio;actual_y -= (actual_y - minimum_y);
@@ -2092,22 +2185,25 @@ namespace scls {
                 if(y_2 >= height()){y_2 = height() - 1;}
 
                 // Draw the line
+                int total = 0;
                 while (actual_y < y_2) {
-                    actual_y++;
+                    actual_y++;total++;
                     actual_x += x_y_ratio;
                     if(actual_x < 0 && x_y_ratio < 0){break;}
+                    else if(round(actual_x) < minimum_x){break;} // TEMP
 
                     // TEMP TO DISABLE FASTLY
-                    //fill_circle(actual_x, actual_y, line_width / 2.0, red, green, blue, alpha);
+                    //fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
 
                     // Draw the pixels
-                    double current_maximum_x = actual_x + length_to_use_half;
-                    double current_minimum_x = actual_x - length_to_use_half;
+                    double current_maximum_x = round(actual_x + length_to_use_half);
+                    double current_minimum_x = round(actual_x - length_to_use_half);
                     double start = std::max(0.0, minimum_x - current_minimum_x);
                     double total_length = length_to_use - std::max(0.0, current_maximum_x - maximum_x);
                     if(total_length + start > width()){total_length = width() - start;}
                     for(int i = start;i<total_length;i++) {
-                        set_pixel(actual_x + (i - length_to_use_half), actual_y, red, green, blue, alpha, 1);
+                        //if(i == (int)(start)) std::cout << "E " << total << " " << length_to_use_half << " " << start << " " << length_to_use << " " << total_length << " " << minimum_x << " " << x_1 << " " << actual_x << " " << current_maximum_x << " " << round(actual_x + (i - length_to_use_half)) << " " << total_length << std::endl;
+                        set_pixel(round(actual_x + (i - length_to_use_half)), actual_y, red, green, blue, alpha, 1);
                     }
                 }
             }
@@ -2128,20 +2224,20 @@ namespace scls {
                 actual_x -= line_width / 2.0;actual_y -= y_x_ratio * (line_width / 2.0);
 
                 // Circle
-                double angle = std::atan(x_y_ratio);
+                double angle = std::atan(y_x_ratio);
                 double cos_angle = std::cos(angle);double sin_angle = std::sin(angle);
-                double maximum_x = (std::max(x_1, x_2) + std::abs(cos_angle) * (line_width / 2)) - 1;
-                double maximum_y = (std::max(y_1, y_2) + std::abs(sin_angle) * (line_width / 2)) - 1;
-                double minimum_x = (std::min(x_1, x_2) - std::abs(cos_angle) * (line_width / 2)) + 1;
-                double minimum_y = (std::min(y_1, y_2) - std::abs(sin_angle) * (line_width / 2)) + 1;
+                double maximum_x = (std::max(x_1, x_2) + std::abs(sin_angle) * (line_width / 2)) - 1;
+                double maximum_y = (std::max(y_1, y_2) + std::abs(cos_angle) * (line_width / 2)) - 1;
+                double minimum_x = (std::min(x_1, x_2) - std::abs(sin_angle) * (line_width / 2)) + 1;
+                double minimum_y = (std::min(y_1, y_2) - std::abs(cos_angle) * (line_width / 2)) + 1;
                 double needed_width_reduced = std::abs(sin_angle) * line_width;
-                double height_to_use = (line_width * (line_width / needed_width_reduced) - 1);
+                double height_to_use = (1 * (line_width / std::abs(cos_angle)));
                 double height_to_use_half = height_to_use / 2;
 
                 // Left / right
-                if(draw_circles) {
-                    fill_circle(x_1, y_1, line_width / 2.0, red, green, blue, alpha);
-                    fill_circle(x_2, y_2, line_width / 2.0, red, green, blue, alpha);
+                if(draw_extremity) {
+                    fill_oval(x_1, y_1, (line_width / 2), (line_width / 2), red, green, blue, alpha);
+                    fill_oval(x_2, y_2, (line_width / 2), (line_width / 2), red, green, blue, alpha);
                 }
 
                 // Pre-circle modification
@@ -2158,16 +2254,18 @@ namespace scls {
                 while (actual_x < x_2) {
                     actual_y += y_x_ratio;
                     if(actual_y < 0){break;}
+                    else if(round(actual_y) < minimum_y){if(y_x_ratio < 0){break;}else{actual_x++;continue;}} // TEMP
                     actual_x++;
 
                     // TEMP TO DISABLE FASTLY
-                    //fill_circle(actual_x, actual_y, line_width / 2.0, red, green, blue, alpha);
+                    //fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
 
                     // Draw the pixels
                     double current_maximum_y = actual_y + height_to_use_half;
                     double current_minimum_y = actual_y - height_to_use_half;
                     double start = std::max(0.0, minimum_y - current_minimum_y);
                     double total_height = height_to_use - std::max(0.0, current_maximum_y - maximum_y);
+                    if(total_height + start > height()){total_height = height() - start;}
                     for(int i = start;i<total_height;i++) {
                         set_pixel(actual_x, actual_y + (i - height_to_use_half), red, green, blue, alpha, 1);
                     }
@@ -2933,11 +3031,8 @@ namespace scls {
     };
 
     // Draw a grid in an image (the canonical base is the image base)
-    void draw_grid(scls::Image img, scls::Plane_Base* base) {
-        // Datas
-        int central_width = 8;
-        int side_width = 4;
-
+    void draw_grid_precisely(scls::Image img, scls::Plane_Base* base, double step_x, double step_y, scls::Color color, int side_width) {
+    	// Datas
 		double min_x = base->canonical_x_to_base_x(0);
 		double max_x = base->canonical_x_to_base_x(img.width());
 		double min_y = base->canonical_y_to_base_y(img.height());
@@ -2945,29 +3040,40 @@ namespace scls {
 		if(min_y > max_y){double temp = min_y;min_y = max_y;max_y = temp;}
 
 		// Calculate the start of the grid
-		double step_x = 1;double step_y = 1;
 		double x_start = std::ceil(min_x * (1.0/step_x)) * step_x;
 		double y_start = std::ceil(min_y * (1.0/step_y)) * step_y;
 
 		// Trace the X lines
 		double current_x = x_start;
 		while(current_x <= max_x) {
-			img.draw_line(base->base_x_to_canonical_x(current_x), 0, base->base_x_to_canonical_x(current_x), img.height(), scls::Color(150, 150, 150), side_width);
+			img.draw_line(base->base_x_to_canonical_x(current_x), 0, base->base_x_to_canonical_x(current_x), img.height(), color, side_width);
 			current_x += step_x;
 		}
 
 		// Trace the Y lines
 		double current_y = y_start;
 		while(current_y <= max_y) {
-			img.draw_line(0, img.height() - base->base_y_to_canonical_y(current_y), img.width(), img.height() - base->base_y_to_canonical_y(current_y), scls::Color(150, 150, 150), side_width);
+			img.draw_line(0, img.height() - base->base_y_to_canonical_y(current_y), img.width(), img.height() - base->base_y_to_canonical_y(current_y), color, side_width);
 			current_y += step_y;
 		}
+    }
+    void draw_grid(scls::Image img, scls::Plane_Base* base) {
+        // Datas
+        int central_width = 8;
+        scls::Color color_central = scls::Color(0, 0, 0);
+
+		// Tiny grid
+        draw_grid_precisely(img, base, 0.2, 0.2, scls::Color(150, 150, 150), 2);
+		draw_grid_precisely(img, base, 1, 1, scls::Color(150, 150, 150), 8);
 
 		// Central grid
-		double needed_y = img.height() - base->base_y_to_canonical_y(0);
-		img.draw_line(0, needed_y, img.width(), needed_y, scls::Color(0, 0, 0), central_width);
-		double needed_x = base->base_x_to_canonical_x(0);
-		img.draw_line(needed_x, 0, needed_x, img.height(), scls::Color(0, 0, 0), central_width);
+		bool draw_central_grid = true;
+		if(draw_central_grid) {
+            double needed_y = img.height() - base->base_y_to_canonical_y(0);
+            img.draw_line(0, needed_y, img.width(), needed_y, color_central, central_width);
+            double needed_x = base->base_x_to_canonical_x(0);
+            img.draw_line(needed_x, 0, needed_x, img.height(), color_central, central_width);
+		}
 	}
 
 	// Draw a grid in an image with a linear application

@@ -351,29 +351,39 @@ namespace scls {
         	needed_x = b->canonical_x_to_base_x(j);std::cout << "A " << needed_x << " " << f->replace_unknowns("x", needed_x)->value_to_double() << std::endl;
             scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value_to_double()));
             if(needed_x < end_x) {
-                if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), color, 5);}
-            }
-            else{break;}
-            last_point = current_point;
-        }
-    }
-    void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b){draw_function_graph(img, f, b, b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
-    void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x) {
-    	scls::Fraction pi_temp = scls::Fraction(31415, 10000);
-    	//Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
-
-    	scls::Point_2D last_point = scls::Point_2D(-1, 0);
-    	double needed_x = 0;
-        for(int j = 0;j<img.width();j++){
-        	needed_x = b->canonical_x_to_base_x(j);
-            scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
-            if(needed_x < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
-                    img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(255, 0, 0), 5);
+                    img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), color, 5);
                 }
             }
             else{break;}
             last_point = current_point;
         }
+    }
+    void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b){draw_function_graph(img, f, b, scls::Color(255, 0, 0), b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
+    void draw_function_graph(Image img, Formula_Base* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x) {
+    	scls::Fraction pi_temp = scls::Fraction(31415, 10000);
+    	//Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
+
+    	scls::Point_2D last_point = scls::Point_2D(-1, 0);
+    	double needed_x = 0;double line_width = 16;
+    	std::vector<scls::Point_2D> used_points;
+        for(int j = 0;j<img.width();j++){
+        	needed_x = b->canonical_x_to_base_x(j);
+            scls::Point_2D current_point = scls::Point_2D(j, img.height() - round(b->base_y_to_canonical_y(f->replace_unknowns("x", Fraction::from_double(needed_x, 1000)).get()->value<scls::Fraction>()->to_double())));
+            used_points.push_back(current_point);
+            if(needed_x < end_x) {
+                if(needed_x >= start_x && last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
+                    if(j % 2 == 0 || true) img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), graph_color, line_width);
+                    else img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(0, 0, 0), line_width);
+                }
+            }
+            else{break;}
+            last_point = current_point;
+        }
+
+        /*while(!used_points.empty()){
+            img.set_pixel(used_points.at(0).x(), used_points.at(0).y(), scls::Color(0, 0, 0));
+            used_points.erase(used_points.begin());
+        }//*/
     }
 }
