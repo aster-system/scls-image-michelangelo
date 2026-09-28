@@ -49,7 +49,7 @@ void van_der_pol_oscillator(scls::Physic_Object* object, scls::Formula_Base* for
 }
 
 int main() {
-	//scls::Image img = scls::Image(2000, 2000);scls::Plane_Base b = scls::Plane_Base::base_for_image(2000, 2000, 100, 100);
+	scls::Image img = scls::Image(2000, 2000);scls::Plane_Base b = scls::Plane_Base::base_for_image(2000, 2000, 100, 100);scls::draw_grid(img, &b);
     //scls::vector_field_2d(img, {scls::string_to_algebra_element<scls::Formula_Base>("(x-2)*10*exp(-((x - 2)*(x - 2)+(y - 2)*(y - 2)))").get(), scls::string_to_algebra_element<scls::Formula_Base>("(x+2)*10*exp(-((x + 2)*(x + 2)+(y + 2)*(y + 2)))").get()}, {scls::string_to_algebra_element<scls::Formula_Base>("(y-2)*10*exp(-((x - 2)*(x - 2)+(y - 2)*(y - 2)))").get(), scls::string_to_algebra_element<scls::Formula_Base>("(y+2)*10*exp(-((x + 2)*(x + 2)+(y + 2)*(y + 2)))").get()}, &b);
 
     /*img.draw_line(100, 500, 900, 500, scls::Color(255, 0, 0), 21);
@@ -71,13 +71,16 @@ int main() {
     img.set_pixel(900, 500, scls::Color(0, 0, 255));
     img.set_pixel(900, 800, scls::Color(0, 0, 255));//*/
 
-	scls::Matrix c = scls::Matrix::matrix_column({scls::string_to_algebra_element<scls::Formula_Base>("d"), scls::string_to_algebra_element<scls::Formula_Base>("e"), scls::string_to_algebra_element<scls::Formula_Base>("f")});
+	//scls::Matrix c = scls::Matrix::matrix_column({scls::string_to_algebra_element<scls::Formula_Base>("d"), scls::string_to_algebra_element<scls::Formula_Base>("e"), scls::string_to_algebra_element<scls::Formula_Base>("f")});
 
-	scls::Matrix m = scls::Matrix::matrix_random_integer_included_between(10, 10, -30, 30);
-	scls::Matrix n = scls::Matrix::matrix_random_integer_included_between(10, 10, -30, 30);
+	scls::Matrix m = scls::Matrix::matrix_random_integer_included_between(5, 5, -2, 2);
+
+	std::cout << "U " << std::endl << m.to_std_string(0) << std::endl << std::endl << scls::gaussian_elimination_inverse_shared_ptr(&m).get()->to_std_string(0) << std::endl << std::endl << m.product(scls::gaussian_elimination_inverse_shared_ptr(&m).get()).to_std_string(0) << std::endl;
+
+	//scls::Matrix n = scls::Matrix::matrix_random_integer_included_between(10, 10, -30, 30);
+
     scls::Text_Style s;s.set_font_size(30);
-
-    scls::Image img = scls::string_to_image("<math>" + m.to_mathml(0) + "<mo>.</mo>" + n.to_mathml(0) + "<mo>=</mo>" + m.product(&n).to_mathml(0) + "</math>", s);std::cout << m.to_std_string(0) << std::endl;
+    img = scls::string_to_image("<math>" + m.to_mathml(0) + "</math></br><math>" + scls::gaussian_elimination_inverse_shared_ptr(&m).get()->to_mathml(0) + "</math>", s);
     img.save_png("tests/p.png");
     //img.draw_line(100, 100, 900, 900, scls::Color(255, 0, 0), 100);
     //img.draw_line(100, 100, 900, 100, scls::Color(255, 0, 0), 100);

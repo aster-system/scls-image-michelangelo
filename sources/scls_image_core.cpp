@@ -1520,6 +1520,7 @@ namespace scls {
     void __Image_Base::fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){
         // TEMP
         fill_circle(x_center, y_center, radius_x, radius_y, Color(red, green, blue, alpha), 0, Color(0, 0, 0, 0));
+        //fill_oval(x_center, y_center, radius_x, radius_y, red, green, blue, alpha, 0, 0, 0, 0, 0);
     }
     void __Image_Base::fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
     	// Datas for the oval
@@ -1540,9 +1541,12 @@ namespace scls {
     	double oval_x_without_border_proportion = (oval_minimum_x_pixel - oval_minimum_x_without_border_pixel) * oval_x_without_border_ratio;
     	int radius_x_pixel = (oval_maximum_x_pixel - oval_minimum_x_pixel);
 
+    	// Resize to avoid memory leak
+    	int radius_x_pixel_max = std::min(width() - 1, radius_x_pixel);
+
     	// Loop
     	int current_x_pixel = oval_minimum_x_pixel;
-    	for(int i = 0;i<radius_x_pixel;i++) {
+    	for(int i = 0;i<radius_x_pixel_max;i++) {
     		// Height of the disk witho border
     		double proportion_corrected = (round(oval_x_proportion * radius_x * 2) - 0.5) / (radius_x * 2);
     		double height = std::sqrt(1 - std::pow(proportion_corrected * 2.0 - 1, 2)) * radius_y;

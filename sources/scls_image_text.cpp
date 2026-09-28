@@ -137,7 +137,7 @@ namespace scls {
         // Function
         scls::Function_Called_Text called_function = scls::parse_function_call(base);
         if(called_function.name == std::string("random")){return scls::Color(scls::random_int_between_included(0, 255), scls::random_int_between_included(0, 255), scls::random_int_between_included(0, 255));}
-        else if(!called_function.error == SCLS_FUNCTION_CALLED_TEXT_NOT_FUNCTION){scls::print("Warning", "SCLS Image", "Unknown \"" + called_function.name + "\" to parse color.");return scls::Color(0,0,0);}
+        else if(called_function.error != SCLS_FUNCTION_CALLED_TEXT_NOT_FUNCTION){scls::print("Warning", "SCLS Image", "Unknown \"" + called_function.name + "\" to parse color.");return scls::Color(0,0,0);}
 
         // Set the color
         std::vector<std::string> cutted = scls::Color::from_std_string_parts(base);
@@ -676,6 +676,7 @@ namespace scls {
         else if(name == "mphi" || name == "phi") {return 632;}
         else if(name == "mpi" || name == "pi") {return 960;}
         else if(name == "mrho" || name == "rho") {return 961;}
+        else if(name == "mtimes") {return 215;}
         return -1;
 	}
 
@@ -1038,9 +1039,6 @@ namespace scls {
 			if(current_dimension > dimension_x){dimension_x = current_dimension;}
 		}
 
-		std::cout << "A " << dimension_x << " " << dimension_y << std::endl;
-		std::cout << "B " << xml_content.get()->full_text() << std::endl;
-
         // Draw the table
 		Text_Image_Generator gen;Text_Image_Generator* generator = &gen;
 		std::vector<std::vector<std::shared_ptr<__Image_Base>>> images = std::vector<std::vector<std::shared_ptr<__Image_Base>>>(dimension_y, std::vector<std::shared_ptr<__Image_Base>>(dimension_x));
@@ -1051,7 +1049,7 @@ namespace scls {
 			// Get each sub-matrices
 			for(int j = 0;j<dimension_y;j++) {
 				// Get each images
-				int x = i; int y = j;//std::cout << "U " << x << " " << y << " " << xml_content.get()->sub_texts().at(x).get()->full_text() << std::endl;
+				int x = i; int y = j;
 				std::shared_ptr<__Image_Base> current_image = generator->image_shared_ptr(xml_content.get()->sub_texts().at(y).get()->sub_texts().at(x), current_style);
 				if(max_height[y] < current_image.get()->height()){max_height[y] = current_image.get()->height();}
 				if(max_width[x] < current_image.get()->width()){max_width[x] = current_image.get()->width();}
