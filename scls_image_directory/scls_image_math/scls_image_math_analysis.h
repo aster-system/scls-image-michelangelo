@@ -43,6 +43,7 @@ namespace scls {
     void draw_function_tangent(Image img, Formula_Base* f, Plane_Base* b, double point);
 
     // Fill the graph of a function
+    void fill_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double function_width);
     void fill_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x);
 }
 

@@ -40,6 +40,7 @@
 #include "scls_image_root.h"
 
 // Include the needed SCLS Image files
+#include "scls_image_directory/scls_image_color.h"
 #include "scls_image_directory/scls_image_core.h"
 #include "scls_image_directory/scls_image_effects.h"
 #include "scls_image_directory/scls_image_text.h"
@@ -50,6 +51,7 @@
 #include "scls_image_directory/scls_image_turtle.h"
 // Maths
 #include "scls_image_directory/scls_image_math/scls_image_math_analysis.h"
+#include "scls_image_directory/scls_image_math/scls_image_math_analysis_complex.h"
 #include "scls_image_directory/scls_image_math/scls_image_math_field.h"
 
 namespace scls {

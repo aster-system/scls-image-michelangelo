@@ -140,6 +140,7 @@ namespace scls {
     void draw_function_graph(Image img, Extendable_Formula_Base* f, Plane_Base*, Color color, double start_x, double end_x);
     void draw_function_graph(Image img, Extendable_Formula_Base* f, Plane_Base* b, double start_x, double end_x);
     void draw_function_graph(Image img, Extendable_Formula_Base* f, Plane_Base* b);
+    void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x, double line_width);
     void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x);
     void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b);
 }

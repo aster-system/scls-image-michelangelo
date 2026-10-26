@@ -590,6 +590,9 @@ namespace scls {
     }
     bool __is_math_mo(char to_test){std::string temp;temp+=to_test;return __is_math_mo(temp);}
     void __format_math_in_balise(std::shared_ptr<XML_Text_Base> text){
+        // Asserts
+        if(!text.get()->xml_balise_name().empty()&& text.get()->xml_balise_name() != std::string_view("math") && text.get()->xml_balise_name() != std::string_view("mfrac") && text.get()->xml_balise_name() != std::string_view("mrow")){return;}
+
         // Create the needed datas
         std::string current = std::string();
         int current_sub_balise = 0;
@@ -618,9 +621,19 @@ namespace scls {
         if(text.get()->only_text()){__format_math_in_balise(text);}
         else{
             // Browse the text (after that the text become a mother balise)
-            for(int i = 0;i<static_cast<int>(text.get()->sub_texts().size());i++) {
+            for(std::size_t i = 0;i<text.get()->sub_texts().size();i++) {
                 // Blank text
-                if(text.get()->sub_texts().at(i).get()->xml_balise_name() == std::string()) {__format_math_in_balise(text.get()->sub_texts().at(i));}
+                if(text.get()->sub_texts().at(i).get()->only_text()) {__format_math_in_balise(text.get()->sub_texts().at(i));}
+
+                // Special balises
+                else if(text.get()->sub_texts().at(i).get()->xml_balise_name() == std::string_view("mball")) {
+                    std::cout << "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" << std::endl;
+                    text.get()->sub_texts().at(i).get()->parse_text("<mi>B</mi>");
+                    text.get()->sub_texts().at(i).get()->set_xml_balise_name("mi");
+                }
+
+                // Else
+                else {format_math(text.get()->sub_texts().at(i));}
             }
         }
     }
@@ -649,6 +662,7 @@ namespace scls {
         else if(name == "minfinity" || name == "minf"){return 8734;}
         else if(name == "mint"){return 8747;}
         else if(name == "minter"){return 8745;}
+        else if(name == std::string_view("minteger")){return 8484;}
         else if(name == "mlambda"){return 955;}
         else if(name == "mlambdamaj"){return 923;}
         else if(name == "mlang"){return 10216;}
@@ -658,7 +672,7 @@ namespace scls {
         else if(name == std::string_view("mgammamaj")){return 915;}
         else if(name == "mgt"){return 62;}
         else if(name == "mgtequal"){return 8805;}
-        else if(name == "mnatural"){return 'N';}
+        else if(name == std::string_view("mnatural")){return 8469;}
         else if(name == std::string_view("mno") || name == std::string_view("mnot")){return 172;}
         else if(name == "mnotequal"){return 8800;}
         else if(name == "mnotin"){return 8713;}
@@ -1135,10 +1149,13 @@ namespace scls {
         to_return.get()->middle_top_offset = std::floor(image.get()->height() / 2);
 
         // Trace the bar
-        if(bar_width < 1){bar_width = 1;}
-        int x = root_image.get()->width();
-        int y = image.get()->height() - root_image.get()->height();
-        image.get()->fill_rect(x, y, needed_image.get()->width(), bar_width, current_style.color());
+        bool trace = false;
+        if(trace) {
+            if(bar_width < 1){bar_width = 1;}
+            int x = root_image.get()->width();
+            int y = image.get()->height() - root_image.get()->height();
+            image.get()->fill_rect(x, y, needed_image.get()->width(), bar_width, current_style.color());
+        }
 
         return to_return;
     }

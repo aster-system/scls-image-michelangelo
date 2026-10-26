@@ -360,11 +360,11 @@ namespace scls {
         }
     }
     void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b){draw_function_graph(img, f, b, scls::Color(255, 0, 0), b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
-    void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x) {
+    void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x) {draw_function_graph(img, f, b, graph_color, start_x, end_x, 16);}
+    void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x, double line_width) {
     	// Assert
     	if(start_x == end_x){
             // Only one point
-            double line_width = 16;
             int pos = b->base_x_to_canonical_x(start_x);Double current_pos = Double(start_x);
             scls::Point_2D current_point = scls::Point_2D(pos, img.height() - round(b->base_y_to_canonical_y(f->replace_unknowns_formula("x", &current_pos).get()->value_to_double())));
             img.fill_circle(current_point.x(), current_point.y(), line_width, line_width, graph_color);
@@ -372,7 +372,7 @@ namespace scls {
     	}
 
     	scls::Point_2D last_point = scls::Point_2D(-1, 0);
-    	double needed_x = 0;double line_width = 16;
+    	double needed_x = 0;
     	std::vector<scls::Point_2D> used_points;
         for(int j = 0;j<img.width();j++){
         	needed_x = b->canonical_x_to_base_x(j);Double current_pos = Double(needed_x);

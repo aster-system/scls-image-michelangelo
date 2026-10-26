@@ -52,6 +52,7 @@
 
 // SCLS Image cor
 #include "../scls_image_root.h"
+#include "scls_image_color.h"
 
 // Include basics C++ libraries
 #include <map>
@@ -112,79 +113,6 @@
 // The namespace "scls" is used to simplify the all.
 namespace scls {
     //*********
-	//
-	// Color handling
-	//
-	//*********
-
-	class Color : public Object {
-	    // Class representing an 8 bit RGBA color
-    public:
-        // Basic Color constructor
-        Color(short red, short green, short blue);
-        Color(short red, short green, short blue, short alpha);
-        Color();
-        // Color copy constructor
-        Color(const Color& color_copy);
-
-        // Return a color loaded from a text
-        static std::vector<std::string> from_std_string_parts(std::string source);
-        static Color from_std_string(std::string source);
-        // Return a color loaded from an XML balise
-        static Color from_xml(std::shared_ptr<XML_Text_Base> source);
-        // Returns the color to an std::string
-        std::string to_std_string(Textual_Math_Settings* settings);
-
-        // Getters and setters
-        inline unsigned char alpha() const {return static_cast<unsigned char>(a_alpha * 255.0);};
-        inline unsigned char blue() const {return static_cast<unsigned char>(a_blue * 255.0);};
-        inline unsigned char green() const {return static_cast<unsigned char>(a_green * 255.0);};
-        inline unsigned char red() const {return static_cast<unsigned char>(a_red * 255.0);};
-        inline void set_alpha(unsigned char new_alpha) {a_alpha = static_cast<double>(new_alpha) / 255.0;};
-        inline void set_blue(unsigned char new_blue) {a_blue = static_cast<double>(new_blue) / 255.0;};
-        inline void set_green(unsigned char new_green) {a_green = static_cast<double>(new_green) / 255.0;};
-        inline void set_red(unsigned char new_red) {a_red = static_cast<double>(new_red) / 255.0;};
-        inline void set_rgb(unsigned char new_red, unsigned char new_green, unsigned char new_blue) { set_red(new_red); set_green(new_green); set_blue(new_blue); };
-        inline void set_rgba(unsigned char new_red, unsigned char new_green, unsigned char new_blue, unsigned char new_alpha) { set_rgb(new_red, new_green, new_blue); set_alpha(new_alpha); };
-
-        // Operator
-        bool operator==(Color color) const;
-        bool operator!=(Color color) const;
-        Color operator+(const Color& color) const;
-        Color operator-(const Color& color) const;
-        Color operator*(double proportion) const;
-    private:
-        // Descriptor of the color (between 0 and 1)
-        double a_alpha = 1;
-        double a_blue = 0;
-        double a_green = 0;
-        double a_red = 0;
-	};
-
-	// Defined colors by name
-    void defined_color_by_name(std::string name, Color& color);
-
-	class Color_Mixer {
-	    // Class representing a mixer of color
-    public:
-        // Basic Color_Mixer constructor
-        Color_Mixer(short red, short green, short blue);
-        Color_Mixer(Color color_1, Color color_2);
-        Color_Mixer(std::vector<Color> colors);
-        Color_Mixer(Color color);
-        Color_Mixer();
-
-        // Add a color to the mixer
-        void add_color(Color new_color);
-        // Returns the current color
-        Color current_color(double total_proportion) const;
-
-    private:
-        // Colors in the mixer
-        std::vector<Color> a_colors;
-	};
-
-	//*********
 	//
 	// Compression handling
 	//
@@ -416,6 +344,7 @@ namespace scls {
         void set_pixel_green(unsigned short x, unsigned short y, unsigned char green, unsigned char alpha = 255);
         void set_pixel_red(unsigned short x, unsigned short y, unsigned char red, unsigned char alpha = 255);
         void set_pixel_rgba_directly_with_alpha(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
+        void set_pixels(const std::vector<Point_2D>& points, Color c);
 
         // Get datas about a specific pixel
 		Color pixel(unsigned short x, unsigned short y);
@@ -500,6 +429,7 @@ namespace scls {
         void flip_y();
 
         // Points to draw a line
+        std::vector<Point_2D> line_points(int x_1, int y_1, int x_2, int y_2, int line_width);
         std::vector<Point_2D> line_points(int x_1, int y_1, int x_2, int y_2);
 
 		// Paste an __Image_Base on this __Image_Base
@@ -671,6 +601,7 @@ namespace scls {
 
     // Draw a grid in an image
     void draw_grid(Image img, Plane_Base* base);
+    void draw_grid(Image img, Plane_Base* base, int central_width, int grid_1_width, int grid_2_width);
     void draw_grid(Image img, double u_x, double u_y, double v_x, double v_y);
     void draw_grid(Image img, Matrix* u, Matrix* v);
     void draw_grid(Image img, Vector_Base_2D* base);
