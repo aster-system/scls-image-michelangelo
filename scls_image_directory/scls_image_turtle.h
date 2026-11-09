@@ -331,13 +331,17 @@ namespace scls {
             virtual std::shared_ptr<Action> clone();
 	    };
 
+	    // Type of drawing
+	    enum Drawing_Type {TDT_None, TDT_Position, TDT_Velocity, TDT_Acceleration};
+
 		// Turtle constructor
 		Turtle(Image image);
 		// Turtle destructor
-		~Turtle();
+		virtual ~Turtle();
 
 		// Getters and setters
 		inline Action_Structure* actions() const {return a_actions.get();};
+		inline Image image() const {return a_image;};
 		inline Point_2D position() const {return a_position;};
 		inline double rotation() const {return a_rotation;};
 		inline void set_pen_size(int new_pen_size){a_pen_size = new_pen_size;};
@@ -387,9 +391,44 @@ namespace scls {
 		void load_actions_from_std_string(std::string t, double rotation_angle, double side);
 		void load_actions_from_std_string(std::string t);
 
+		// Simulate the turtle
+		void simulate(double time, double delta_time);
+
 		// Update the actions in the turtle
 		double execute_action(Action* action, double delta_time);
 		void update_actions(double delta_time);
+
+		// Update the turtle
+		void update(double delta_time);
+
+		// Formulas
+
+		// Current values
+		inline Point_2D formula_position_current() const {Point_2D unscaled = formula_position_current_unscaled();return Point_2D(a_plane_base.get()->base_x_to_canonical_x(unscaled.x()), a_plane_base.get()->base_y_to_canonical_y(unscaled.y()));};
+		inline Point_2D formula_position_current_unscaled() const {return Point_2D(a_formula_x.get()->replace_unknowns("t", a_t).get()->value_to_double(), a_formula_y.get()->replace_unknowns("t", a_t).get()->value_to_double());};
+		inline Point_2D formula_velocity_current() const {return Point_2D(a_formula_velocity_x.get()->replace_unknowns("t", a_t).get()->value_to_double(), a_formula_velocity_y.get()->replace_unknowns("t", a_t).get()->value_to_double());};
+
+		// With Formula_Base_Formula
+		inline void set_formula_x(std::shared_ptr<Formula_Base_Template<Double>> new_x){a_formula_x = new_x;a_drawing_type = Drawing_Type::TDT_Position;};
+		inline void set_formula_y(std::shared_ptr<Formula_Base_Template<Double>> new_y){a_formula_y = new_y;a_drawing_type = Drawing_Type::TDT_Position;};
+		inline void set_formula_velocity_x(std::shared_ptr<Formula_Base_Template<Double>> new_x){a_formula_velocity_x = new_x;a_drawing_type = Drawing_Type::TDT_Velocity;};
+		inline void set_formula_velocity_y(std::shared_ptr<Formula_Base_Template<Double>> new_y){a_formula_velocity_y = new_y;a_drawing_type = Drawing_Type::TDT_Velocity;};
+		inline void set_formula_acceleration_x(std::shared_ptr<Formula_Base_Template<Double>> new_x){a_formula_acceleration_x = new_x;a_drawing_type = Drawing_Type::TDT_Acceleration;};
+		inline void set_formula_acceleration_y(std::shared_ptr<Formula_Base_Template<Double>> new_y){a_formula_acceleration_y = new_y;a_drawing_type = Drawing_Type::TDT_Acceleration;;};
+		// With std string
+		inline void set_formula_x(std::string new_x){set_formula_x(string_to_algebra_element<Formula_Base_Template<Double>>(new_x));};
+		inline void set_formula_y(std::string new_y){set_formula_y(string_to_algebra_element<Formula_Base_Template<Double>>(new_y));};
+		inline void set_formula_velocity_x(std::string new_x){set_formula_velocity_x(string_to_algebra_element<Formula_Base_Template<Double>>(new_x));};
+		inline void set_formula_velocity_y(std::string new_y){set_formula_velocity_y(string_to_algebra_element<Formula_Base_Template<Double>>(new_y));};
+		inline void set_formula_acceleration_x(std::string new_x){set_formula_acceleration_x(string_to_algebra_element<Formula_Base_Template<Double>>(new_x));};
+		inline void set_formula_acceleration_y(std::string new_y){set_formula_acceleration_y(string_to_algebra_element<Formula_Base_Template<Double>>(new_y));};
+
+		// Getters and setters
+		inline Drawing_Type drawing_type() const {return a_drawing_type;};
+		inline Formula_Base_Template<Double>* formula_x() const {return a_formula_x.get();};
+		inline Formula_Base_Template<Double>* formula_y() const {return a_formula_y.get();};
+		inline void set_plane_base(std::shared_ptr<Plane_Base> new_plane_base){a_plane_base = new_plane_base;};
+		inline void set_t(double new_t){a_t = new_t;};
 
 	private:
 
@@ -409,8 +448,23 @@ namespace scls {
 		bool a_pen = true;
 		int a_pen_size = 3;
 
-		// Position of the turtle
+		// Position / velocity of the turtle
+		Point_2D a_acceleration = Point_2D(0, 0);
 		Point_2D a_position = Point_2D(0, 0);
+		Point_2D a_velocity = Point_2D(0, 0);
+
+		// Type of drawing
+		Drawing_Type a_drawing_type = Drawing_Type::TDT_None;
+
+		// Formulas
+		Double a_t = 0;
+		std::shared_ptr<Formula_Base_Template<Double>> a_formula_x;
+		std::shared_ptr<Formula_Base_Template<Double>> a_formula_y;
+		std::shared_ptr<Formula_Base_Template<Double>> a_formula_velocity_x;
+		std::shared_ptr<Formula_Base_Template<Double>> a_formula_velocity_y;
+		std::shared_ptr<Formula_Base_Template<Double>> a_formula_acceleration_x;
+		std::shared_ptr<Formula_Base_Template<Double>> a_formula_acceleration_y;
+		std::shared_ptr<Plane_Base> a_plane_base;
 
 		// Rotation
 		double a_rotation = 0;
@@ -440,6 +494,9 @@ namespace scls {
 
     // Product and return a L-System
     std::string l_system(std::string axiom, std::map<std::string, std::string> rules, int number);
+
+    // Put a way to a turtle with a lagrange interpolation
+    void put_lagrange_interpolation_in_turtle(Turtle* t, std::vector<Point_2D> points);
 }
 
 #endif // SCLS_IMAGE_TURTLE

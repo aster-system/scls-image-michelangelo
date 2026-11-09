@@ -641,6 +641,9 @@ namespace scls {
     // Copies this image and returns the result
     std::shared_ptr<__Image_Base> __Image_Base::copy_image(){std::shared_ptr<__Image_Base> to_return = std::make_shared<__Image_Base>();to_return.get()->a_height = a_height;to_return.get()->a_width = a_width;to_return.get()->free_memory();to_return.get()->a_pixels.reset(new Bytes_Set(0));to_return.get()->a_pixels.get()->add_datas(*a_pixels.get());return to_return;};
 
+    // Create the editing mask
+    void __Image_Base::__create_editing_mask(std::shared_ptr<Bytes_Set>& current_datas, int width, int height){current_datas.reset(new Bytes_Set(width * height));}
+    void __Image_Base::create_editing_mask(){__create_editing_mask(a_editing_mask, width(), height());}
     // Create the memory needed
     void __Image_Base::__create_memory(std::shared_ptr<Bytes_Set>& current_datas, int width, int height){__free_memory(current_datas);current_datas.reset(new Bytes_Set(__buffer_size(width, height)));};
     void __Image_Base::create_memory(){__create_memory(a_pixels, width(), height());};
@@ -674,6 +677,17 @@ namespace scls {
             } threads.clear();
         }
         else {__fill_pixel_part(current_datas, 0, width * height, red, green, blue, alpha);}
+
+        // Mask
+        bool use_mask = false;
+        if(use_mask){
+            create_editing_mask();
+
+            // Fill with 0
+            for (unsigned int i = 0; i < width * height; i++) {
+                a_editing_mask.get()->set_data_at(i, 0);
+            }
+        }
     }
 
     // Fill a part of pixel
@@ -848,6 +862,31 @@ namespace scls {
         }
         else {fill_rect(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);}
     }
+    void __Image_Base::set_pixel_with_editing_mask(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short width_point) {
+        if (width_point == 0) return;
+        else if (width_point == 1) {
+            // Check the position
+            if (x < 0 || y < 0 || x >= width() || y >= height()) {
+                print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set is out of the image.");
+                return;
+            }
+
+            // Editing mask
+            if(a_editing_mask.get()->data_at_directly(y * width() + x) == a_editing_value){return;}
+            a_editing_mask.get()->set_data_at_directly(y * width() + x, a_editing_value);
+
+            unsigned char multiplier = (bit_depht() / 8.0);
+            unsigned int position = (y * width() + x) * components() * (bit_depht() / 8.0);
+
+            if(color_type() == SCLS_IMAGE_RGBA) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+            else if(color_type() == SCLS_IMAGE_RGB) {
+                a_pixels->set_data_at_directly(position, red);
+                a_pixels->set_data_at_directly(position + multiplier, green);
+                a_pixels->set_data_at_directly(position + 2 * multiplier, blue);
+            }
+        }
+        else {fill_rect(static_cast<int>(static_cast<double>(x) - static_cast<double>(width_point) / 2.0), static_cast<int>(static_cast<double>(y) - (static_cast<double>(width_point)) / 2.0), width_point, width_point, red, green, blue, alpha);}
+    }
     void __Image_Base::set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha) {
         if (x < 0 || y < 0 || x >= width() || y >= height()) {
             print("Warning", "SCLS Image", "The position (" + std::to_string(x) + "; " + std::to_string(y) + ") you want to set the alpha is out of the image.");
@@ -982,9 +1021,11 @@ namespace scls {
     unsigned int __Image_Base::flip_x_number() const {return a_flip_x_number;};
     int __Image_Base::height() const { return a_height; };
     void __Image_Base::reset(int new_width, int new_height, Color new_color){a_height=new_height;a_width=new_width;fill(new_color);}
+    void __Image_Base::set_editing_change_next_value(bool new_editing_change_next_value){a_editing_change_next_value = new_editing_change_next_value;}
     void __Image_Base::set_thread_number_for_filling(unsigned short new_thread_number) {a_thread_number_for_filling = new_thread_number;};
     void __Image_Base::set_thread_number_for_pasting(unsigned short new_thread_number) {a_thread_number_for_pasting = new_thread_number;};
     void __Image_Base::set_thread_number_for_pasting_text(unsigned short new_thread_number) {a_thread_number_for_pasting_text = new_thread_number;};
+    bool __Image_Base::use_editing_mask() const{return a_editing_mask.get() != 0;}
     int __Image_Base::width() const { return a_width; };
 
     //*********
@@ -1472,6 +1513,11 @@ namespace scls {
     void __Image_Base::fill_circle(int x_center, int y_center, double radius, Color color, double border_radius, Color border_color){fill_circle(x_center,y_center,radius,0,360,color.red(),color.green(),color.blue(),color.alpha(),border_radius,border_color.red(),border_color.green(),border_color.blue(),border_color.alpha());};
     void __Image_Base::fill_circle(int x_center, int y_center, double radius, Color color){fill_circle(x_center,y_center,radius,color.red(),color.green(),color.blue(),color.alpha());};
     void __Image_Base::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
+        // Editing
+        if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
+        auto function_for_pixel_use = paste_pixel_rgba_directly_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = paste_pixel_rgba_directly;}
+
         // Format the angle
         while(angle <= -90.0){angle += 180.0;}while(angle >= 90.0){angle -= 180.0;}
         angle /= (180.0/SCLS_PI);
@@ -1579,7 +1625,7 @@ namespace scls {
                         int current_y = (needed_y_left - (last_y_top + i));
                         if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {(this->*function_for_pixel_use)(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
@@ -1591,7 +1637,7 @@ namespace scls {
                         int current_y = (needed_y_left + (last_y_top + i));
                         if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {(this->*function_for_pixel_use)(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
@@ -1620,7 +1666,7 @@ namespace scls {
                         int current_y = (needed_y_right - (last_y_top + i));
                         if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {(this->*function_for_pixel_use)(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
@@ -1635,7 +1681,7 @@ namespace scls {
                         int current_y = (needed_y_right + (last_y_top + i));
                         if((CHECK_ANGLE(current_angle) || CHECK_ANGLE(current_angle_border)) && current_y >= 0 && current_y < needed_height) {
                             int position = (current_y * needed_width + needed_x) * needed_components;
-                            if(use_alpha()) {paste_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, multiplier);}
+                            if(use_alpha()) {(this->*function_for_pixel_use)(position, border_red, border_green, border_blue, border_alpha, multiplier);}
                             else{set_pixel_directly(position, border_red, border_green, border_blue, multiplier);}
                         }
                     }
@@ -1706,7 +1752,7 @@ namespace scls {
                             int current_y = (needed_y_left + i);
                             if(current_y >= 0 && current_y < needed_height && fill_bottom) {
                                 int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                if(use_alpha()) {(this->*function_for_pixel_use)(position, red, green, blue, alpha, multiplier);}
                                 else{set_pixel_directly(position, red, green, blue, multiplier);}
                             }
                         }
@@ -1716,7 +1762,7 @@ namespace scls {
                             int current_y = (needed_y_left - i);
                             if(current_y < needed_y_left && current_y >= 0 && current_y < needed_height) {
                                 int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                if(use_alpha()) {(this->*function_for_pixel_use)(position, red, green, blue, alpha, multiplier);}
                                 else{set_pixel_directly(position, red, green, blue, multiplier);}
                             }
                         }
@@ -1732,7 +1778,7 @@ namespace scls {
                             int current_y = (needed_y_right + i);
                             if(current_y >= 0 && current_y < needed_height && fill_bottom) {
                                 int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                if(use_alpha()) {(this->*function_for_pixel_use)(position, red, green, blue, alpha, multiplier);}
                                 else{set_pixel_directly(position, red, green, blue, multiplier);}
                             }
                         }
@@ -1744,7 +1790,7 @@ namespace scls {
                             int current_y = (needed_y_right - i);
                             if(current_y < needed_y_right && current_y >= 0 && current_y < needed_height) {
                                 int position = (current_y * needed_width + needed_x) * needed_components;
-                                if(use_alpha()) {paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}
+                                if(use_alpha()) {(this->*function_for_pixel_use)(position, red, green, blue, alpha, multiplier);}
                                 else{set_pixel_directly(position, red, green, blue, multiplier);}
                             }
                         }
@@ -2105,14 +2151,22 @@ namespace scls {
     // Draw a line on the image
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short line_width) {draw_line(x_1, y_1, x_2, y_2, color.red(), color.green(), color.blue(), color.alpha(), line_width);}
     void __Image_Base::draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short line_width){draw_line(point_1.x(), point_1.y(), point_2.x(), point_2.y(), color.red(), color.green(), color.blue(), color.alpha(), line_width);};
-    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width) {
+    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width){
+        char extremity_type = 0; // 0 = circle, 1 = rect
+        draw_line(x_1, y_1, x_2, y_2, red, green, blue, alpha, line_width, extremity_type);
+    }
+    void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width, char extremity_type) {
         // Asserts
         if(y_1 - line_width / 2 > height() && y_2 - line_width / 2 > height()){return;}
         else if(x_1 == x_2 && y_1 == y_2){fill_rect(x_1 - line_width / 2, y_1 - line_width / 2, line_width, line_width, red, green, blue, alpha);return;}
 
+        // Editing
+        if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
+        auto function_for_pixel_use = set_pixel_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = set_pixel;}
+
         // Datas
         bool draw_extremity = true;draw_extremity=true;
-        char extremity_type = 0; // 0 = circle, 1 = rect
 
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
@@ -2127,18 +2181,18 @@ namespace scls {
             // Draw the line
             if(line_width % 2 == 1){y_2++;}
             int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);x_1 -= mid_line_width;
-            fill_rect(x_1, y_1, line_width, (y_2 - y_1), red, green, blue, alpha);
+            a_editing_change_next_value = false;fill_rect(x_1, y_1, line_width, (y_2 - y_1), red, green, blue, alpha);
 
             // Draw the extremity
             if(extremity_type == 0) {
                 x_1 += mid_line_width;
-                fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
-                fill_oval(x_1, y_2, mid_line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_oval(x_1, y_2, mid_line_width, mid_line_width, red, green, blue, alpha);
             }
             else if(extremity_type == 1) {
                 y_1 -= mid_line_width;
-                fill_rect(x_1, y_1, line_width, mid_line_width, red, green, blue, alpha);
-                fill_rect(x_1, y_2, line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_rect(x_1, y_1, line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_rect(x_1, y_2, line_width, mid_line_width, red, green, blue, alpha);
             }
         }
         else if(y_1 == y_2) {
@@ -2153,18 +2207,18 @@ namespace scls {
             // Draw the line
             if(line_width % 2 == 1){x_2++;}
             int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);y_1 -= mid_line_width;
-            fill_rect(x_1, y_1, (x_2 - x_1), line_width, red, green, blue, alpha);
+            a_editing_change_next_value = false;fill_rect(x_1, y_1, (x_2 - x_1), line_width, red, green, blue, alpha);
 
             // Draw the extremity
             if(extremity_type == 0) {
                 y_1 += mid_line_width;
-                fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
-                fill_oval(x_2, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_oval(x_2, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
             }
             else if(extremity_type == 1) {
                 x_1 -= mid_line_width;
-                fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
-                fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
             }
         }
         else {
@@ -2187,7 +2241,7 @@ namespace scls {
 
                 // Check the positions
                 double actual_x = x_1;double actual_y = y_1;
-                actual_x -= (line_width / 2.0) * x_y_ratio;actual_y -= line_width / 2.0;
+                //actual_x -= (line_width / 2.0) * x_y_ratio;actual_y -= line_width / 2.0;
 
                 // Circle
                 double angle = std::atan(x_y_ratio);
@@ -2202,16 +2256,16 @@ namespace scls {
 
                 // Left / right
                 if(draw_extremity) {
-                    fill_oval(x_1, y_1, line_width / 2, line_width / 2, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_1, y_1, line_width / 2, line_width / 2, red, green, blue, alpha);
                     if(x_1 <= x_2){minimum_x = a_minimum_x_ld;}else{maximum_x = a_maximum_x_ld;}
 
-                    fill_oval(x_2, y_2, line_width / 2, line_width / 2, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_2, y_2, line_width / 2, line_width / 2, red, green, blue, alpha);
                     if(x_1 > x_2){minimum_x = a_minimum_x_ld;}else{maximum_x = a_maximum_x_ld;}
                 }
 
                 // Pre-circle modification
-                actual_x -= (actual_y - minimum_y) * x_y_ratio;actual_y -= (actual_y - minimum_y);
-                x_2 += (maximum_y - y_2) * x_y_ratio;y_2 += (maximum_y - y_2);
+                //actual_x -= (actual_y - minimum_y) * x_y_ratio;actual_y -= (actual_y - minimum_y);
+                //x_2 += (maximum_y - y_2) * x_y_ratio;y_2 += (maximum_y - y_2);
 
                 // Optimise the position
                 if(actual_x < 0){actual_y += (-actual_x) / x_y_ratio;actual_x = 0;}
@@ -2230,6 +2284,9 @@ namespace scls {
                     // Asserts
                     if(actual_y < 0){actual_y++;actual_x += x_y_ratio;continue;}
 
+                    // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
+                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
+
                     // Get the position
                     double current_minimum_x = actual_x - length_to_use_half;
                     double current_maximum_x = actual_x + length_to_use_half;
@@ -2244,7 +2301,7 @@ namespace scls {
 
                         // Draw the pixels
                         for(int i = 0;i<current_length_to_use_pixel;i++) {
-                            set_pixel(current_minimum_x_pixel + i, actual_y, red, green, blue, alpha, 1);
+                            //(this->*function_for_pixel_use)(current_minimum_x_pixel + i, actual_y, red, green, blue, alpha, 1);
                         }
                     }
 
@@ -2281,8 +2338,8 @@ namespace scls {
 
                 // Left / right
                 if(draw_extremity) {
-                    fill_oval(x_1, y_1, (line_width / 2), (line_width / 2), red, green, blue, alpha);
-                    fill_oval(x_2, y_2, (line_width / 2), (line_width / 2), red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_1, y_1, (line_width / 2), (line_width / 2), red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_2, y_2, (line_width / 2), (line_width / 2), red, green, blue, alpha);
                 }
 
                 // Pre-circle modification
@@ -2303,7 +2360,7 @@ namespace scls {
                     actual_x++;
 
                     // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
-                    fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
 
                     // Draw the pixels
                     double current_maximum_y = actual_y + height_to_use_half;
@@ -2485,6 +2542,11 @@ namespace scls {
     }
     void __Image_Base::fill_rect(int x, int y, unsigned short width, unsigned short height, Color color) {fill_rect(x, y, width, height, color.red(), color.green(), color.blue(), color.alpha());}
     void __Image_Base::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+        // Editing
+        if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
+        auto function_for_pixel_use = paste_pixel_rgba_directly_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = paste_pixel_rgba_directly;}
+
         // Check the position
         if(y >= static_cast<int>(height()) || x >= static_cast<int>(width()) || y + static_cast<int>(rect_height) < 0 || x + static_cast<int>(rect_width) < 0) return;
         if(x < 0) {x=-x;rect_width -= static_cast<unsigned short>(x);x = 0;}
@@ -2502,7 +2564,7 @@ namespace scls {
         unsigned int to_add_line = (width() - rect_width) * needed_components;
         for (unsigned short i = 0; i < rect_height; i++) {
             for (unsigned short j = 0; j < rect_width; j++) {
-                paste_pixel_rgba_directly(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
+                (this->*function_for_pixel_use)(current_position, needed_red, needed_green, needed_blue, needed_alpha, 1);
                 current_position+=needed_components;
             } current_position += to_add_line;
         }
@@ -2566,7 +2628,7 @@ namespace scls {
         // Create the first line
         int iter = 0; int iter_total = 0;
         while(actual_x < x_2) {
-            draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
+            draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha, 1, 2);
             actual_x++; total_added_y += all_x_1_3[iter_total];
             iter++; iter_total++; if(iter < static_cast<int>(all_x_1_2.size())){actual_y_added += all_x_1_2[iter];}
         }
@@ -2575,7 +2637,7 @@ namespace scls {
         if(static_cast<int>(all_x_2_3.size()) > 0){actual_y_added = distance_y_1_2 - all_x_2_3[0];}
         while(actual_x < x_3) {
             actual_y_added += all_x_2_3[iter];
-            draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha);
+            draw_line(actual_x, actual_y + total_added_y, actual_x, actual_y + actual_y_added, red, green, blue, alpha, 1, 2);
             actual_x++; total_added_y += all_x_1_3[iter_total];
             iter++; iter_total++;
         }
@@ -2753,6 +2815,7 @@ namespace scls {
     void __Image_Base::paste_top_center(__Image_Base* to_paste, double offset_y, double opacity){paste(to_paste, width() / 2 - to_paste->width() / 2, offset_y, opacity);}
 
     // Paste datas to a specific pixel
+    void __Image_Base::paste_pixel_rgba_directly_with_editing_mask(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier) {if(a_editing_mask.get()->data_at_directly(position / static_cast<unsigned int>(components())) != a_editing_value){a_editing_mask.get()->set_data_at_directly(position / static_cast<unsigned int>(components()), a_editing_value);paste_pixel_rgba_directly(position, red, green, blue, alpha, multiplier);}}
     void __Image_Base::paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier){
         if(alpha == 255 && static_cast<unsigned char>(a_pixels->data_at_directly(position + 3 * multiplier)) == 255){
             // No need to hard calculation

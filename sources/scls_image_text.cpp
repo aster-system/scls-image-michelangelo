@@ -682,6 +682,7 @@ namespace scls {
         else if(name == "mrang"){return 10217;}
         else if(name == "mreal"){return 8477;}
         else if(name == "mroot"){return 8730;}
+        else if(name == std::string_view("msigma")){return 963;}
         else if(name == std::string_view("msum")){return 8721;}
         else if(name == "mto"){return 10230;}
         else if(name == "mu") {return 956;}

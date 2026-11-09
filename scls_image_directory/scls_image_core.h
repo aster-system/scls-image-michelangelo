@@ -273,6 +273,7 @@ namespace scls {
             inline int height() const {if(a_image.get() == 0){return 0;}return a_image.get()->height();};
             inline __Image_Base* image() const {return a_image.get();};
             inline std::shared_ptr<__Image_Base> image_shared_ptr() const {return a_image;};
+            inline void set_editing_change_next_value(bool new_editing_change_next_value){a_image.get()->set_editing_change_next_value(new_editing_change_next_value);};
             inline int width() const {if(a_image.get() == 0){return 0;}return a_image.get()->width();};
         private:
             // Stored image
@@ -307,8 +308,10 @@ namespace scls {
 		// Copies this image and returns the result
 		std::shared_ptr<__Image_Base> copy_image();
 		// Creates / frees the memory needed
+		void __create_editing_mask(std::shared_ptr<Bytes_Set>& current_datas, int width, int height);
 		void __create_memory(std::shared_ptr<Bytes_Set>& current_datas, int width, int height);
 		void __free_memory(std::shared_ptr<Bytes_Set>& current_datas);
+        void create_editing_mask();
         void create_memory();
         void free_memory();
 		// Fills the image with one color
@@ -331,12 +334,14 @@ namespace scls {
 
         // Paste datas to a specific pixel
         void paste_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
+        void paste_pixel_rgba_directly_with_editing_mask(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
         // Set datas about a specific pixel*
         void set_pixel_directly(unsigned int position, unsigned char value);
         void set_pixel_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char multiplier);
         void set_pixel_rgba_directly(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned char multiplier);
         void set_pixel(int x, int y, Color color, unsigned short width = 1);
         void set_pixel(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1);
+        void set_pixel_with_editing_mask(int x, int y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short width_point = 1);
         void set_pixel_alpha(unsigned short x, unsigned short y, unsigned char alpha);
         void set_pixel_blue(unsigned short x, unsigned short y, unsigned char blue, unsigned char alpha = 255);
         void set_pixel_by_number(unsigned int position, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
@@ -362,9 +367,11 @@ namespace scls {
         unsigned int flip_x_number() const;
         int height() const;
         void reset(int new_width, int new_height, Color new_color);
+        void set_editing_change_next_value(bool new_editing_change_next_value);
         void set_thread_number_for_filling(unsigned short new_thread_number);
         void set_thread_number_for_pasting(unsigned short new_thread_number);
         void set_thread_number_for_pasting_text(unsigned short new_thread_number);
+        bool use_editing_mask() const;
         int width() const;
 
         //*********
@@ -381,6 +388,7 @@ namespace scls {
         void draw_border(int top, int left, int bottom, int right, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255);
         void draw_border(int top, int left, int bottom, int right, scls::Color color);
         // Draw a line on the image
+		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width, char extremity_type);
 		void draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha = 255, unsigned short line_width = 1);
         void draw_line(int x_1, int y_1, int x_2, int y_2, Color color, unsigned short width = 1);
         void draw_line(scls::Point_2D point_1, scls::Point_2D point_2, Color color, unsigned short width);
@@ -542,6 +550,11 @@ namespace scls {
         double a_minimum_y_ld = 0;
         double a_maximum_x_ld = 0;
         double a_maximum_y_ld = 0;
+
+        // Editing mask / value
+		std::shared_ptr<Bytes_Set> a_editing_mask;
+		bool a_editing_change_next_value = true;
+		char a_editing_value = 0;
 
     private:
 	    // Base datas about the image

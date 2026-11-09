@@ -359,7 +359,10 @@ namespace scls {
             last_point = current_point;
         }
     }
+    void draw_function_graph(Image img, std::string f, Plane_Base* b, Color graph_color){draw_function_graph(img, string_to_algebra_element<Formula_Base_Template<Double>>(f).get(), b, graph_color, b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
+    void draw_function_graph(Image img, std::string f, Plane_Base* b){draw_function_graph(img, string_to_algebra_element<Formula_Base_Template<Double>>(f).get(), b, scls::Color(255, 0, 0), b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
     void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b){draw_function_graph(img, f, b, scls::Color(255, 0, 0), b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
+    void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, Color graph_color){draw_function_graph(img, f, b, graph_color, b->canonical_x_to_base_x(-1), b->canonical_x_to_base_x(img.width()));}
     void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x) {draw_function_graph(img, f, b, graph_color, start_x, end_x, 16);}
     void draw_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, scls::Color graph_color, double start_x, double end_x, double line_width) {
     	// Assert

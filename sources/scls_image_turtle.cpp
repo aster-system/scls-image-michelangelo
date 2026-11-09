@@ -338,6 +338,39 @@ namespace scls {
         }
     }
 
+    // Simulate the turtle
+    void Turtle::simulate(double time, double delta_time) {
+        double current_time = 0;
+        while(current_time < time){update(delta_time);current_time += delta_time;}
+    }
+
+    // Update the turtle
+    void Turtle::update(double delta_time) {
+    	// Last position
+    	Point_2D a_last_position = a_position;
+    	Point_2D a_new_position = a_position;
+
+    	// Update with the formulas
+    	if(a_drawing_type == Drawing_Type::TDT_Position) {
+    		a_new_position = formula_position_current();
+    	}
+    	else if(a_drawing_type == Drawing_Type::TDT_Velocity) {
+    		a_velocity = formula_velocity_current();
+    	}
+
+    	// Physic update
+    	a_velocity += a_acceleration * delta_time;
+    	a_new_position += a_velocity * delta_time;
+
+    	// Drawing
+    	if(a_last_position != a_new_position) {
+    		go_to(a_new_position);
+    	}
+
+    	// Update
+    	a_t += delta_time;
+    }
+
     // Draw a form by only controlling advancement and rotation
     void draw_by_rotation(Image img, std::shared_ptr<scls::Formula_Base> rotation, double start_angle) {
         scls::Turtle t = scls::Turtle(img);
@@ -503,5 +536,18 @@ namespace scls {
         }
 
         return result;
+    }
+
+    // Put a way to a turtle with a lagrange interpolation
+    void put_lagrange_interpolation_in_turtle(Turtle* t, std::vector<Point_2D> points) {
+        // Get the values
+        std::vector<Point_2D> values_x = std::vector<Point_2D>(points.size());
+        std::vector<Point_2D> values_y = std::vector<Point_2D>(points.size());
+        for(std::size_t i = 0;i<points.size();i++){values_x[i] = Point_2D(i, points.at(i).x());values_y[i] = Point_2D(i, points.at(i).y());}
+
+        // Set the values
+        std::shared_ptr<Formula_Base_Template<Double>> function_x = scls::lagrange_interpolator(values_x);
+        std::shared_ptr<Formula_Base_Template<Double>> function_y = scls::lagrange_interpolator(values_y);
+        t->set_formula_x(function_x);t->set_formula_y(function_y);t->pen_up();t->go_to(t->formula_position_current());t->pen_down();t->set_pen_size(12);
     }
 }
