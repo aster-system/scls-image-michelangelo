@@ -267,32 +267,32 @@ namespace scls {
         double angle = 0;double angle_end = 360;double angle_start=0;
         double radius_x = radius;double radius_y = radius;
         while(angle <= -90.0){angle += 180.0;}while(angle >= 90.0){angle -= 180.0;}
-        angle /= (180.0/SCLS_PI);
+        angle /= (180.0/pi);
 
         // Datas to return
         int current_to_return = 0;
         std::vector<scls::Point_2D> to_return = std::vector<scls::Point_2D>(width * height);
 
-        double last_angle = SCLS_PI / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / SCLS_PI)).x();
-        double left_angle = SCLS_PI * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / SCLS_PI)).x();
+        double last_angle = pi / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / pi)).x();
+        double left_angle = pi * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / pi)).x();
         for(int i = 0;i<30;i++){
             double new_angle = (last_angle + left_angle) / 2.0;
-            double needed_x = oval_vector_x(radius_x, radius_y, new_angle).rotated(angle * (180.0 / SCLS_PI)).x();
+            double needed_x = oval_vector_x(radius_x, radius_y, new_angle).rotated(angle * (180.0 / pi)).x();
             if(last_x > left_x){last_angle = new_angle;last_x = needed_x;}
             else{left_angle = new_angle;left_x = needed_x;}
         }
-        last_angle = 0;double last_y = scls::vector_2d_with_angle(last_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, last_angle);
-        double top_angle = SCLS_PI;double top_y = scls::vector_2d_with_angle(top_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, top_angle);
+        last_angle = 0;double last_y = scls::vector_2d_with_angle(last_angle).rotated(angle * (180.0 / pi)).y() * oval_radius_proportion_y(radius_x, radius_y, last_angle);
+        double top_angle = pi;double top_y = scls::vector_2d_with_angle(top_angle).rotated(angle * (180.0 / pi)).y() * oval_radius_proportion_y(radius_x, radius_y, top_angle);
         for(int i = 0;i<30;i++){
             double new_angle = (last_angle + top_angle) / 2.0;
-            double needed_y = scls::vector_2d_with_angle(new_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, new_angle);
+            double needed_y = scls::vector_2d_with_angle(new_angle).rotated(angle * (180.0 / pi)).y() * oval_radius_proportion_y(radius_x, radius_y, new_angle);
             if(last_y < top_y){last_angle = new_angle;last_y = needed_y;}
             else{top_angle = new_angle;top_y = needed_y;}
         }
 
         // Get the needed radius
         double drew_radius_x = std::sqrt(std::pow(radius_x * std::cos(angle), 2) + std::pow(radius_y * std::sin(angle), 2));
-        double drew_y_center = std::sqrt(std::abs(std::pow(oval_radius(radius_x, radius_y, left_angle - SCLS_PI), 2) - std::pow(drew_radius_x, 2)));
+        double drew_y_center = std::sqrt(std::abs(std::pow(oval_radius(radius_x, radius_y, left_angle - pi), 2) - std::pow(drew_radius_x, 2)));
         if(angle < 0){drew_y_center *= -1;}
         const int start_x = round(x_center - (drew_radius_x));
         const int start_x_inner = start_x + border_radius;
@@ -311,7 +311,7 @@ namespace scls {
         angle_end+=180.0;angle_start+=180.0;
         while(angle_end < 0.0){angle_end += 360.0;}while(angle_start < 0.0){angle_start += 360.0;}
         while(angle_end >= 360.0){angle_end -= 360.0;}while(angle_start >= 360.0){angle_start -= 360.0;}
-        angle_end /= (180.0/SCLS_PI);angle_start /= (180.0/SCLS_PI);
+        angle_end /= (180.0/pi);angle_start /= (180.0/pi);
         int needed_height = height;
         int needed_width = width;
         while(current_x < drew_radius_x) {
@@ -325,24 +325,24 @@ namespace scls {
             y_center_offset_left += y_center_offset_left_to_add;
 
             // Get the needed x/y
-            double angle_border = circle_angle_at_x(current_x_proportion_border - 1.0) + (left_angle - SCLS_PI);
+            double angle_border = circle_angle_at_x(current_x_proportion_border - 1.0) + (left_angle - pi);
             Point_2D director_border_before_angle = oval_vector_x(radius_x, radius_y, angle_border) * radius_x;
-            Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/SCLS_PI));
+            Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/pi));
             int first_y_top = director_border_top.y() - (drew_y_center - y_center_offset_left);
 
             // Get the needed limits
             int limit_top_right = 0;
             if(angle_end != 0 && angle_end <= 90.0){
-                /*double angle_border = (circle_angle_at_x(static_cast<double>(radius_x) * current_x_proportion_border, radius_x, radius_x) + left_angle) - SCLS_PI;
+                /*double angle_border = (circle_angle_at_x(static_cast<double>(radius_x) * current_x_proportion_border, radius_x, radius_x) + left_angle) - pi;
                 Point_2D director_border_before_angle = oval_vector_x(radius_x, radius_y, angle_border);
-                Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/SCLS_PI));
+                Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/pi));
                 double circle_y = (director_border_top.y() * (radius_x)) - (drew_y_center - y_center_offset_left);//*/
 
                 double x_hypothenus = ((radius_x - radius_x * current_x_proportion_border) / std::abs(std::cos(angle_end)));
                 if(x_hypothenus != 0){
                     double y_hypothenus = x_hypothenus * (radius_y / radius_x);
                     Point_2D director_limit_top_before_angle = oval_vector_x(x_hypothenus, y_hypothenus, angle_end + angle) * x_hypothenus;
-                    Point_2D director_limit_top = director_limit_top_before_angle.rotated(angle * (180.0/SCLS_PI));
+                    Point_2D director_limit_top = director_limit_top_before_angle.rotated(angle * (180.0/pi));
                     double circle_y = (director_limit_top.y());
                     limit_top_right = circle_y - (drew_y_center - y_center_offset_left);
                     //std::cout << "G " << circle_y << " " << angle << " " << (radius_x * current_x_proportion_border) << " " << angle_end << " " << x_hypothenus << " " << y_hypothenus << " " << director_limit_top.y() << " " << director_limit_top_before_angle.y() << " " << limit_top_right << std::endl;
@@ -354,21 +354,21 @@ namespace scls {
             #define CHECK_ANGLE(needed_angle) ((angle_end == angle_start) || (needed_angle >= angle_start && needed_angle <= angle_end) || (angle_start > angle_end && (needed_angle <= angle_end || needed_angle >= angle_start)))
             #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) > std::abs(angle_end - angle_1))
             #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(angle_start - angle_1) < std::abs(angle_end - angle_1))
-            double needed_angle_bottom = SCLS_PI;double needed_angle_top = SCLS_PI;
+            double needed_angle_bottom = pi;double needed_angle_top = pi;
             bool in_border_bottom = true;int last_y_bottom = 0;int last_y_top = 0;
             if(needed_x >= start_x_inner) {
                 needed_angle_bottom = circle_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
                 needed_angle_top = circle_angle_at_x(static_cast<double>(radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
 
                 // Update angles
-                needed_angle_bottom -= SCLS_PI;needed_angle_top -= SCLS_PI;
-                while(needed_angle_bottom < 0){needed_angle_bottom += SCLS_PI * 2.0;}while(needed_angle_bottom >= SCLS_PI * 2.0){needed_angle_bottom -= SCLS_PI * 2.0;}
-                while(needed_angle_top < 0){needed_angle_top += SCLS_PI * 2.0;}while(needed_angle_top >= SCLS_PI * 2.0){needed_angle_top -= SCLS_PI * 2.0;}
+                needed_angle_bottom -= pi;needed_angle_top -= pi;
+                while(needed_angle_bottom < 0){needed_angle_bottom += pi * 2.0;}while(needed_angle_bottom >= pi * 2.0){needed_angle_bottom -= pi * 2.0;}
+                while(needed_angle_top < 0){needed_angle_top += pi * 2.0;}while(needed_angle_top >= pi * 2.0){needed_angle_top -= pi * 2.0;}
 
-                Point_2D director_bottom = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_bottom).rotated(angle * (180.0/SCLS_PI));
-                Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/SCLS_PI));
+                Point_2D director_bottom = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_bottom).rotated(angle * (180.0/pi));
+                Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/pi));
 
-                double current_border_radius = std::sqrt(std::pow(radius_x, 2) + std::pow(radius_x - border_radius, 2) - 2 * radius_x * (radius_x - border_radius) * std::cos((needed_angle_bottom - angle_border) / SCLS_PI));
+                double current_border_radius = std::sqrt(std::pow(radius_x, 2) + std::pow(radius_x - border_radius, 2) - 2 * radius_x * (radius_x - border_radius) * std::cos((needed_angle_bottom - angle_border) / pi));
                 last_y_bottom = (director_bottom.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left);
                 last_y_top = (director_top.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left);
                 in_border_bottom = false;
@@ -382,7 +382,7 @@ namespace scls {
                 needed_x = (x_center - drew_radius_x) + current_x;
                 if(needed_x >= 0 && needed_x < needed_width) {
                     // Left-bottom of the circle border
-                    int i = 0;double current_angle = SCLS_PI - needed_angle_bottom;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
+                    int i = 0;double current_angle = pi - needed_angle_bottom;double current_angle_border = pi - angle_border;int y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
@@ -392,7 +392,7 @@ namespace scls {
                         }
                     }
                     // Left-top of the circle border
-                    i = 0;current_angle = SCLS_PI + needed_angle_top;current_angle_border = SCLS_PI + angle_border;y_height = y_height_base;
+                    i = 0;current_angle = pi + needed_angle_top;current_angle_border = pi + angle_border;y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
@@ -427,7 +427,7 @@ namespace scls {
                         }
                     }
                     // Right-top of the circle border
-                    i = 0; current_angle = SCLS_PI * 2.0 - needed_angle_top;current_angle_border = SCLS_PI * 2.0 - angle_border;y_height = y_height_base;
+                    i = 0; current_angle = pi * 2.0 - needed_angle_top;current_angle_border = pi * 2.0 - angle_border;y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){
                         double end_hypothenus = (static_cast<double>(radius_x - current_x) / std::abs(std::cos(angle_end)));
                         y_height = std::abs(std::sin(angle_end)) * end_hypothenus - last_y_top;
@@ -1520,29 +1520,29 @@ namespace scls {
 
         // Format the angle
         while(angle <= -90.0){angle += 180.0;}while(angle >= 90.0){angle -= 180.0;}
-        angle /= (180.0/SCLS_PI);
+        angle /= (180.0/pi);
 
         // Approximate the angle of the farest part of the circle at the left
-        double last_angle = SCLS_PI / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / SCLS_PI)).x();
-        double left_angle = SCLS_PI * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / SCLS_PI)).x();
+        double last_angle = pi / 3.0;double last_x = oval_vector_x(radius_x, radius_y, last_angle).rotated(angle * (180.0 / pi)).x();
+        double left_angle = pi * 1.8;double left_x = oval_vector_x(radius_x, radius_y, left_angle).rotated(angle * (180.0 / pi)).x();
         for(int i = 0;i<30;i++){
             double new_angle = (last_angle + left_angle) / 2.0;
-            double needed_x = oval_vector_x(radius_x, radius_y, new_angle).rotated(angle * (180.0 / SCLS_PI)).x();
+            double needed_x = oval_vector_x(radius_x, radius_y, new_angle).rotated(angle * (180.0 / pi)).x();
             if(last_x > left_x){last_angle = new_angle;last_x = needed_x;}
             else{left_angle = new_angle;left_x = needed_x;}
         }
-        last_angle = 0;double last_y = scls::vector_2d_with_angle(last_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, last_angle);
-        double top_angle = SCLS_PI;double top_y = scls::vector_2d_with_angle(top_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, top_angle);
+        last_angle = 0;double last_y = scls::vector_2d_with_angle(last_angle).rotated(angle * (180.0 / pi)).y() * oval_radius_proportion_y(radius_x, radius_y, last_angle);
+        double top_angle = pi;double top_y = scls::vector_2d_with_angle(top_angle).rotated(angle * (180.0 / pi)).y() * oval_radius_proportion_y(radius_x, radius_y, top_angle);
         for(int i = 0;i<30;i++){
             double new_angle = (last_angle + top_angle) / 2.0;
-            double needed_y = scls::vector_2d_with_angle(new_angle).rotated(angle * (180.0 / SCLS_PI)).y() * oval_radius_proportion_y(radius_x, radius_y, new_angle);
+            double needed_y = scls::vector_2d_with_angle(new_angle).rotated(angle * (180.0 / pi)).y() * oval_radius_proportion_y(radius_x, radius_y, new_angle);
             if(last_y < top_y){last_angle = new_angle;last_y = needed_y;}
             else{top_angle = new_angle;top_y = needed_y;}
         }
 
         // Get the needed radius
         double drew_radius_x = std::sqrt(std::pow(radius_x * std::cos(angle), 2) + std::pow(radius_y * std::sin(angle), 2));
-        double drew_y_center = std::sqrt(std::abs(std::pow(oval_radius(radius_x, radius_y, left_angle - SCLS_PI), 2) - std::pow(drew_radius_x, 2)));
+        double drew_y_center = std::sqrt(std::abs(std::pow(oval_radius(radius_x, radius_y, left_angle - pi), 2) - std::pow(drew_radius_x, 2)));
         if(angle < 0){drew_y_center *= -1;}
         const int start_x = round(x_center - (drew_radius_x));
         const int start_x_inner = start_x + border_radius;
@@ -1562,7 +1562,7 @@ namespace scls {
         adaptated_angle_end+=180.0;adaptated_angle_start+=180.0;
         while(adaptated_angle_end < 0.0){adaptated_angle_end += 360.0;}while(adaptated_angle_start < 0.0){adaptated_angle_start += 360.0;}
         while(adaptated_angle_end >= 360.0){adaptated_angle_end -= 360.0;}while(adaptated_angle_start >= 360.0){adaptated_angle_start -= 360.0;}
-        adaptated_angle_end /= (180.0/SCLS_PI);adaptated_angle_start /= (180.0/SCLS_PI);angle_end /= (180.0/SCLS_PI);angle_start /= (180.0/SCLS_PI);
+        adaptated_angle_end /= (180.0/pi);adaptated_angle_start /= (180.0/pi);angle_end /= (180.0/pi);angle_start /= (180.0/pi);
         int iteration = 0;
         int multiplier = 1;
         int needed_components = components();
@@ -1578,9 +1578,9 @@ namespace scls {
             y_center_offset_left += y_center_offset_left_to_add;
 
             // Get the needed x/y
-            double angle_border = circle_angle_at_x(current_x_proportion_border - 1.0) + (left_angle - SCLS_PI);
+            double angle_border = circle_angle_at_x(current_x_proportion_border - 1.0) + (left_angle - pi);
             Point_2D director_border_before_angle = oval_vector_x(radius_x, radius_y, angle_border) * radius_x;
-            Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/SCLS_PI));
+            Point_2D director_border_top = director_border_before_angle.rotated(angle * (180.0/pi));
             int first_y_top = round(director_border_top.y() - (drew_y_center - y_center_offset_left));
 
             // Draw each needed pixels
@@ -1588,21 +1588,21 @@ namespace scls {
             #define CHECK_ANGLE(needed_angle) ((adaptated_angle_end == adaptated_angle_start) || (needed_angle >= adaptated_angle_start && needed_angle <= adaptated_angle_end) || (adaptated_angle_start > adaptated_angle_end && (needed_angle <= adaptated_angle_end || needed_angle >= adaptated_angle_start)))
             #define CHECK_ANGLE_END(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(adaptated_angle_start - angle_1) > std::abs(adaptated_angle_end - angle_1))
             #define CHECK_ANGLE_START(angle_1, angle_2) (CHECK_ANGLE(angle_1) && !CHECK_ANGLE(angle_2) && std::abs(adaptated_angle_start - angle_1) < std::abs(adaptated_angle_end - angle_1))
-            double needed_angle_bottom = SCLS_PI;double needed_angle_top = SCLS_PI;
+            double needed_angle_bottom = pi;double needed_angle_top = pi;
             bool in_border_bottom = true;int last_y_bottom = 0;int last_y_top = 0;
             if(needed_x >= start_x_inner) {
                 needed_angle_bottom = circle_angle_at_x((radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
                 needed_angle_top = circle_angle_at_x((radius_x - border_radius) * current_x_proportion, radius_x - border_radius, radius_x - border_radius) + left_angle;
 
                 // Update angles
-                needed_angle_bottom -= SCLS_PI;needed_angle_top -= SCLS_PI;
-                while(needed_angle_bottom < 0){needed_angle_bottom += SCLS_PI * 2.0;}while(needed_angle_bottom >= SCLS_PI * 2.0){needed_angle_bottom -= SCLS_PI * 2.0;}
-                while(needed_angle_top < 0){needed_angle_top += SCLS_PI * 2.0;}while(needed_angle_top >= SCLS_PI * 2.0){needed_angle_top -= SCLS_PI * 2.0;}
+                needed_angle_bottom -= pi;needed_angle_top -= pi;
+                while(needed_angle_bottom < 0){needed_angle_bottom += pi * 2.0;}while(needed_angle_bottom >= pi * 2.0){needed_angle_bottom -= pi * 2.0;}
+                while(needed_angle_top < 0){needed_angle_top += pi * 2.0;}while(needed_angle_top >= pi * 2.0){needed_angle_top -= pi * 2.0;}
 
-                Point_2D director_bottom = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_bottom).rotated(angle * (180.0/SCLS_PI));
-                Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/SCLS_PI));
+                Point_2D director_bottom = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_bottom).rotated(angle * (180.0/pi));
+                Point_2D director_top = oval_vector_x(radius_x - border_radius, radius_y - border_radius, needed_angle_top).rotated(angle * (180.0/pi));
 
-                double current_border_radius = std::sqrt(std::pow(radius_x, 2) + std::pow(radius_x - border_radius, 2) - 2 * radius_x * (radius_x - border_radius) * std::cos((needed_angle_bottom - angle_border) / SCLS_PI));
+                double current_border_radius = std::sqrt(std::pow(radius_x, 2) + std::pow(radius_x - border_radius, 2) - 2 * radius_x * (radius_x - border_radius) * std::cos((needed_angle_bottom - angle_border) / pi));
                 last_y_bottom = round((director_bottom.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left));
                 last_y_top = round((director_top.y() * (radius_x - current_border_radius)) - (drew_y_center - y_center_offset_left));
                 in_border_bottom = false;
@@ -1618,7 +1618,7 @@ namespace scls {
                 if(iteration == 0){a_minimum_x_ld = needed_x;}
                 if(needed_x >= 0 && needed_x < needed_width) {
                     // Left-bottom of the circle border
-                    int i = 0;double current_angle = SCLS_PI - needed_angle_bottom;double current_angle_border = SCLS_PI - angle_border;int y_height = y_height_base;
+                    int i = 0;double current_angle = pi - needed_angle_bottom;double current_angle_border = pi - angle_border;int y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((adaptated_angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((adaptated_angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
@@ -1630,7 +1630,7 @@ namespace scls {
                         }
                     }
                     // Left-top of the circle border
-                    i = 0;current_angle = SCLS_PI + needed_angle_top;current_angle_border = SCLS_PI + angle_border;y_height = y_height_base;
+                    i = 0;current_angle = pi + needed_angle_top;current_angle_border = pi + angle_border;y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle_border, current_angle)){i = round(static_cast<double>(y_height_base) * ((adaptated_angle_end - current_angle) / (current_angle_border - current_angle)));}
                     if(CHECK_ANGLE_START(current_angle, current_angle_border)){y_height = round(static_cast<double>(y_height_base) * ((adaptated_angle_start - current_angle) / (current_angle_border - current_angle)));}
                     for(;i<y_height;i++) {
@@ -1671,7 +1671,7 @@ namespace scls {
                         }
                     }
                     // Right-top of the circle border
-                    i = 0; current_angle = SCLS_PI * 2.0 - needed_angle_top;current_angle_border = SCLS_PI * 2.0 - angle_border;y_height = y_height_base;
+                    i = 0; current_angle = pi * 2.0 - needed_angle_top;current_angle_border = pi * 2.0 - angle_border;y_height = y_height_base;
                     if(CHECK_ANGLE_END(current_angle, current_angle_border)){
                         double end_hypothenus = (static_cast<double>(radius_x - current_x) / std::abs(std::cos(adaptated_angle_end)));
                         y_height = std::abs(std::sin(adaptated_angle_end)) * end_hypothenus - last_y_top;
@@ -1695,7 +1695,7 @@ namespace scls {
                 int last_y_top_left = last_y_top;int last_y_top_right = last_y_top;
                 int start_top_left = 0;int start_top_right = 0;
                 // Top left
-                if(angle_start > SCLS_HALF_PI  && angle_start <= SCLS_PI){
+                if(angle_start > scls::half_pi  && angle_start <= pi){
                     double x_hypothenus = ((radius_x - radius_x * current_x_proportion_border) * std::abs(std::tan(angle_start)));
                     if(x_hypothenus > 0){
                         double y_hypothenus = x_hypothenus * (radius_y / radius_x);
@@ -1704,7 +1704,7 @@ namespace scls {
                     }
                     else{last_y_top_left = 0;}
                 }
-                if(angle_end > SCLS_HALF_PI  && angle_end <= SCLS_PI){
+                if(angle_end > scls::half_pi  && angle_end <= pi){
                     double x_hypothenus = ((radius_x - radius_x * current_x_proportion_border) * std::abs(std::tan(angle_end)));
                     if(x_hypothenus > 0){
                         double y_hypothenus = x_hypothenus * (radius_y / radius_x);
@@ -1713,7 +1713,7 @@ namespace scls {
                     else{start_top_left = 0;}
                 }
                 // Top right
-                if(angle_start != 0 && angle_start <= SCLS_PI / 2.0){
+                if(angle_start != 0 && angle_start <= pi / 2.0){
                     double x_hypothenus = ((radius_x - radius_x * current_x_proportion_border) * std::abs(std::tan(angle_start)));
                     if(x_hypothenus > 0){
                         double y_hypothenus = x_hypothenus * (radius_y / radius_x);
@@ -1721,7 +1721,7 @@ namespace scls {
                     }
                     else{start_top_right = 0;}
                 }
-                if(angle_end != 0 && angle_end <= SCLS_PI / 2.0){
+                if(angle_end != 0 && angle_end <= pi / 2.0){
                     double x_hypothenus = ((radius_x - radius_x * current_x_proportion_border) * std::abs(std::tan(angle_end)));
                     if(x_hypothenus > 0){
                         double y_hypothenus = x_hypothenus * (radius_y / radius_x);
@@ -1733,10 +1733,10 @@ namespace scls {
 
                 // Parts to use
                 #define USE_PART(a_1, a_2) (angle_start <= a_2 && angle_end >= a_1) || (angle_end <= a_2 && angle_start >= a_2 && angle_end >= a_1) || (angle_start >= a_1 && angle_end >= a_1 && angle_start <= a_2)
-                bool use_bottom_left = USE_PART(SCLS_PI, SCLS_PI + SCLS_HALF_PI);
-                bool use_bottom_right = USE_PART(SCLS_PI + SCLS_HALF_PI, SCLS_PI * 2.0);
-                bool use_top_left = USE_PART(SCLS_HALF_PI, SCLS_PI);
-                bool use_top_right = USE_PART(0, SCLS_HALF_PI);
+                bool use_bottom_left = USE_PART(pi, pi + scls::half_pi);
+                bool use_bottom_right = USE_PART(pi + scls::half_pi, pi * 2.0);
+                bool use_top_left = USE_PART(scls::half_pi, pi);
+                bool use_top_right = USE_PART(0, scls::half_pi);
                 #undef USE_PART
 
                 // Fill the circle
@@ -2158,7 +2158,11 @@ namespace scls {
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width, char extremity_type) {
         // Asserts
         if(y_1 - line_width / 2 > height() && y_2 - line_width / 2 > height()){return;}
-        else if(x_1 == x_2 && y_1 == y_2){fill_rect(x_1 - line_width / 2, y_1 - line_width / 2, line_width, line_width, red, green, blue, alpha);return;}
+        else if(x_1 == x_2 && y_1 == y_2){
+            if(extremity_type == 0){fill_oval(x_1, y_1, line_width / 2, line_width / 2, red, green, blue, alpha);}
+            else{fill_rect(x_1 - line_width / 2, y_1 - line_width / 2, line_width, line_width, red, green, blue, alpha);}
+            return;
+        }
 
         // Editing
         if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
@@ -2166,6 +2170,7 @@ namespace scls {
         if(a_editing_mask.get() == 0){function_for_pixel_use = set_pixel;}
 
         // Datas
+        double double_mid_line_width = (static_cast<double>(line_width) / 2.0);
         bool draw_extremity = true;draw_extremity=true;
 
         // Only case which the algorithm does not work correctly
@@ -2185,7 +2190,7 @@ namespace scls {
 
             // Draw the extremity
             if(extremity_type == 0) {
-                x_1 += mid_line_width;
+                x_1 += mid_line_width;mid_line_width = round(static_cast<double>(line_width) / 2.0);
                 a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
                 a_editing_change_next_value = false;fill_oval(x_1, y_2, mid_line_width, mid_line_width, red, green, blue, alpha);
             }
@@ -2211,7 +2216,7 @@ namespace scls {
 
             // Draw the extremity
             if(extremity_type == 0) {
-                y_1 += mid_line_width;
+                y_1 += mid_line_width;mid_line_width = round(static_cast<double>(line_width) / 2.0);
                 a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
                 a_editing_change_next_value = false;fill_oval(x_2, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
             }
@@ -2222,8 +2227,8 @@ namespace scls {
             }
         }
         else {
-            double distance_x = static_cast<double>(x_2) - static_cast<double>(x_1);
-            double distance_y = static_cast<double>(y_2) - static_cast<double>(y_1);
+            double distance_x = (static_cast<double>(x_2) - static_cast<double>(x_1)) + 1;
+            double distance_y = (static_cast<double>(y_2) - static_cast<double>(y_1)) + 1;
             if(distance_y == 0){distance_y = 0.000001;}
 
             double x_y_ratio = distance_x / distance_y;
@@ -2256,10 +2261,10 @@ namespace scls {
 
                 // Left / right
                 if(draw_extremity) {
-                    a_editing_change_next_value = false;fill_oval(x_1, y_1, line_width / 2, line_width / 2, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_1, y_1, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
                     if(x_1 <= x_2){minimum_x = a_minimum_x_ld;}else{maximum_x = a_maximum_x_ld;}
 
-                    a_editing_change_next_value = false;fill_oval(x_2, y_2, line_width / 2, line_width / 2, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_2, y_2, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
                     if(x_1 > x_2){minimum_x = a_minimum_x_ld;}else{maximum_x = a_maximum_x_ld;}
                 }
 
@@ -2285,7 +2290,7 @@ namespace scls {
                     if(actual_y < 0){actual_y++;actual_x += x_y_ratio;continue;}
 
                     // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
-                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
 
                     // Get the position
                     double current_minimum_x = actual_x - length_to_use_half;
@@ -2325,6 +2330,9 @@ namespace scls {
                 double y_x_ratio = distance_y / distance_x;
                 //actual_x -= line_width / 2.0;actual_y -= y_x_ratio * (line_width / 2.0);
 
+                // Avoid a problems where a circle is not high enough
+                double_mid_line_width = round(double_mid_line_width);
+
                 // Circle
                 double angle = std::atan(y_x_ratio);
                 double cos_angle = std::cos(angle);double sin_angle = std::sin(angle);
@@ -2338,8 +2346,8 @@ namespace scls {
 
                 // Left / right
                 if(draw_extremity) {
-                    a_editing_change_next_value = false;fill_oval(x_1, y_1, (line_width / 2), (line_width / 2), red, green, blue, alpha);
-                    a_editing_change_next_value = false;fill_oval(x_2, y_2, (line_width / 2), (line_width / 2), red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_1, y_1, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(x_2, y_2, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
                 }
 
                 // Pre-circle modification
@@ -2360,7 +2368,7 @@ namespace scls {
                     actual_x++;
 
                     // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
-                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, line_width / 2.0, line_width / 2.0, red, green, blue, alpha);
+                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
 
                     // Draw the pixels
                     double current_maximum_y = actual_y + height_to_use_half;

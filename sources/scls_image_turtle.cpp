@@ -182,7 +182,7 @@ namespace scls {
 	void Turtle::pen_up(){a_pen = false;}
 
 	// Rotation
-	void Turtle::rotate_degrees(double rotation){rotate_radians(rotation / (180.0 / SCLS_PI));}
+	void Turtle::rotate_degrees(double rotation){rotate_radians(rotation / (180.0 / pi));}
 	void Turtle::rotate_radians(double rotation){a_rotation += rotation;}
 	void Turtle::rotate_towards(Point_2D point){rotate_towards(point, 0);}
 	void Turtle::rotate_towards(Point_2D point, double offset) {
@@ -194,7 +194,7 @@ namespace scls {
 	void Turtle::add_action_follow(std::shared_ptr<Transform_Object_2D> transform_object, std::shared_ptr<Plane_Base> plane_base){actions()->add_action(std::make_shared<Turtle::Action_Follow>(transform_object, plane_base));}
     void Turtle::add_action_move_forward(double needed_distance){actions()->add_action(std::make_shared<Turtle::Action_Move_Forward>(needed_distance));}
     void Turtle::add_action_move_to(Point_2D needed_position){actions()->add_action(std::make_shared<Turtle::Action_Move_To>(needed_position));}
-    void Turtle::add_action_rotate(double needed_rotation){while(needed_rotation < 0){needed_rotation += 360.0;}actions()->add_action(std::make_shared<Turtle::Action_Rotate>(needed_rotation / (180.0 / SCLS_PI)));}
+    void Turtle::add_action_rotate(double needed_rotation){while(needed_rotation < 0){needed_rotation += 360.0;}actions()->add_action(std::make_shared<Turtle::Action_Rotate>(needed_rotation / (180.0 / pi)));}
     void Turtle::add_action_rotate_towards(Point_2D needed_position){actions()->add_action(std::make_shared<Turtle::Action_Rotate_Towards>(needed_position));}
     void Turtle::add_action_pen_down(){actions()->add_action(std::make_shared<Turtle::Action_Pen_Down>());}
     void Turtle::add_action_pen_up(){actions()->add_action(std::make_shared<Turtle::Action_Pen_Up>());}
@@ -269,15 +269,15 @@ namespace scls {
             double diff = scls::vector_2d_angle(r->a_position - a_position) - a_rotation;
             if(std::abs(diff) > 0.0001) {
                 double angle = delta_time * r->a_speed_rotation;
-                while(diff > SCLS_PI){diff -= SCLS_PI * 2;}
-                while(diff < -SCLS_PI){diff += SCLS_PI * 2;}
+                while(diff > pi){diff -= pi * 2;}
+                while(diff < -pi){diff += pi * 2;}
                 if(diff < 0){angle *= -1;}
 
                 if(std::abs(diff) < std::abs(angle)){rotate_radians(diff);diff=0; delta_time -= std::abs(angle - diff) / r->a_speed_rotation;}
                 else{rotate_radians(angle);}
 
-                while(a_rotation < 0){a_rotation += SCLS_PI * 2.0;}
-                while(a_rotation > SCLS_PI * 2.0){a_rotation -= SCLS_PI * 2.0;}
+                while(a_rotation < 0){a_rotation += pi * 2.0;}
+                while(a_rotation > pi * 2.0){a_rotation -= pi * 2.0;}
             }
 
             // Move
@@ -293,31 +293,31 @@ namespace scls {
             Turtle::Action_Rotate* r = reinterpret_cast<Turtle::Action_Rotate*>(action);
             double angle = delta_time * r->a_speed;
             double diff = (r->a_angle - (r->a_angle_updated));
-            while(diff > SCLS_PI){diff -= SCLS_PI * 2;}
-            while(diff < -SCLS_PI){diff += SCLS_PI * 2;}
+            while(diff > pi){diff -= pi * 2;}
+            while(diff < -pi){diff += pi * 2;}
             if(diff < 0){angle *= -1;}
 
             if(std::abs(r->a_angle - r->a_angle_updated) < std::abs(angle)){rotate_radians(r->a_angle - r->a_angle_updated);return std::abs(angle - (r->a_angle - r->a_angle_updated)) / r->a_speed;}
             else{rotate_radians(angle);r->a_angle_updated += angle;}
 
             // Update
-            while(r->a_angle_updated < 0){r->a_angle_updated += SCLS_PI * 2.0;}
-            while(r->a_angle_updated > SCLS_PI * 2.0){r->a_angle_updated -= SCLS_PI * 2.0;}
+            while(r->a_angle_updated < 0){r->a_angle_updated += pi * 2.0;}
+            while(r->a_angle_updated > pi * 2.0){r->a_angle_updated -= pi * 2.0;}
         }
         else if(action->type == TURTLE_ACTION_ROTATE_TOWARDS) {
             // Rotate with the turtle
             Turtle::Action_Rotate_Towards* r = reinterpret_cast<Turtle::Action_Rotate_Towards*>(action);
             double angle = delta_time * r->a_speed;
             double diff = scls::vector_2d_angle(r->a_position - a_position) - a_rotation;
-            while(diff > SCLS_PI){diff -= SCLS_PI * 2;}
-            while(diff < -SCLS_PI){diff += SCLS_PI * 2;}
+            while(diff > pi){diff -= pi * 2;}
+            while(diff < -pi){diff += pi * 2;}
             if(diff < 0){angle *= -1;}
 
             if(std::abs(diff) < std::abs(angle)){rotate_radians(diff);return std::abs(angle - diff) / r->a_speed;}
             else{rotate_radians(angle);}
 
-            while(a_rotation < 0){a_rotation += SCLS_PI * 2.0;}
-            while(a_rotation > SCLS_PI * 2.0){a_rotation -= SCLS_PI * 2.0;}
+            while(a_rotation < 0){a_rotation += pi * 2.0;}
+            while(a_rotation > pi * 2.0){a_rotation -= pi * 2.0;}
         }
         else if(action->type == TURTLE_ACTION_PEN_DOWN) {pen_down();return -1;}
         else if(action->type == TURTLE_ACTION_PEN_UP) {pen_up();return -1;}

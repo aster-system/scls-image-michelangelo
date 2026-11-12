@@ -256,7 +256,7 @@ namespace scls {
 
             // Speed
             double a_speed = 100;
-            double a_speed_rotation = SCLS_PI;
+            double a_speed_rotation = pi;
 	    };
 
 	    struct Action_Pen_Down : public Action {
@@ -302,7 +302,7 @@ namespace scls {
             double a_angle_updated = 0;
 
             // Speed
-            double a_speed = SCLS_PI;
+            double a_speed = pi;
 	    };
 
 	    struct Action_Rotate_Towards : public Action {
@@ -318,7 +318,7 @@ namespace scls {
             Point_2D a_position;
 
             // Speed
-            double a_speed = SCLS_PI;
+            double a_speed = pi;
 	    };
 
 	    struct Action_Save_Position : public Action {

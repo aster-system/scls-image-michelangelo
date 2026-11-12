@@ -255,7 +255,7 @@ namespace scls {
                             // Get the good angle
                             double x_diff = needed_x[current_id] - needed_x[i];
                             double y_diff = needed_y[current_id] - needed_y[i];
-                            double angle = vector_2d_angle(x_diff, y_diff) * (180.0 / SCLS_PI);
+                            double angle = vector_2d_angle(x_diff, y_diff) * (180.0 / pi);
                             while(angle < 0){angle += 360;}
                             if(angle > 225 && angle <= 315){link_type = Link_Type::LT_Bottom;}
                             else if(angle > 135 && angle <= 225){link_type = Link_Type::LT_Left;}
