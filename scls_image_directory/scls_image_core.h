@@ -557,6 +557,9 @@ namespace scls {
 		char a_editing_value = 0;
 
     private:
+        // Temporary methods used while waiting for optimize versions
+		void draw_line_naive(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width, char extremity_type);
+
 	    // Base datas about the image
         // Bit depth of the image
 		unsigned int a_bit_depth = 8;

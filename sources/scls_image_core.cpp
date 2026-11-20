@@ -684,7 +684,7 @@ namespace scls {
             create_editing_mask();
 
             // Fill with 0
-            for (unsigned int i = 0; i < width * height; i++) {
+            for (int i = 0; i < width * height; i++) {
                 a_editing_mask.get()->set_data_at(i, 0);
             }
         }
@@ -1432,8 +1432,8 @@ namespace scls {
     // Fills an oval on the image
     void __Image_Base::fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha){
         // TEMP
-        fill_circle(x_center, y_center, radius_x, radius_y, Color(red, green, blue, alpha), 0, Color(0, 0, 0, 0));
-        //fill_oval(x_center, y_center, radius_x, radius_y, red, green, blue, alpha, 0, 0, 0, 0, 0);
+        //fill_circle(x_center, y_center, radius_x, radius_y, Color(red, green, blue, alpha), 0, Color(0, 0, 0, 0));
+        fill_oval(x_center, y_center, radius_x, radius_y, red, green, blue, alpha, 0, 0, 0, 0, 0);
     }
     void __Image_Base::fill_oval(int x_center, int y_center, double radius_x, double radius_y, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
     	// Datas for the oval
@@ -1451,44 +1451,72 @@ namespace scls {
     	double oval_x_ratio = 1.0 / (radius_x * 2.0 - 1.0);
     	double oval_x_without_border_ratio = 1.0 / (radius_x_without_border * 2.0 - 1.0);
     	double oval_x_proportion = (oval_minimum_x_pixel - oval_minimum_x) * oval_x_ratio;
-    	double oval_x_without_border_proportion = (oval_minimum_x_pixel - oval_minimum_x_without_border_pixel) * oval_x_without_border_ratio;
+    	double oval_x_without_border_proportion = (oval_minimum_x_pixel - oval_minimum_x_without_border) * oval_x_without_border_ratio;
     	int radius_x_pixel = (oval_maximum_x_pixel - oval_minimum_x_pixel);
 
-    	// Resize to avoid memory leak
+    	// Rect handling
+
+    	// X start
+    	int current_x_pixel = oval_minimum_x_pixel;int offset_start_x = 0;
+    	if(current_x_pixel < 0){
+            oval_x_proportion += oval_x_ratio * -static_cast<double>(current_x_pixel);
+            oval_x_without_border_proportion += oval_x_without_border_ratio * -static_cast<double>(current_x_pixel);
+            offset_start_x=-current_x_pixel;current_x_pixel=0;
+        }
+
+        // X end
     	int radius_x_pixel_max = std::min(width() - 1, radius_x_pixel);
+    	if(current_x_pixel + radius_x_pixel_max >= width()) {radius_x_pixel_max = width() - current_x_pixel;}
 
     	// Loop
-    	int current_x_pixel = oval_minimum_x_pixel;
-    	for(int i = 0;i<radius_x_pixel_max;i++) {
+    	for(int i = offset_start_x;i<radius_x_pixel_max;i++) {
     		// Height of the disk witho border
     		double proportion_corrected = (round(oval_x_proportion * radius_x * 2) - 0.5) / (radius_x * 2);
-    		double height = std::sqrt(1 - std::pow(proportion_corrected * 2.0 - 1, 2)) * radius_y;
-    		int height_in_pixel = round(height);if(height_in_pixel < 0){height_in_pixel = 0;}
+    		double current_height = std::sqrt(1 - std::pow(proportion_corrected * 2.0 - 1, 2)) * radius_y;
+    		int height_in_pixel = round(current_height);if(height_in_pixel < 0){height_in_pixel = 0;}
 
     		// Height of the disk without border
     		double proportion_corrected_without_border = (round(oval_x_without_border_proportion * radius_x_without_border * 2) - 0.5) / (radius_x_without_border * 2);
     		double height_without_border = std::sqrt(1 - std::pow(proportion_corrected_without_border * 2.0 - 1, 2)) * radius_y_without_border;
     		int height_without_border_in_pixel = round(height_without_border);if(height_without_border_in_pixel < 0){height_without_border_in_pixel = 0;}
 
+    		// Rect (MISSING THE CASE WHERE Y CENTER > HEIGHT)
+    		// Y- start
+    		int current_y_offset_y_minus = 0;
+    		if(y_center >= height()){current_y_offset_y_minus = y_center - (height() - 1);}
+    		// Y- stop
+    		int current_height_without_border_in_pixel_y_minus = height_without_border_in_pixel;
+    		if(y_center - current_height_without_border_in_pixel_y_minus < 0){current_height_without_border_in_pixel_y_minus = y_center + 1;}
+    		int current_height_in_pixel_y_minus = height_in_pixel;
+    		if(y_center - current_height_in_pixel_y_minus < 0){current_height_in_pixel_y_minus = y_center;}
+    		// Y+ start
+    		int current_y_offset_y_plus = 0;
+    		if(y_center < 0){current_y_offset_y_plus = -y_center - 1;}
+    		// Y+ stop
+    		int current_height_without_border_in_pixel_y_plus = height_without_border_in_pixel;
+    		if(y_center + current_height_without_border_in_pixel_y_plus >= height()){current_height_without_border_in_pixel_y_plus = (height() - y_center) - 1;}
+    		int current_height_in_pixel_y_plus = height_in_pixel;
+    		if(y_center + current_height_in_pixel_y_plus >= height()){current_height_in_pixel_y_plus = height() - (y_center + current_height_in_pixel_y_plus);}
+
     		// Pixels Y-
     		int needed_components = components();int to_remove = needed_components * width();
-    		unsigned int position = ((y_center) * width() + current_x_pixel) * needed_components * (bit_depht() / 8.0);
-    		for(int i = 0;i<height_without_border_in_pixel;i++) {
-				set_pixel_rgba_directly(position, 255, 0, 0, 255, 1);
+    		unsigned int position = ((y_center - current_y_offset_y_minus) * width() + current_x_pixel) * needed_components * (bit_depht() / 8.0);
+    		for(int j = current_y_offset_y_minus;j<current_height_without_border_in_pixel_y_minus;j++) {
+				set_pixel_rgba_directly(position, red, green, blue, alpha, 1);
 				position -= to_remove;
 			}
-			for(int i = height_without_border_in_pixel;i<height_in_pixel;i++) {
+			for(int j = std::max(current_y_offset_y_minus, current_height_without_border_in_pixel_y_minus);j<current_height_in_pixel_y_minus;j++) {
 				set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, 1);
 				position -= to_remove;
 			}
 
     		// Pixels Y+
-    		position = ((y_center + 1) * width() + current_x_pixel) * components() * (bit_depht() / 8.0);
-    		for(int i = 1;i<height_without_border_in_pixel;i++) {
-				set_pixel_rgba_directly(position, 255, 0, 0, 255, 1);
+    		position = ((y_center + current_y_offset_y_plus + 1) * width() + current_x_pixel) * components() * (bit_depht() / 8.0);
+    		for(int j = current_y_offset_y_plus;j<current_height_without_border_in_pixel_y_plus;j++) {
+				set_pixel_rgba_directly(position, red, green, blue, alpha, 1);
 				position += to_remove;
 			}
-			for(int i = height_without_border_in_pixel;i<height_in_pixel;i++) {
+			for(int j = std::max(current_y_offset_y_plus, current_height_without_border_in_pixel_y_plus);j<current_height_in_pixel_y_plus;j++) {
 				set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, 1);
 				position += to_remove;
 			}
@@ -2156,6 +2184,9 @@ namespace scls {
         draw_line(x_1, y_1, x_2, y_2, red, green, blue, alpha, line_width, extremity_type);
     }
     void __Image_Base::draw_line(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width, char extremity_type) {
+        // TEMP
+        draw_line_naive(x_1, y_1, x_2, y_2, red, green, blue, alpha, line_width, extremity_type);return;
+
         // Asserts
         if(y_1 - line_width / 2 > height() && y_2 - line_width / 2 > height()){return;}
         else if(x_1 == x_2 && y_1 == y_2){
@@ -2272,11 +2303,13 @@ namespace scls {
                 //actual_x -= (actual_y - minimum_y) * x_y_ratio;actual_y -= (actual_y - minimum_y);
                 //x_2 += (maximum_y - y_2) * x_y_ratio;y_2 += (maximum_y - y_2);
 
-                // Optimise the position
-                if(actual_x < 0){actual_y += (-actual_x) / x_y_ratio;actual_x = 0;}
-                if(actual_y < 0) {actual_x += x_y_ratio * std::abs(actual_y);actual_y=0;}
+                // Optimize the position
+                double minimum_tracable_x = -std::floor(double_mid_line_width);
+                double minimum_tracable_y = -std::floor(double_mid_line_width);
+                if(actual_x < minimum_tracable_x){actual_y += (-(actual_x - minimum_tracable_x)) / x_y_ratio;actual_x = minimum_tracable_x;}
+                if(actual_y < minimum_tracable_y) {actual_x += x_y_ratio * std::abs(actual_y - minimum_tracable_y);actual_y = minimum_tracable_y;}
                 if(actual_x >= width()){actual_y -= (actual_x - width()) / x_y_ratio;actual_x = width();}
-                if(y_2 >= height()){y_2 = height() - 1;}
+                if(y_2 >= height() + std::ceil(double_mid_line_width)){y_2 = (height() + std::ceil(double_mid_line_width)) - 1;}
 
                 // Minimum / maximum
                 minimum_x = std::max(0.0, minimum_x);minimum_x = round(minimum_x);
@@ -2287,7 +2320,7 @@ namespace scls {
                 // Draw the line
                 while (actual_y < y_2 + 1) {
                     // Asserts
-                    if(actual_y < 0){actual_y++;actual_x += x_y_ratio;continue;}
+                    //if(actual_y < 0){actual_y++;actual_x += x_y_ratio;continue;}
 
                     // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
                     a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
@@ -2355,17 +2388,17 @@ namespace scls {
                 //y_2 += (maximum_x - x_2) * y_x_ratio;x_2 += (maximum_x - x_2);
 
                 // Optimise the positions
-                if(actual_y < 0) {actual_x += std::abs(actual_y) / y_x_ratio;actual_y=0;}
-                else if(actual_y >= height()){actual_x -= (actual_y - height()) / y_x_ratio;actual_y = height();}
-                if(actual_x < 0) {actual_y += y_x_ratio * std::abs(actual_x);actual_x=0;}
-                if(x_2 >= width()){x_2 = width() - 1;}
+                double minimum_tracable_x = -std::floor(double_mid_line_width);
+                double minimum_tracable_y = -std::floor(double_mid_line_width);
+                if(actual_y < minimum_tracable_y) {actual_x += std::abs(actual_y - minimum_tracable_y) / y_x_ratio;actual_y=minimum_tracable_y;}
+                if(actual_x < minimum_tracable_x) {actual_y += y_x_ratio * std::abs(actual_x - minimum_tracable_x);actual_x=minimum_tracable_x;}
+                //if(actual_y >= height()){actual_x -= (actual_y - height()) / y_x_ratio;actual_y = height();}
+                //if(x_2 >= width()){x_2 = width() - 1;}
 
                 // Draw the line
                 while (actual_x < x_2) {
-                    actual_y += y_x_ratio;
-                    if(actual_y < 0){break;}
-                    else if(round(actual_y) < minimum_y){if(y_x_ratio < 0){break;}else{actual_x++;continue;}} // TEMP
-                    actual_x++;
+                    //if(actual_y < 0){break;}
+                    //else if(round(actual_y) < minimum_y){if(y_x_ratio < 0){break;}else{actual_x++;continue;}} // TEMP
 
                     // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
                     a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
@@ -2379,6 +2412,159 @@ namespace scls {
                     for(int i = start;i<total_height;i++) {
                         //set_pixel(actual_x, actual_y + (i - height_to_use_half), red, green, blue, alpha, 1);
                     }
+
+                    actual_x++;actual_y += y_x_ratio;
+                }
+            }
+        }
+    }
+    void __Image_Base::draw_line_naive(int x_1, int y_1, int x_2, int y_2, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, unsigned short line_width, char extremity_type) {
+        // Asserts
+        if(y_1 - line_width / 2 > height() && y_2 - line_width / 2 > height()){return;}
+        else if(x_1 == x_2 && y_1 == y_2){
+            if(extremity_type == 0){fill_oval(x_1, y_1, line_width / 2, line_width / 2, red, green, blue, alpha);}
+            else{fill_rect(x_1 - line_width / 2, y_1 - line_width / 2, line_width, line_width, red, green, blue, alpha);}
+            return;
+        }
+
+        // Editing
+        if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
+        auto function_for_pixel_use = set_pixel_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = set_pixel;}
+
+        // Datas
+        double double_mid_line_width = (static_cast<double>(line_width) / 2.0);
+        bool draw_extremity = true;//draw_extremity=false;extremity_type = 2;
+
+        // Only case which the algorithm does not work correctly
+        if(x_1 == x_2) {
+            // Check the X position
+            if(x_1 + static_cast<int>(line_width) < 0 || x_1 >= width()) return;
+            if(y_2 < y_1) {
+                y_2 += y_1;
+                y_1 = y_2 - y_1;
+                y_2 = y_2 - y_1;
+            }
+
+            // Draw the line
+            if(line_width % 2 == 1){y_2++;}
+            int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);x_1 -= mid_line_width;
+            a_editing_change_next_value = false;fill_rect(x_1, y_1, line_width, (y_2 - y_1), red, green, blue, alpha);
+
+            // Draw the extremity
+            if(extremity_type == 0) {
+                x_1 += mid_line_width;mid_line_width = round(static_cast<double>(line_width) / 2.0);
+                a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_oval(x_1, y_2, mid_line_width, mid_line_width, red, green, blue, alpha);
+            }
+            else if(extremity_type == 1) {
+                y_1 -= mid_line_width;
+                a_editing_change_next_value = false;fill_rect(x_1, y_1, line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_rect(x_1, y_2, line_width, mid_line_width, red, green, blue, alpha);
+            }
+        }
+        else if(y_1 == y_2) {
+            // Check the Y position
+            if(y_1 < 0 || y_1 >= height()) return;
+            if(x_2 < x_1) {
+                x_2 += x_1;
+                x_1 = x_2 - x_1;
+                x_2 = x_2 - x_1;
+            }
+
+            // Draw the line
+            if(line_width % 2 == 1){x_2++;}
+            int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);y_1 -= mid_line_width;
+            a_editing_change_next_value = false;fill_rect(x_1, y_1, (x_2 - x_1), line_width, red, green, blue, alpha);
+
+            // Draw the extremity
+            if(extremity_type == 0) {
+                y_1 += mid_line_width;mid_line_width = round(static_cast<double>(line_width) / 2.0);
+                a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_oval(x_2, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+            }
+            else if(extremity_type == 1) {
+                x_1 -= mid_line_width;
+                a_editing_change_next_value = false;fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
+                a_editing_change_next_value = false;fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
+            }
+        }
+        else {
+            double distance_x = (static_cast<double>(x_2) - static_cast<double>(x_1)) + 1;
+            double distance_y = (static_cast<double>(y_2) - static_cast<double>(y_1)) + 1;
+            if(distance_y == 0){distance_y = 0.000001;}
+
+            double x_y_ratio = distance_x / distance_y;
+
+            if (abs(x_y_ratio) < 1) {
+                // Normalize positions
+                if (y_1 > y_2) {
+                    int temp = y_1;
+                    y_1 = y_2;
+                    y_2 = temp;
+                    temp = x_1;
+                    x_1 = x_2;
+                    x_2 = temp;
+                }
+
+                // Check the positions
+                double actual_x = x_1;double actual_y = y_1;
+
+                // Optimize the position
+                double minimum_tracable_x = -std::floor(double_mid_line_width);
+                double minimum_tracable_y = -std::floor(double_mid_line_width);
+                if(actual_x < minimum_tracable_x){actual_y += (-(actual_x - minimum_tracable_x)) / x_y_ratio;actual_x = minimum_tracable_x;}
+                if(actual_y < minimum_tracable_y) {actual_x += x_y_ratio * std::abs(actual_y - minimum_tracable_y);actual_y = minimum_tracable_y;}
+                if(actual_x >= width()){actual_y -= (actual_x - width()) / x_y_ratio;actual_x = width();}
+                if(y_2 >= height() + std::ceil(double_mid_line_width)){y_2 = (height() + std::ceil(double_mid_line_width)) - 1;}
+
+                // Draw the line
+                while (actual_y < y_2 + 1) {
+                    // Asserts
+                    //if(actual_y < 0){actual_y++;actual_x += x_y_ratio;continue;}
+
+                    // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
+                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
+
+                    // Update
+                    actual_y++;actual_x += x_y_ratio;
+                }
+            }
+            else {
+                // Normalize positions
+                if (x_1 > x_2) {
+                    int temp = x_1;
+                    x_1 = x_2;
+                    x_2 = temp;
+                    temp = y_1;
+                    y_1 = y_2;
+                    y_2 = temp;
+                }
+
+                // Check the positions
+                double actual_x = x_1;double actual_y = y_1;
+                double y_x_ratio = distance_y / distance_x;
+
+                // Avoid a problems where a circle is not high enough
+                double_mid_line_width = round(double_mid_line_width);
+
+                // Optimise the positions
+                double minimum_tracable_x = -std::floor(double_mid_line_width);
+                double minimum_tracable_y = -std::floor(double_mid_line_width);
+                if(actual_y < minimum_tracable_y) {actual_x += std::abs(actual_y - minimum_tracable_y) / y_x_ratio;actual_y=minimum_tracable_y;}
+                if(actual_x < minimum_tracable_x) {actual_y += y_x_ratio * std::abs(actual_x - minimum_tracable_x);actual_x=minimum_tracable_x;}
+                //if(actual_y >= height()){actual_x -= (actual_y - height()) / y_x_ratio;actual_y = height();}
+                //if(x_2 >= width()){x_2 = width() - 1;}
+
+                // Draw the line
+                while (actual_x < x_2) {
+                    //if(actual_y < 0){break;}
+                    //else if(round(actual_y) < minimum_y){if(y_x_ratio < 0){break;}else{actual_x++;continue;}} // TEMP
+
+                    // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
+                    a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
+
+                    actual_x++;actual_y += y_x_ratio;
                 }
             }
         }
@@ -2909,7 +3095,6 @@ namespace scls {
         }
 
         // Return the result
-        img.get()->save_png("tests/cobble.png");
         return img;
     }
 

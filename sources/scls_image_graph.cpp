@@ -383,8 +383,8 @@ namespace scls {
             used_points.push_back(current_point);
             if(needed_x < end_x) {
                 if(needed_x >= start_x && last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
-                    if(j % 2 == 0 || true) img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), graph_color, line_width);
-                    else img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(0, 0, 0), line_width);
+                    if(j % 10 == 0 || true) img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), graph_color, line_width);
+                    //else img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(0, 0, 0), line_width);
                 }
             }
             else{break;}
