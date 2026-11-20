@@ -1543,8 +1543,8 @@ namespace scls {
     void __Image_Base::fill_circle(int x_center, int y_center, double radius_x, double radius_y, double angle, double angle_start, double angle_end, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha, double border_radius, unsigned char border_red, unsigned char border_green, unsigned char border_blue, unsigned char border_alpha) {
         // Editing
         if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
-        auto function_for_pixel_use = paste_pixel_rgba_directly_with_editing_mask;
-        if(a_editing_mask.get() == 0){function_for_pixel_use = paste_pixel_rgba_directly;}
+        void (scls::__Image_Base::*function_for_pixel_use)(unsigned int, unsigned char, unsigned char, unsigned char, unsigned char, unsigned char) = &scls::__Image_Base::paste_pixel_rgba_directly_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = &scls::__Image_Base::paste_pixel_rgba_directly;}
 
         // Format the angle
         while(angle <= -90.0){angle += 180.0;}while(angle >= 90.0){angle -= 180.0;}
@@ -2197,8 +2197,8 @@ namespace scls {
 
         // Editing
         if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
-        auto function_for_pixel_use = set_pixel_with_editing_mask;
-        if(a_editing_mask.get() == 0){function_for_pixel_use = set_pixel;}
+        void (scls::__Image_Base::*function_for_pixel_use)(int, int, unsigned char, unsigned char, unsigned char, unsigned char, unsigned short) = &scls::__Image_Base::set_pixel_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = &scls::__Image_Base::set_pixel;}
 
         // Datas
         double double_mid_line_width = (static_cast<double>(line_width) / 2.0);
@@ -2429,8 +2429,8 @@ namespace scls {
 
         // Editing
         if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
-        auto function_for_pixel_use = set_pixel_with_editing_mask;
-        if(a_editing_mask.get() == 0){function_for_pixel_use = set_pixel;}
+        void (scls::__Image_Base::*function_for_pixel_use)(int, int, unsigned char, unsigned char, unsigned char, unsigned char, unsigned short) = &scls::__Image_Base::set_pixel_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = &scls::__Image_Base::set_pixel;}
 
         // Datas
         double double_mid_line_width = (static_cast<double>(line_width) / 2.0);
@@ -2738,8 +2738,8 @@ namespace scls {
     void __Image_Base::fill_rect(int x, int y, unsigned short rect_width, unsigned short rect_height, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
         // Editing
         if(a_editing_change_next_value){a_editing_value++;}else{a_editing_change_next_value=!a_editing_change_next_value;}
-        auto function_for_pixel_use = paste_pixel_rgba_directly_with_editing_mask;
-        if(a_editing_mask.get() == 0){function_for_pixel_use = paste_pixel_rgba_directly;}
+        void (scls::__Image_Base::*function_for_pixel_use)(unsigned int, unsigned char, unsigned char, unsigned char, unsigned char, unsigned char) = &scls::__Image_Base::paste_pixel_rgba_directly_with_editing_mask;
+        if(a_editing_mask.get() == 0){function_for_pixel_use = &scls::__Image_Base::paste_pixel_rgba_directly;}
 
         // Check the position
         if(y >= static_cast<int>(height()) || x >= static_cast<int>(width()) || y + static_cast<int>(rect_height) < 0 || x + static_cast<int>(rect_width) < 0) return;
