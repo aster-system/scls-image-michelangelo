@@ -36,15 +36,15 @@ namespace scls {
     void draw_function_integral_darboux_sup(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, int parts);
 
     // Draw a Riemann integral
-    void draw_function_integral_riemann(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step);
+    void draw_function_integral_riemann(Image img, Formula_Base_Field* f, Plane_Base* b, double start_x, double end_x, double step);
 
     // Draw a function secant / tangent
     void draw_function_secant(Image img, Formula_Base* f, Plane_Base* b, double point_1, double point_2);
     void draw_function_tangent(Image img, Formula_Base* f, Plane_Base* b, double point);
 
     // Fill the graph of a function
-    void fill_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double function_width);
-    void fill_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x);
+    void fill_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, double start_x, double end_x, double function_width);
+    void fill_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, double start_x, double end_x);
 }
 
 #endif // SCLS_IMAGE_MATH_ANALYSIS

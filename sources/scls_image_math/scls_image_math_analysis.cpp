@@ -95,7 +95,7 @@ namespace scls {
     }
 
     // Draw a Riemann integral
-    void draw_function_integral_riemann(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double step) {
+    void draw_function_integral_riemann(Image img, Formula_Base_Field* f, Plane_Base* b, double start_x, double end_x, double step) {
         scls::Fraction pi_temp = scls::Fraction(31415, 10000);
         //Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
 
@@ -111,8 +111,8 @@ namespace scls {
         scls::Point_2D last_point = scls::Point_2D(0, 0);
         double zero_position_y = b->base_y_to_canonical_y(0);
         for(int j = start_x;j<img.width();j+=step){
-            double needed_x = b->canonical_x_to_base_x(j + step / 2.0);
-            scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
+            Double needed_x = b->canonical_x_to_base_x(j + step / 2.0);
+            scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns_formula("x", &needed_x).get()->value_to_double()));
             if(j < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
                     //if(border_width != 0){img.fill_rect(j, current_point.y(), step, (zero_position_y - current_point.y()), border_color);}
@@ -168,8 +168,8 @@ namespace scls {
     }
 
     // Fill the graph of a function
-    void fill_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x) {fill_function_graph(img, f, b, start_x, end_x, 5);}
-    void fill_function_graph(Image img, Formula_Base* f, Plane_Base* b, double start_x, double end_x, double function_width) {
+    void fill_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, double start_x, double end_x) {fill_function_graph(img, f, b, start_x, end_x, 5);}
+    void fill_function_graph(Image img, Formula_Base_Field* f, Plane_Base* b, double start_x, double end_x, double function_width) {
         scls::Fraction pi_temp = scls::Fraction(31415, 10000);
         //Math_Environment::Relation_Module m = Math_Environment::Relation_Module(pi_temp);
 
@@ -179,13 +179,13 @@ namespace scls {
         bool draw_line = false;
 
         scls::Point_2D last_point = scls::Point_2D(-1, 0);
-        double needed_x = 0;
+        Double needed_x = 0;
         double zero_position_y = b->base_y_to_canonical_y(0);
         for(int j = 0;j<img.width();j++){
             needed_x = b->canonical_x_to_base_x(j);
             if(needed_x < start_x){continue;}
 
-            scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns("x", needed_x).get()->value<scls::Fraction>()->to_double()));
+            scls::Point_2D current_point = scls::Point_2D(j, img.height() - b->base_y_to_canonical_y(f->replace_unknowns_formula("x", &needed_x).get()->value_to_double()));
             if(needed_x < end_x) {
                 if(last_point.x() != -1 && !((last_point.y() < 0 && current_point.y() > img.height()) || (last_point.y() > img.height() && current_point.y() < 0))){
                     if(draw_line){img.draw_line(last_point.x(), last_point.y(), current_point.x(), current_point.y(), scls::Color(255, 0, 0), function_width);}

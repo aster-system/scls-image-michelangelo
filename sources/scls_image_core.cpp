@@ -1443,6 +1443,9 @@ namespace scls {
     	double radius_y_without_border = radius_y - border_radius;
     	double oval_maximum_x_without_border = x_center + radius_x_without_border;
     	double oval_minimum_x_without_border = x_center - radius_x_without_border;
+        int& state = a_state_ld;state = 0;
+
+        #define SCLS_IMAGE_CORE_FILL_OVAL_STATE_OUT 1
 
     	// Pixel handling
     	int oval_maximum_x_pixel = ceil(oval_maximum_x);
@@ -1462,11 +1465,19 @@ namespace scls {
             oval_x_proportion += oval_x_ratio * -static_cast<double>(current_x_pixel);
             oval_x_without_border_proportion += oval_x_without_border_ratio * -static_cast<double>(current_x_pixel);
             offset_start_x=-current_x_pixel;current_x_pixel=0;
+            state = SCLS_IMAGE_CORE_FILL_OVAL_STATE_OUT;
         }
 
         // X end
     	int radius_x_pixel_max = std::min(width() - 1, radius_x_pixel);
-    	if(current_x_pixel + radius_x_pixel_max >= width()) {radius_x_pixel_max = width() - current_x_pixel;}
+    	if(current_x_pixel + radius_x_pixel_max >= width()) {
+            radius_x_pixel_max = width() - current_x_pixel;
+            state = SCLS_IMAGE_CORE_FILL_OVAL_STATE_OUT;
+        }
+
+    	// Reset
+    	a_maximum_y_ld = 0;
+    	a_minimum_y_ld = height();
 
     	// Loop
     	for(int i = offset_start_x;i<radius_x_pixel_max;i++) {
@@ -1488,7 +1499,10 @@ namespace scls {
     		int current_height_without_border_in_pixel_y_minus = height_without_border_in_pixel;
     		if(y_center - current_height_without_border_in_pixel_y_minus < 0){current_height_without_border_in_pixel_y_minus = y_center + 1;}
     		int current_height_in_pixel_y_minus = height_in_pixel;
-    		if(y_center - current_height_in_pixel_y_minus < 0){current_height_in_pixel_y_minus = y_center;}
+    		if(y_center - current_height_in_pixel_y_minus < 0){
+                current_height_in_pixel_y_minus = y_center;
+                state = SCLS_IMAGE_CORE_FILL_OVAL_STATE_OUT;
+            }
     		// Y+ start
     		int current_y_offset_y_plus = 0;
     		if(y_center < 0){current_y_offset_y_plus = -y_center - 1;}
@@ -1496,7 +1510,10 @@ namespace scls {
     		int current_height_without_border_in_pixel_y_plus = height_without_border_in_pixel;
     		if(y_center + current_height_without_border_in_pixel_y_plus >= height()){current_height_without_border_in_pixel_y_plus = (height() - y_center) - 1;}
     		int current_height_in_pixel_y_plus = height_in_pixel;
-    		if(y_center + current_height_in_pixel_y_plus >= height()){current_height_in_pixel_y_plus = height() - (y_center + current_height_in_pixel_y_plus);}
+    		if(y_center + current_height_in_pixel_y_plus >= height()){
+                current_height_in_pixel_y_plus = height() - (y_center + current_height_in_pixel_y_plus);
+                state = SCLS_IMAGE_CORE_FILL_OVAL_STATE_OUT;
+            }
 
     		// Pixels Y-
     		int needed_components = components();int to_remove = needed_components * width();
@@ -1510,6 +1527,9 @@ namespace scls {
 				position -= to_remove;
 			}
 
+			// Min LD
+			a_minimum_y_ld = std::min(a_minimum_y_ld, static_cast<double>((y_center - current_y_offset_y_minus) - current_height_in_pixel_y_minus + 1));
+
     		// Pixels Y+
     		position = ((y_center + current_y_offset_y_plus + 1) * width() + current_x_pixel) * components() * (bit_depht() / 8.0);
     		for(int j = current_y_offset_y_plus;j<current_height_without_border_in_pixel_y_plus;j++) {
@@ -1520,6 +1540,9 @@ namespace scls {
 				set_pixel_rgba_directly(position, border_red, border_green, border_blue, border_alpha, 1);
 				position += to_remove;
 			}
+
+			// Max LD
+			a_maximum_y_ld = std::max(a_maximum_y_ld, static_cast<double>((y_center + current_y_offset_y_plus + 1) + current_height_in_pixel_y_plus));
 
     		// Continue
     		current_x_pixel++;
@@ -2434,7 +2457,7 @@ namespace scls {
 
         // Datas
         double double_mid_line_width = (static_cast<double>(line_width) / 2.0);
-        bool draw_extremity = true;//draw_extremity=false;extremity_type = 2;
+        bool draw_extremity = true;
 
         // Only case which the algorithm does not work correctly
         if(x_1 == x_2) {
@@ -2472,22 +2495,32 @@ namespace scls {
                 x_2 = x_2 - x_1;
             }
 
-            // Draw the line
+            // Datas
             if(line_width % 2 == 1){x_2++;}
-            int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);y_1 -= mid_line_width;
-            a_editing_change_next_value = false;fill_rect(x_1, y_1, (x_2 - x_1), line_width, red, green, blue, alpha);
+            int mid_line_width = std::floor(static_cast<double>(line_width) / 2.0);
 
             // Draw the extremity
             if(extremity_type == 0) {
-                y_1 += mid_line_width;mid_line_width = round(static_cast<double>(line_width) / 2.0);
                 a_editing_change_next_value = false;fill_oval(x_1, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
                 a_editing_change_next_value = false;fill_oval(x_2, y_1, mid_line_width, mid_line_width, red, green, blue, alpha);
+                y_1 -= mid_line_width;
+
+                // Reset Y
+                if(a_state_ld == 0) {
+                    y_1 = a_minimum_y_ld;
+                    y_2 = a_minimum_y_ld;
+                    line_width = a_maximum_y_ld - a_minimum_y_ld;
+                }
             }
             else if(extremity_type == 1) {
-                x_1 -= mid_line_width;
+                x_1 -= mid_line_width;y_1 -= mid_line_width;
                 a_editing_change_next_value = false;fill_rect(x_1, y_1, mid_line_width, line_width, red, green, blue, alpha);
                 a_editing_change_next_value = false;fill_rect(x_2, y_1, mid_line_width, line_width, red, green, blue, alpha);
+                x_1 += mid_line_width;
             }
+
+            // Draw the line
+            a_editing_change_next_value = false;fill_rect(x_1, y_1, (x_2 - x_1), line_width, red, green, blue, alpha);
         }
         else {
             double distance_x = (static_cast<double>(x_2) - static_cast<double>(x_1)) + 1;

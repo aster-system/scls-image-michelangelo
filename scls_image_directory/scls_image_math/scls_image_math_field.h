@@ -32,18 +32,19 @@
 // The namespace "scls" is used to simplify the all.
 namespace scls {
 	// Point in a grid
-	std::vector<scls::Point_2D> points_grid(int image_width, int image_height);
+	std::vector<Point_2D> points_grid(int image_width, int image_height);
 
     // Do a colored scalar field
-    void scalar_field_2d_colored(scls::Image image, scls::Formula_Base* formula, scls::Plane_Base* base);
+    void scalar_field_2d_colored(Image image, Formula_Base* formula, Plane_Base* base);
 
     // Do an arrowed vector field
-    void vector_field_2d(scls::Image image, std::vector<scls::Formula_Base*> formula_x, std::vector<scls::Formula_Base*> formula_y, scls::Plane_Base* base, std::vector<scls::Point_2D> arrow_starts);
-    void vector_field_2d(scls::Image image, std::vector<scls::Formula_Base*> formula_x, std::vector<scls::Formula_Base*> formula_y, scls::Plane_Base* base);
-    void vector_field_2d(scls::Image image, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, scls::Plane_Base* base);
+    void vector_field_2d(Image image, const std::vector<Formula_Base_Template<Double>*>& formula_x, const std::vector<Formula_Base_Template<Double>*>& formula_y, Plane_Base* base, std::vector<Point_2D> arrow_starts);
+    void vector_field_2d(Image image, const std::vector<Formula_Base_Field*>& formula_x, const std::vector<Formula_Base_Field*>& formula_y, Plane_Base* base, std::vector<Point_2D> arrow_starts);
+    void vector_field_2d(Image image, std::vector<Formula_Base_Field*> formula_x, std::vector<Formula_Base_Field*> formula_y, Plane_Base* base);
+    void vector_field_2d(Image image, Formula_Base_Field* formula_x, Formula_Base_Field* formula_y, scls::Plane_Base* base);
 
     // Do an arrow-linked vector field
-    void vector_field_2d_link(scls::Image image, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, scls::Plane_Base* base);
+    void vector_field_2d_link(Image image, Formula_Base_Field* formula_x, Formula_Base_Field* formula_y, Plane_Base* base);
 }
 
 #endif // SCLS_IMAGE_MATH_FIELD

@@ -76,32 +76,39 @@ namespace scls {
     }
 
     // Do an arrowed vector field
-    void vector_field_2d(scls::Image image, std::vector<scls::Formula_Base*> formula_x, std::vector<scls::Formula_Base*> formula_y, scls::Plane_Base* base, std::vector<scls::Point_2D> arrow_starts) {
+    void vector_field_2d(Image image, const std::vector<Formula_Base_Template<Double>*>& formula_x, const std::vector<Formula_Base_Template<Double>*>& formula_y, Plane_Base* base, std::vector<Point_2D> arrow_starts) {
+        std::vector<scls::Formula_Base_Field*> xs = std::vector<scls::Formula_Base_Field*>(formula_x.size());
+        std::vector<scls::Formula_Base_Field*> ys = std::vector<scls::Formula_Base_Field*>(formula_y.size());
+        for(std::size_t i = 0;i<formula_x.size();i++){xs[i] = formula_x.at(i);}
+        for(std::size_t i = 0;i<formula_y.size();i++){ys[i] = formula_y.at(i);}
+        vector_field_2d(image, xs, ys, base, arrow_starts);
+    }
+    void vector_field_2d(scls::Image image, const std::vector<scls::Formula_Base_Field*>& formula_x, const std::vector<scls::Formula_Base_Field*>& formula_y, scls::Plane_Base* base, std::vector<scls::Point_2D> arrow_starts) {
     	// Browse the image
 		for(std::size_t i = 0;i<arrow_starts.size();i++) {
 			// Get the position
 			int current_x_pixel = arrow_starts.at(i).x();
 			int current_y_pixel = arrow_starts.at(i).y();
-			double current_x = base->canonical_x_to_base_x(current_x_pixel);
-			double current_y = base->canonical_y_to_base_y(current_y_pixel);
+			Double current_x = base->canonical_x_to_base_x(current_x_pixel);
+			Double current_y = base->canonical_y_to_base_y(current_y_pixel);
 
 			// Get the needed vector
 			scls::Fraction current_value_x = 0;
 			scls::Fraction current_value_y = 0;
-			for(std::size_t j = 0;j<formula_x.size();j++){current_value_x += *formula_x.at(j)->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();}
-			for(std::size_t j = 0;j<formula_y.size();j++){current_value_y += *formula_y.at(j)->replace_unknowns("x", scls::Fraction::from_double(current_x)).get()->replace_unknowns("y", scls::Fraction::from_double(current_y)).get()->value<scls::Fraction>();}
+			for(std::size_t j = 0;j<formula_x.size();j++){current_value_x += formula_x.at(j)->replace_unknowns_formula("x", &current_x).get()->replace_unknowns_formula("y", &current_y).get()->value_to_double();}
+			for(std::size_t j = 0;j<formula_y.size();j++){current_value_y += formula_y.at(j)->replace_unknowns_formula("x", &current_x).get()->replace_unknowns_formula("y", &current_y).get()->value_to_double();}
 			int current_value_x_pixel = current_value_x.to_double() * 20.0;
 			int current_value_y_pixel = current_value_y.to_double() * 20.0;
 
 			image.image()->draw_arrow(current_x_pixel, image.height() - current_y_pixel, current_x_pixel + current_value_x_pixel, image.height() - (current_y_pixel + current_value_y_pixel), scls::Color(0, 0, 0), 0.3, 5);
 		}
     }
-    void vector_field_2d(scls::Image image, std::vector<scls::Formula_Base*> formula_x, std::vector<scls::Formula_Base*> formula_y, scls::Plane_Base* base) {
+    void vector_field_2d(scls::Image image, std::vector<scls::Formula_Base_Field*> formula_x, std::vector<scls::Formula_Base_Field*> formula_y, scls::Plane_Base* base) {
         // Field
     	std::vector<scls::Point_2D> arrow_starts = points_grid(image.width(), image.height());
         vector_field_2d(image, formula_x, formula_y, base, arrow_starts);
     }
-    void vector_field_2d(scls::Image image, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, scls::Plane_Base* base) {vector_field_2d(image, std::vector<scls::Formula_Base*>(1, formula_x), std::vector<scls::Formula_Base*>(1, formula_y), base);}
+    void vector_field_2d(scls::Image image, scls::Formula_Base_Field* formula_x, scls::Formula_Base_Field* formula_y, scls::Plane_Base* base) {vector_field_2d(image, std::vector<scls::Formula_Base_Field*>(1, formula_x), std::vector<scls::Formula_Base_Field*>(1, formula_y), base);}
 
     // Do an arrow-linked vector field
     void vector_field_2d_link(scls::Image image, scls::Formula_Base* formula_x, scls::Formula_Base* formula_y, scls::Plane_Base* base) {

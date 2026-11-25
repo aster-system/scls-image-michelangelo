@@ -111,8 +111,9 @@ void test_draw_lines() {
 
 scls::Complex temp(scls::Complex c){return (c - scls::Complex(3)) * (c - scls::Complex(-3)) * (c - scls::Complex(0, 3)) * (c - scls::Complex(0, -3));}
 int main() {
-	//test_draw_oval();
+	test_draw_lines();
 
+	/*
 	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> td = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("0");
 	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("tan(x)");
 	derivate(td.get(), f.get(), std::string("x"));
@@ -126,6 +127,7 @@ int main() {
 	scls::draw_function_graph(img, scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("cos(x*2)*x/2").get(), &b, scls::Color(255, 0, 0), -1000, 1000, 5);
 
 	img.save_png("./tests/f.png");
+	//*/
 
     return 0;
 }

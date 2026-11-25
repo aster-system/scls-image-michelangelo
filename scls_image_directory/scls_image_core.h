@@ -545,11 +545,14 @@ namespace scls {
         //
         //*********
 
-        // Minimum x for last drawing
+        // Minimum X/Y for last drawing
         double a_minimum_x_ld = 0;
         double a_minimum_y_ld = 0;
         double a_maximum_x_ld = 0;
         double a_maximum_y_ld = 0;
+
+        // Last state of the drawing
+        int a_state_ld = 0;
 
         // Editing mask / value
 		std::shared_ptr<Bytes_Set> a_editing_mask;
