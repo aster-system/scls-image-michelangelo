@@ -94,6 +94,14 @@ void test_draw_lines() {
     img.draw_line(600, 1600, 1000, 2100, scls::Color(0, 0, 0, 255), 15);
     img.draw_line(500, 1700, 1000, 2100, scls::Color(0, 0, 0, 255), 15);
 
+    // 1
+    img.draw_line(700, 700, 800, 750, scls::Color(0, 0, 0, 255), 2);
+    img.draw_line(700, 700, 750, 800, scls::Color(0, 0, 0, 255), 2);
+
+    // 5
+    img.draw_line(500, 500, 600, 550, scls::Color(0, 0, 0, 255), 5);
+    img.draw_line(500, 500, 550, 600, scls::Color(0, 0, 0, 255), 5);
+
     /*double t = scls::time_ns();
     for(int i = 0;i<1;i++){if(i>0){img.set_editing_change_next_value(false);} img.draw_line(100, 100, 1900, 1800, scls::Color(0, 0, 0, 100), 15);}
     std::cout << "U " << static_cast<double>(scls::time_ns() - t) / 1000000000.0 << std::endl;
@@ -109,18 +117,53 @@ void test_draw_lines() {
     img.save_png("./tests/l.png");
 }
 
+void scalar_field_2d_gradient(scls::Image image, scls::Formula_Base_Field* formula, scls::Plane_Base* base) {
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f_x = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("0");
+	scls::derivate(f_x.get(), formula, std::string("x"));
+
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f_y = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("0");
+	scls::derivate(f_y.get(), formula, std::string("y"));
+
+	vector_field_2d(image, f_x.get(), f_y.get(), base);
+}
+
+void vector_field_2d_divergence(scls::Image image, scls::Formula_Base_Field* formula_x, scls::Formula_Base_Field* formula_y, scls::Plane_Base* base) {
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f_x = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("0");
+	scls::derivate(f_x.get(), formula_x, std::string("x"));
+
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f_y = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("0");
+	scls::derivate(f_y.get(), formula_y, std::string("y"));
+
+	f_x.get()->operate(f_y.get(), "+");
+	std::cout << "U " << f_x.get()->to_std_string(0) << std::endl;
+	scalar_field_2d_colored(image, f_x.get(), base);
+}
+
 scls::Complex temp(scls::Complex c){return (c - scls::Complex(3)) * (c - scls::Complex(-3)) * (c - scls::Complex(0, 3)) * (c - scls::Complex(0, -3));}
 int main() {
-	test_draw_lines();
+	//test_draw_lines();
 
-	/*
 	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> td = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("0");
-	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("tan(x)");
-	derivate(td.get(), f.get(), std::string("x"));
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> temp = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("x*x*x*x*y");
+	scls::derivate(td.get(), temp.get(), std::string("x"));
 	std::cout << "U " << td.get()->to_std_string(0) << std::endl;
 
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("cos(x)+cos(y)");
 
-	scls::Image img = scls::Image(2000, 2000, scls::Color(255, 255, 255));
+	scls::Image img = scls::Image(2000, 2000);scls::Plane_Base b = scls::Plane_Base::base_for_image(img.width(), img.height(), 200, 200);
+	scalar_field_2d_colored(img, f.get(), &b);
+	scalar_field_2d_gradient(img, f.get(), &b);
+	img.save_png("./tests/l.png");//*/
+
+	/*std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f_x = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("sin(x)");
+	std::shared_ptr<scls::Formula_Base_Template<scls::Double>> f_y = scls::string_to_algebra_element<scls::Formula_Base_Template<scls::Double>>("sin(y)+y");
+
+	scls::Image img = scls::Image(2000, 2000);scls::Plane_Base b = scls::Plane_Base::base_for_image(img.width(), img.height(), 200, 200);
+	vector_field_2d_divergence(img, f_x.get(), f_y.get(), &b);
+    vector_field_2d(img, f_x.get(), f_y.get(), &b);
+	img.save_png("./tests/l.png");//*/
+
+	/*scls::Image img = scls::Image(2000, 2000, scls::Color(255, 255, 255));
 	scls::Plane_Base b = scls::Plane_Base::base_for_image(img.width(), img.height(), 200, 200);
 	//img.draw_line(1699, 734, 1700, 736, scls::Color(255, 0, 0), 5);
 	scls::draw_grid(img, &b);

@@ -31,10 +31,10 @@ namespace scls {
 	// Point in a grid
 	std::vector<scls::Point_2D> points_grid(int image_width, int image_height) {
         // Datas
-        int start_x_pixel = 40;
-        int start_y_pixel = 40;
-        int step_x_pixel = 80;
-        int step_y_pixel = 80;
+        int start_x_pixel = 50;
+        int start_y_pixel = 50;
+        int step_x_pixel = 100;
+        int step_y_pixel = 100;
         std::list<scls::Point_2D> arrow_starts_list;
         std::size_t arrow_starts_list_n = 0;
 
@@ -58,19 +58,19 @@ namespace scls {
 	}
 
 	// Do a colored scalar field
-    void scalar_field_2d_colored(scls::Image image, scls::Formula_Base* formula, scls::Plane_Base* base) {
+    void scalar_field_2d_colored(scls::Image image, scls::Formula_Base_Field* formula, scls::Plane_Base* base) {
         // Datas
 
         // Browse the image
         for(int y_pixel = 0;y_pixel<image.height();y_pixel++) {
             for(int x_pixel = 0;x_pixel<image.width();x_pixel++) {
                 // Datas for this pixel
-                scls::Fraction x = base->canonical_x_to_base_x(x_pixel);
-                scls::Fraction y = base->canonical_y_to_base_y(image.height() - y_pixel);
+                Double x = base->canonical_x_to_base_x(x_pixel);
+                Double y = base->canonical_y_to_base_y(image.height() - y_pixel);
 
-                scls::Fraction current_value = *formula->replace_unknowns("x", x).get()->replace_unknowns("y", y).get()->value<scls::Fraction>();
-                if(current_value > 0 ){image.set_pixel(x_pixel, y_pixel, scls::Color(100.0 * current_value.to_double(), 0, 0));}
-                else{image.set_pixel(x_pixel, y_pixel, scls::Color(0, 0, 100.0 * -current_value.to_double()));}
+                double current_value = formula->replace_unknowns_formula("x", &x).get()->replace_unknowns_formula("y", &y).get()->value_to_double();
+                if(current_value > 0 ){image.set_pixel(x_pixel, y_pixel, scls::Color(75.0 * current_value, 0, 0));}
+                else{image.set_pixel(x_pixel, y_pixel, scls::Color(0, 0, 100.0 * -current_value));}
             }
         }
     }
@@ -97,10 +97,10 @@ namespace scls {
 			scls::Fraction current_value_y = 0;
 			for(std::size_t j = 0;j<formula_x.size();j++){current_value_x += formula_x.at(j)->replace_unknowns_formula("x", &current_x).get()->replace_unknowns_formula("y", &current_y).get()->value_to_double();}
 			for(std::size_t j = 0;j<formula_y.size();j++){current_value_y += formula_y.at(j)->replace_unknowns_formula("x", &current_x).get()->replace_unknowns_formula("y", &current_y).get()->value_to_double();}
-			int current_value_x_pixel = current_value_x.to_double() * 20.0;
-			int current_value_y_pixel = current_value_y.to_double() * 20.0;
+			int current_value_x_pixel = current_value_x.to_double() * 40.0;
+			int current_value_y_pixel = current_value_y.to_double() * 40.0;
 
-			image.image()->draw_arrow(current_x_pixel, image.height() - current_y_pixel, current_x_pixel + current_value_x_pixel, image.height() - (current_y_pixel + current_value_y_pixel), scls::Color(0, 0, 0), 0.3, 5);
+			image.image()->draw_arrow(current_x_pixel, image.height() - current_y_pixel, current_x_pixel + current_value_x_pixel, image.height() - (current_y_pixel + current_value_y_pixel), scls::Color(255, 255, 255), 0.3, 6);
 		}
     }
     void vector_field_2d(scls::Image image, std::vector<scls::Formula_Base_Field*> formula_x, std::vector<scls::Formula_Base_Field*> formula_y, scls::Plane_Base* base) {

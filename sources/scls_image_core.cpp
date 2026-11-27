@@ -2543,6 +2543,9 @@ namespace scls {
                 // Check the positions
                 double actual_x = x_1;double actual_y = y_1;
 
+                // Avoid a problems where a circle is not high enough
+                double_mid_line_width = round(double_mid_line_width);
+
                 // Optimize the position
                 double minimum_tracable_x = -std::floor(double_mid_line_width);
                 double minimum_tracable_y = -std::floor(double_mid_line_width);
@@ -2553,10 +2556,7 @@ namespace scls {
 
                 // Draw the line
                 while (actual_y < y_2 + 1) {
-                    // Asserts
-                    //if(actual_y < 0){actual_y++;actual_x += x_y_ratio;continue;}
-
-                    // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
+                    // Drawing
                     a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
 
                     // Update
@@ -2591,12 +2591,10 @@ namespace scls {
 
                 // Draw the line
                 while (actual_x < x_2) {
-                    //if(actual_y < 0){break;}
-                    //else if(round(actual_y) < minimum_y){if(y_x_ratio < 0){break;}else{actual_x++;continue;}} // TEMP
-
-                    // TEMP TO DISABLE FASTLY (ALSO MODIFY ACTUAL_X AND AXTUAL_Y CALCULATION)
+                    // Drawing
                     a_editing_change_next_value = false;fill_oval(actual_x, actual_y, double_mid_line_width, double_mid_line_width, red, green, blue, alpha);
 
+                    // Update
                     actual_x++;actual_y += y_x_ratio;
                 }
             }
